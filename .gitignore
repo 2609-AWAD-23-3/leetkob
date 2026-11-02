@@ -1,0 +1,13 @@
+# Local agent/session records: not project documentation
+/memory/
+
+# Prevent historical drafts/root-source duplicates from being reintroduced
+/plan.before-*.md
+/PLAN-REVIEW.md
+/plan.md
+/requirement.md
+/requirement_vn.md
+/LeeTKOB — class project brief.pdf
+/LeeTKOB — class project brief_vn.md
+/PA#2 rubric — Harness and quality gate.pdf
+/PA#2 rubric — Harness and quality gate_vn.md
