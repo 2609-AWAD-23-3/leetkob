@@ -2,6 +2,7 @@
 
 ## Bắt đầu từ đâu?
 
+- [Contributing](../CONTRIBUTING.md) và [Development workflow](workflow.md): Issues, branches, PR, review và điều kiện đóng task.
 - [Tài liệu tham chiếu](reference/README.md): đề bài, rubric, requirements và mẫu.
 - [Mục lục plans](plans/README.md): plan hiện hành, roadmap và các checkpoint.
 - [PA02 — plan thực thi](plans/PA02.md): bản chính để cập nhật task/checklist/evidence.
