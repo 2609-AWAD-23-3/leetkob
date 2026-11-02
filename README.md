@@ -8,6 +8,8 @@ Tài liệu và nền cấu trúc dự án LeeTKOB dùng chung cho các checkpoi
 - [Tất cả plans](docs/plans/README.md)
 - [Brief, rubric, requirements và mẫu](docs/reference/README.md)
 - [Architecture overview](docs/architecture/overview.md)
+- [Contributing](CONTRIBUTING.md)
+- [Development workflow](docs/workflow.md)
 
 ## Repository
 
