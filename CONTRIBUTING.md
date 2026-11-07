@@ -34,4 +34,4 @@ See the workflow for default-branch issue-closing behavior, main/develop promoti
 
 ## Current implementation boundary
 
-The repository currently contains documentation, not a runnable application. T01 establishes the stack and startup procedure; T04 defines executable local commands; T09 implements CI and protections. Do not invent install/test commands or mark these tasks complete because templates exist. No branch protection or executable CI is introduced by this documentation setup.
+This candidate includes the runnable T01 application foundation and README setup procedure. T04 still owns the complete quality commands/harness; T09 owns CI and protections. Neither smoke tests nor workflow templates establish those later tasks as complete. PA02 requires only publish; existing empty submissions/review-queue plugins do not require implementation for PA02. The full scope synchronization remains in PR #16 until reviewed and integrated.
