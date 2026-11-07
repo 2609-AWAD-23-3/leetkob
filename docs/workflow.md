@@ -10,11 +10,11 @@
 
 Do not direct-push or force-push main/develop. These are team rules; enforcement is configured and proven in T09. Do not claim that a proposed rule is already enforced. Keep the default branch as main unless the team explicitly changes this decision.
 
-Before starting a task, fetch origin and branch from its current develop commit. For a dependent task, wait until prerequisite interfaces and accepted artifacts are available; a draft contract may be prepared earlier when the plan permits it.
+Before starting a task, fetch origin and branch from its current develop commit. Prerequisites gate integration/final acceptance, not every preparation step. Draft contracts and submission records early; T04 tooling starts from T01 without waiting for T02, then adopts fixture APIs when available. Use only the state/identity/error support needed by publish; do not wait for submissions/review-queue endpoints.
 
 ## Issue structure and synchronization
 
-PA02 uses exactly twelve task issues, T01-T12, grouped under the PA02 milestone. Every issue contains the full English description, all execution and review checklist items, expected deliverables, dependencies, boundaries and evidence/blocker sections from the accepted plan. The reviewer is recorded separately from the single assignee.
+PA02 retains the twelve stable task IDs T01-T12. Following the approved 2026-11-07 scope revision, ten tasks remain active under the PA02 milestone; T06/T07 are deferred outside PA02 acceptance, kept open and not completed. POST /labs/{labId}/publish is the only required endpoint. No required task depends on deferred endpoints; no future milestone is assigned to them. Every issue contains the full English description, all execution and review checklist items, expected deliverables, dependencies, boundaries and evidence/blocker sections from the accepted plan. The reviewer is recorded separately from the single assignee.
 
 The plan is the canonical scope/acceptance record; the issue is its English operational mirror and discussion record. Preserve task IDs and checklist-item ordering. When scope, ownership, dependencies or completion states change, update the plan and issue together, reference the PR and leave unverified items unchecked. Do not maintain two independently evolving definitions of done. A reviewer confirms their own review items; the executor must not manufacture reviewer acceptance.
 
@@ -25,6 +25,7 @@ Use these observable states without inventing completed work:
 - In review: the PR is ready and an independent reviewer has been requested.
 - Done: every task acceptance criterion is evidenced, independent review is accepted and the intended integration/release actions have occurred.
 - Blocked: name the missing input, permission, capability or dependency and who can resolve it.
+- Deferred: excluded from current milestone acceptance, not Done; retain original discussion/evidence without blocking required tasks.
 
 The issue remains open until its own definition of done is satisfied. T05 and T11 may be maintained throughout PA02; their dependencies gate final acceptance rather than the start of record-keeping. T12 additionally requires the accepted ZIP, tag-run and submission confirmation.
 
@@ -32,11 +33,11 @@ The issue remains open until its own definition of done is satisfied. T05 and T1
 
 1. Start a focused task branch from develop and retain the stable task ID in its name.
 2. Open a PR into develop with an English technical title, Refs #N, task scope, evidence and an independent reviewer from the issue.
-3. Keep contract review ahead of final endpoint implementation. Submit full source/tests/contracts together when the work package requires them; do not split ownership implicitly.
+3. Keep contract review ahead of final endpoint implementation. Reuse PR #14 for the foundation and PR #15 for the publish contract/source/tests; a PR title is not proof of implemented files. A focused PR may reference multiple small tasks only when their executor/reviewer and scope align; do not split ownership implicitly.
 4. Run the actual documented local checks and include commands/results. CI must use the same commands once T09 is implemented. Do not weaken tests, skip suites, call a real model in unit tests or hide failed exits.
 5. Apply feedback as the executor. The reviewer verifies, records a GitHub review and updates their review checklist; they do not become a second implementer.
 6. Merge only when applicable checks are green, independent approval is present and evidence supports acceptance. Do not bypass an active rule or treat missing CI as a pass.
-7. Record the merged PR and synchronize plan/issue completion. Close the issue only if all task-specific gates are satisfied.
+7. Record the merged PR and synchronize plan/issue completion. Close the issue only if all task-specific gates are satisfied. Include task-scoped evidence (source SHA, commands, time, exit codes and limits) and truthful AI-log inputs as work happens; T11 consolidates the mandatory root reports. A PR-only narrative or external scratch directory is not the entire submission record.
 
 Use merge commits for milestone promotions and the T10 experiment so required history remains reachable. Do not squash or delete the break/fix evidence history. Other task PRs may be squashed only when intermediate history is not required as evidence. Never rewrite published main/develop history.
 
@@ -54,7 +55,7 @@ Reference: [GitHub issue and PR linking semantics](https://docs.github.com/en/is
 
 Promote an accepted develop baseline into main through a reviewed PR. Run the applicable local/CI checks on the promotion itself, preserve stable required-check names and verify the resulting main commit. Tag pa2 only on the frozen accepted main commit under T12; verify remote tag SHA and a green tag-event run. Never use a PR run as a substitute for the required tag run or silently force-retag.
 
-T09 must implement CI for PRs targeting both develop and main and for the pa2 tag. It must establish and independently verify required checks/protection on both branches, while retaining the rubric's main-specific evidence. Check repository-plan support and source-sharing rights before changing visibility/settings. Do not buy a plan, expose restricted course material, bypass requirements or claim enforcement from documentation alone.
+T09 must implement CI for PRs targeting both develop and main and for the pa2 tag. It must establish and independently verify required checks/protection on main. Protection on develop is an optional team control, not a PA02 acceptance requirement; retain the existing PR-only/no-bypass policy on both branches. Do not add per-module workflows for deferred endpoints. Check repository-plan support and source-sharing rights before changing visibility/settings. Do not buy a plan, expose restricted course material, bypass requirements or claim enforcement from documentation alone.
 
 ## T10 controlled experiment
 
