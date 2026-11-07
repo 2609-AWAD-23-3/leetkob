@@ -1,0 +1,103 @@
+{
+  "task": "T01",
+  "startedAt": "2026-11-02T16:53:15.151Z",
+  "sourceCommit": "738b183aef8e180f8e72ef22edcef3521e65c3c1",
+  "verificationKind": "fresh local Git clone, not a remote/public clone",
+  "environment": {
+    "os": "win32",
+    "arch": "x64",
+    "node": "v24.22.1",
+    "npm": "11.19.1"
+  },
+  "records": [
+    {
+      "command": "git rev-parse HEAD",
+      "startedAt": "2026-11-02T16:53:15.154Z",
+      "endedAt": "2026-11-02T16:53:15.182Z",
+      "exitCode": 0,
+      "stdout": "738b183aef8e180f8e72ef22edcef3521e65c3c1\n",
+      "stderr": ""
+    },
+    {
+      "command": "git diff --name-only (tracked source baseline)",
+      "startedAt": "2026-11-02T16:53:15.183Z",
+      "endedAt": "2026-11-02T16:53:15.216Z",
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": "npm --version",
+      "startedAt": "2026-11-02T16:53:15.216Z",
+      "endedAt": "2026-11-02T16:53:17.414Z",
+      "exitCode": 0,
+      "stdout": "11.19.1\n",
+      "stderr": ""
+    },
+    {
+      "command": "npm run build (working repository)",
+      "startedAt": "2026-11-02T16:53:17.414Z",
+      "endedAt": "2026-11-02T16:53:19.027Z",
+      "exitCode": 0,
+      "stdout": "\n> leetkob@0.1.0 build\n> tsc -p tsconfig.json\n\n",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/smoke/app.test.mjs (working repository)",
+      "startedAt": "2026-11-02T16:53:19.028Z",
+      "endedAt": "2026-11-02T16:53:32.781Z",
+      "exitCode": 0,
+      "stdout": "✔ factory does not listen; health works through the real HTTP injection boundary (6545.1017ms)\n✔ each module accepts its own real Fastify plugin in the same application (25.1723ms)\n✔ business routes are absent rather than fake successful implementations (18.0229ms)\n✔ application instances have isolated plugin state and lifecycle hooks (14.6647ms)\n✔ listener can start on loopback and close without hard-coded test ports (182.4002ms)\n✔ configuration has local defaults and validates explicit environment input (3.4508ms)\n✔ executable rejects invalid configuration with a nonzero exit (146.88ms)\nℹ tests 7\nℹ suites 0\nℹ pass 7\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 13699.7466\n",
+      "stderr": ""
+    },
+    {
+      "command": "git clone --no-hardlinks --single-branch --branch feat/t01-architecture-skeleton <repository> <fresh-local-clone>",
+      "startedAt": "2026-11-02T16:53:32.781Z",
+      "endedAt": "2026-11-02T16:53:33.042Z",
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "Cloning into '<fresh-local-clone>'...\ndone.\n"
+    },
+    {
+      "command": "git rev-parse HEAD (fresh local clone)",
+      "startedAt": "2026-11-02T16:53:33.043Z",
+      "endedAt": "2026-11-02T16:53:33.070Z",
+      "exitCode": 0,
+      "stdout": "738b183aef8e180f8e72ef22edcef3521e65c3c1\n",
+      "stderr": ""
+    },
+    {
+      "command": "npm ci --ignore-scripts (fresh local clone)",
+      "startedAt": "2026-11-02T16:53:33.070Z",
+      "endedAt": "2026-11-02T16:54:01.244Z",
+      "exitCode": 0,
+      "stdout": "\nadded 55 packages, and audited 56 packages in 28s\n\n19 packages are looking for funding\n  run `npm fund` for details\n\nfound 0 vulnerabilities\n",
+      "stderr": ""
+    },
+    {
+      "command": "npm run build (fresh local clone)",
+      "startedAt": "2026-11-02T16:54:01.244Z",
+      "endedAt": "2026-11-02T16:54:01.901Z",
+      "exitCode": 0,
+      "stdout": "\n> leetkob@0.1.0 build\n> tsc -p tsconfig.json\n\n",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/smoke/app.test.mjs (fresh local clone)",
+      "startedAt": "2026-11-02T16:54:01.901Z",
+      "endedAt": "2026-11-02T16:54:02.367Z",
+      "exitCode": 0,
+      "stdout": "✔ factory does not listen; health works through the real HTTP injection boundary (72.5414ms)\n✔ each module accepts its own real Fastify plugin in the same application (4.2784ms)\n✔ business routes are absent rather than fake successful implementations (3.419ms)\n✔ application instances have isolated plugin state and lifecycle hooks (3.5196ms)\n✔ listener can start on loopback and close without hard-coded test ports (34.6911ms)\n✔ configuration has local defaults and validates explicit environment input (0.5628ms)\n✔ executable rejects invalid configuration with a nonzero exit (121.7876ms)\nℹ tests 7\nℹ suites 0\nℹ pass 7\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 419.5281\n",
+      "stderr": ""
+    }
+  ],
+  "limits": [
+    "Not CI evidence or branch-protection evidence",
+    "Not human review or team agreement",
+    "No lint/format/full harness acceptance",
+    "No watch-restart or real terminal-signal verification",
+    "npm audit output is not a full security/secrets audit"
+  ],
+  "result": "passed",
+  "endedAt": "2026-11-02T16:54:02.368Z"
+}

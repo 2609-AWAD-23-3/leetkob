@@ -11,3 +11,11 @@
 /LeeTKOB — class project brief_vn.md
 /PA#2 rubric — Harness and quality gate.pdf
 /PA#2 rubric — Harness and quality gate_vn.md
+
+# T01 runtime/build hygiene; T05 owns the full security/env policy
+/node_modules/
+/dist/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
