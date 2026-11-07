@@ -1,6 +1,6 @@
 # LeeTKOB architecture baseline
 
-Status: implemented T01 proposal, awaiting independent review by @BHVPhuc and team confirmation of the rubric-focus endpoint. This is not evidence that T01 or PA02 is accepted.
+**Trạng thái 08/11/2026:** skeleton tại `738b183a` đã được @BHVPhuc review trên [PR #14](https://github.com/2609-AWAD-23-3/leetkob/pull/14). Người yêu cầu đã chốt publish-only ngày 07/11 và xác nhận đã kiểm tra/duyệt phần conflict trong hội thoại; không suy ra independent approval cho bản tài liệu mới này hoặc cho một resolution commit chưa tồn tại. Bổ sung wiring bên dưới là candidate local chờ review và đầu vào T02, chưa phải implementation hay acceptance T01.
 
 Executor: @tranquocvy. Source: [class brief](../reference/leetkob/LeeTKOB%20%E2%80%94%20class%20project%20brief.pdf), sections 3-5 and 7; [PA02 requirements](../reference/PA02/requirement.md); [task T01](../plans/PA02.md#t01--architecture-baseline-v%C3%A0-skeleton).
 
@@ -60,6 +60,69 @@ The eventual flow is TA lab/constraints -> student submission -> queued sandbox 
 
 PA02 may use deterministic in-process fixtures to exercise endpoint contracts. That is not evidence that judging, queueing, model review or the final pipeline works. No C++ is executed and no provider key is consumed in this skeleton. Later sandbox work must satisfy no-network, resource limits, non-root, no host mounts/Docker socket and no secrets, with attack-test evidence; do not substitute an unrestricted local child process for a sandbox.
 
-There is no frontend, database adapter, judge, job queue, sandbox, LLM/eval pipeline, appeal implementation or deployment in T01. Storage/queue/provider/deployment choices remain open until their checkpoint needs them. Publish is still the proposed PA02 rubric-focus endpoint and requires team confirmation; the skeleton does not depend on that choice.
+There is no frontend, database adapter, judge, job queue, sandbox, LLM/eval pipeline, appeal implementation or deployment in T01. Storage/queue/provider/deployment choices remain open until their checkpoint needs them. PA02 chỉ yêu cầu `POST /labs/{labId}/publish`; T06/T07 deferred, các plugin rỗng sẵn có không tạo thêm acceptance gates. Scope hiện hành nằm trên [PR #16](https://github.com/2609-AWAD-23-3/leetkob/pull/16), chưa được coi là đã tích hợp vào nhánh này.
 
 See [architecture decisions](decisions/README.md) for the review status of consequential choices; no separate accepted ADR is fabricated for this proposal.
+
+## Wiring publish tối thiểu cho PA02 — candidate local 08/11/2026
+
+Phần này cụ thể hóa nền T01, không thay hợp đồng T08 hoặc tự triển khai T02/T03. Các phần product flow phía trên chỉ là bối cảnh sản phẩm; submissions, review-queue, judge, sandbox và model không phải dependencies để test publish.
+
+### Runtime và lifecycle hiện có
+
+| Giai đoạn | Hành vi thực tế tại `738b183a` | Chủ sở hữu |
+| --- | --- | --- |
+| Cài/build | `npm ci --ignore-scripts`; `npm run build` phát JS vào `dist` theo lockfile và TypeScript strict | T01/B; commands quality đầy đủ thuộc T04/B |
+| Khởi tạo | `createApp()` tạo Fastify mới, `trustProxy: false`; chỉ đăng ký health và ba plugin; không tự listen hoặc đọc env | T01/B |
+| Boot/test | `ready()` boot plugins; `inject()` đi qua HTTP boundary thật, không cần socket; tests luôn `close()` trong teardown | T01/B; harness T04/B |
+| Chạy server | `server.ts` gọi `loadConfig()` rồi `listen()`; mặc định `127.0.0.1:3000`; không tự load `.env` | T01/B |
+| Kết thúc | SIGINT/SIGTERM gọi `close()` có guard chống đóng lặp; onClose tháo signal listeners; listen thất bại đóng app rồi báo lỗi/nonzero | T01/B |
+
+`loadConfig()` có thể đọc env khi được gọi không truyền tham số; factory không gọi nó. Smoke tests kiểm tra listener loopback/close và invalid config; không suy ra lần chạy mới hoặc mọi đường OS signal đều được kiểm chứng.
+
+### Composition được đề xuất, chưa phải API đã implement
+
+Giữ Fastify plugin có sẵn, không thêm framework/DI container. B tích hợp dependency bằng **typed plugin options được capture trong wrapper publish** sau khi A/C bàn giao interface. Auth hooks và handlers dùng cùng scope publish; shared not-found/error handling nếu cần áp dụng toàn app phải được C đăng ký ở ancestor scope thích hợp trước khi routes boot, không dựa vào decorator trong sibling plugin.
+
+Luồng composition dự kiến:
+
+```text
+server.ts hoặc harness T04
+  -> tạo store riêng cho app (T02), identity resolver/errors (T03)
+  -> createApp() + wrapper đăng ký publish thật với dependencies (T01 tích hợp)
+  -> ready / inject / listen
+  -> close + cleanup tài nguyên thuộc app
+```
+
+`AppOptions` hiện chỉ có `logger` và `modules`; chưa có options store/auth/clock. Sơ đồ không phải hướng dẫn gọi một API đã tồn tại. Wrapper phải gọi/register module publish thật; contract tests không thay nó bằng handler trả response giả. Không thêm HTTP endpoint hoặc query/header để cấu hình dependencies.
+
+| Dependency cần bàn giao | Trách nhiệm tối thiểu | Trạng thái / người chốt |
+| --- | --- | --- |
+| Lab/class lookup | Tra lab và class sở hữu, báo không tồn tại rõ ràng | T02/A; chưa có signature được xác nhận |
+| Review/publication state | Đọc pending/resolved state và publication metadata/summary; transition publish giữ metadata khi retry và không nhân side effects | T02/A cùng T08/C chốt; chưa có implementation/guarantee concurrency |
+| Seed/reset | Seed trực tiếp lab/reviews/publication cho từng app/test; reset không ảnh hưởng app khác | T02/A; T04/B sử dụng, không tạo store cạnh tranh |
+| Identity resolver | Tạo principal từ nguồn tin cậy; kiểm tra TA và membership của `lab.classId`; không lấy quyền từ body/query | Đầu vào T03/C đã có ở Issue #3; credential/header cụ thể còn chờ chốt |
+| Problem details | RFC 9457, `application/problem+json`, không lộ stack/path/secrets; bao gồm lỗi parser/framework mà contract công bố | T03/C; T08/C và reviewer A đối chiếu contract |
+| Clock/cleanup | Nếu transition dùng timestamp, cung cấp clock xác định cho test; teardown đóng app, giải phóng/reset state do app sở hữu | Đề xuất handoff T02/T04/T08; chưa có API mới |
+
+In-memory state đủ cho PA02 nếu owner ghi rõ mất state khi restart, phạm vi process và giới hạn concurrent requests. Không hứa transaction/distributed lock/persistence trước khi T02 có implementation/tests chứng minh. Tránh singleton mutable toàn process; injected store có lifecycle do caller sở hữu phải được ghi rõ thay vì tự đóng/reset tài nguyên dùng chung.
+
+### Luồng request cần kiểm chứng sau tích hợp
+
+1. Request tới publish thật qua routing/parser và identity boundary T03; thứ tự hook/validation và precedence lỗi phải theo contract T08 đã review, không suy ra từ thứ tự hàng trong bảng dependencies.
+2. Tra lab/class bằng T02 và kiểm tra role TA + class ownership. TA khác lớp vẫn bị từ chối; payload tự khai role/userId không cấp quyền.
+3. Kiểm tra pending reviews và publication state theo contract. Draft T08 yêu cầu `409 pending-reviews` khi còn review và retry giữ nguyên `publishedAt`/`publishedBy`, không tạo side effects trùng. Đây là contract candidate, không phải behavior của skeleton hiện tại.
+4. Transition và summary dùng state T02 thật; lỗi không được gây mutation. Trình tự check/write phải đáp ứng giới hạn concurrency mà T02/T08 thống nhất, không chỉ check rồi ghi với một bảo đảm atomic ngầm định.
+5. Serialize success/problem details theo contract, test thêm state trước/sau và repeat-call, không chỉ status code. Default startup không bật test-header bypass; cơ chế client credential thật cho bản PA02 vẫn cần C/A chốt.
+
+Hiện `POST /labs/{labId}/publish` vẫn trả default 404 vì plugin rỗng. Test seed pending/resolved state trực tiếp; không cần gọi submissions/review-queue để tạo fixture, không gọi model hoặc chạy code sinh viên.
+
+### Review và handoff còn mở
+
+- **Vỹ/người yêu cầu:** review diff tài liệu này, phương án typed plugin options/wrapper, ownership/lifecycle của dependencies và các giới hạn được nêu; chưa yêu cầu commit/push/merge.
+- **Vượng/T02:** xác nhận các capability và API state/seed/reset cùng persistence/concurrency limits; không yêu cầu triển khai T02 trong T01.
+- **Phúc/T03/T08:** xác nhận scope hooks/error handler, resolver và wiring publish thật; credential/header + precedence theo contract phải rõ trước acceptance endpoint.
+- **Phúc/reviewer T01:** review delta mới so với `738b183a`; giữ nguyên approval/evidence cũ, không tự tick thêm mục review.
+- Checklist thực hiện kiến trúc T01 được đồng bộ local sau review của người yêu cầu ngày 08/11: đã ghi nền runtime/lifecycle/wiring và nhận yêu cầu capability T02/đề xuất T03 làm đầu vào. Không có nghĩa API T02 đã được Vượng xác nhận; phần đó thuộc T02, không phải yêu cầu triển khai thêm trong T01. Independent review của delta mới và tích hợp vẫn còn mở; chưa cập nhật Issue remote hoặc publish.
+
+Nguồn đầu vào: [Issue #2](https://github.com/2609-AWAD-23-3/leetkob/issues/2), [đề xuất T03](https://github.com/2609-AWAD-23-3/leetkob/issues/3#issuecomment-6703264025), [draft T08](https://github.com/2609-AWAD-23-3/leetkob/pull/15), [scope PA02](https://github.com/2609-AWAD-23-3/leetkob/pull/16). Không coi mô tả Issue/PR là bằng chứng code đã tồn tại. Evidence/AI entry local: [T01 architecture 08/11](../evidence/PA02/T01/architecture-2026-11-08.md).

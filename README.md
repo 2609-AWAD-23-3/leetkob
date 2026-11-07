@@ -69,7 +69,7 @@ T04 will add the standard lint, format-check, typecheck and comprehensive test c
 
 Each feature module exports a standard Fastify async plugin and owns its complete contract, implementation and tests. The three plugins currently register no routes; missing business routes return 404, not dummy success. Shared data (T02) and trusted auth/errors (T03) must be agreed before implementing business behavior. For interface details and a module extension example, read the [architecture baseline](docs/architecture/overview.md).
 
-B maintains the initial setup README and shared manifest/lockfile through T01/T04; README ownership transfers explicitly to A in T11. Teammate requirements are inputs, not permission for concurrent edits to shared files. The T01 reviewer is @BHVPhuc; team confirmation of publish as the rubric-focus endpoint remains pending.
+B maintains the initial setup README and shared manifest/lockfile through T01/T04; README ownership transfers explicitly to A in T11. Teammate requirements are inputs, not permission for concurrent edits to shared files. The T01 reviewer is @BHVPhuc. PA02 has been finalized with `publish` as the sole endpoint; T06/T07 are deferred, and implementation of the two remaining empty plugins is not required. The requester has reviewed the local documentation; Phuc's review on PR #14 is tied to candidate `738b183a` and does not automatically apply to new changes.
 
 ## Documentation
 
