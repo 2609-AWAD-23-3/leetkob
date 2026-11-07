@@ -48,3 +48,13 @@ Changed: Đồng bộ checklist thực hiện T01 và hai xác nhận review l�
 Rejected: Bắt T01 chờ implementation/API T02 hoàn chỉnh; coi user review là independent approval của Phúc; commit/publish hoặc resolve thay.
 
 By hand: Người yêu cầu xác nhận đã review local, chốt publish và sẽ tự resolve. Việc ghi/sửa docs và chạy audit do assistant thực hiện; không có claim người yêu cầu tự viết code hoặc review thay Phúc.
+
+## Tích hợp develop theo ủy quyền mới — 08/11/2026
+
+Sau các ghi chú lịch sử trên, người yêu cầu đã cho phép commit batch T01 (e89bf6c), rồi yêu cầu assistant resolve/push/merge PR #14. Quyền mới thay việc tự resolve trước đó; không cấp quyền bypass protections hoặc giả review.
+
+Merge origin/develop tại 644c125 vào nhánh T01 bằng merge commit, không rewrite lịch sử. Conflict duy nhất README: giữ setup/runtime T01 và bổ sung links CONTRIBUTING/workflow từ develop. Auto-merge plan giữ section T01 đã review và T12 assignment từ develop; không merge thay PR #16 đang chờ independent review. Cập nhật status CONTRIBUTING từ docs-only sang skeleton có thật, giữ ranh giới T04/T09.
+
+Sau resolve: `npm run build` exit 0; `node --test tests/smoke/app.test.mjs` exit 0, 7/7 pass; không còn unmerged paths; diff source/tests/manifest/lock so với HEAD e89bf6c trống. `git diff --cached --check` exit 0. Đây là local checks, không phải CI xanh. Trạng thái review/protection sau push phải được kiểm tra trực tiếp; không gán approval 738b183a cho SHA mới.
+
+AI-log input: Tool: OpenClaw/Codex assistant. Asked for: resolve và merge PR #14 đã được approve. Kept: skeleton, scope publish-only, workflow links và ownership T12. Changed: resolve README và status integration, ghi evidence. Rejected: bypass review/protection, rewrite history, tự merge scope PR #16. By hand: người yêu cầu cho phép resolve/merge; các thao tác kỹ thuật do assistant thực hiện, không giả reviewer mới.

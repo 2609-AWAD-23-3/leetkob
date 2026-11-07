@@ -79,8 +79,10 @@ B maintains the initial setup README and shared manifest/lockfile through T01/T0
 - [All checkpoint plans](docs/plans/README.md)
 - [Source brief, requirements, rubric and templates](docs/reference/README.md)
 - [Architecture baseline](docs/architecture/overview.md)
+- [Contributing](CONTRIBUTING.md)
+- [Development workflow](docs/workflow.md)
 
-The separate workflow setup [PR #13](https://github.com/2609-AWAD-23-3/leetkob/pull/13) contains CONTRIBUTING and branch/PR templates; do not treat those files as merged into this develop-based task branch yet. Resolve overlapping documentation updates when integrating that PR, preserving both setup instructions and workflow links.
+Workflow setup [PR #13](https://github.com/2609-AWAD-23-3/leetkob/pull/13) is integrated into this candidate from develop, including CONTRIBUTING and branch/PR templates. This does not implement CI or branch protection.
 
 ## Repository and remaining delivery requirements
 
