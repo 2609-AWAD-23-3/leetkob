@@ -5,6 +5,7 @@
 - [Tài liệu tham chiếu](reference/README.md): đề bài, rubric, requirements và mẫu.
 - [Mục lục plans](plans/README.md): plan hiện hành, roadmap và các checkpoint.
 - [PA02 — plan thực thi](plans/PA02.md): bản chính để cập nhật task/checklist/evidence.
+- [PA02 — evidence và AI-log inputs](evidence/PA02/README.md): hồ sơ theo task để review và bàn giao T11.
 - [Roadmap toàn project](plans/PROJECT.md): mục tiêu cuối môn, checkpoint boundaries và quyết định còn mở.
 - [Architecture overview](architecture/overview.md), [data model](architecture/data-model.md), [architecture decisions](architecture/decisions/README.md).
 
