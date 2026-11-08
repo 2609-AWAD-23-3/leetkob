@@ -1,0 +1,30 @@
+[
+    {
+        "command":  "npm run lint",
+        "start":  "2026-11-08T07:43:27.5400983Z",
+        "end":  "2026-11-08T07:43:27.9279710Z",
+        "exitCode":  0,
+        "output":  "\n\u003e leetkob@0.1.0 lint\n\u003e oxlint --deny-warnings src tests scripts\n"
+    },
+    {
+        "command":  "npm run format-check",
+        "start":  "2026-11-08T07:43:27.9387739Z",
+        "end":  "2026-11-08T07:43:28.5827470Z",
+        "exitCode":  0,
+        "output":  "\n\u003e leetkob@0.1.0 format-check\n\u003e prettier --check .\n\nChecking formatting...\nAll matched files use Prettier code style!"
+    },
+    {
+        "command":  "npm run type-check",
+        "start":  "2026-11-08T07:43:28.5838572Z",
+        "end":  "2026-11-08T07:43:29.1001616Z",
+        "exitCode":  0,
+        "output":  "\n\u003e leetkob@0.1.0 type-check\n\u003e tsc -p tsconfig.check.json\n"
+    },
+    {
+        "command":  "npm run test",
+        "start":  "2026-11-08T07:43:29.1001616Z",
+        "end":  "2026-11-08T07:43:30.4767873Z",
+        "exitCode":  0,
+        "output":  "\n\u003e leetkob@0.1.0 test\n\u003e npm run build \u0026\u0026 node scripts/test.mjs\n\n\n\u003e leetkob@0.1.0 build\n\u003e tsc -p tsconfig.json\n\nTAP version 13\n# Subtest: factory does not listen; health works through the real HTTP injection boundary\nok 1 - factory does not listen; health works through the real HTTP injection boundary\n  ---\n  duration_ms: 102.6067\n  type: \u0027test\u0027\n  ...\n# Subtest: each module accepts its own real Fastify plugin in the same application\nok 2 - each module accepts its own real Fastify plugin in the same application\n  ---\n  duration_ms: 6.5566\n  type: \u0027test\u0027\n  ...\n# Subtest: business routes are absent rather than fake successful implementations\nok 3 - business routes are absent rather than fake successful implementations\n  ---\n  duration_ms: 2.9005\n  type: \u0027test\u0027\n  ...\n# Subtest: application instances have isolated plugin state and lifecycle hooks\nok 4 - application instances have isolated plugin state and lifecycle hooks\n  ---\n  duration_ms: 3.8707\n  type: \u0027test\u0027\n  ...\n# Subtest: listener can start on loopback and close without hard-coded test ports\nok 5 - listener can start on loopback and close without hard-coded test ports\n  ---\n  duration_ms: 30.4685\n  type: \u0027test\u0027\n  ...\n# Subtest: configuration has local defaults and validates explicit environment input\nok 6 - configuration has local defaults and validates explicit environment input\n  ---\n  duration_ms: 0.555\n  type: \u0027test\u0027\n  ...\n# Subtest: executable rejects invalid configuration with a nonzero exit\nok 7 - executable rejects invalid configuration with a nonzero exit\n  ---\n  duration_ms: 138.0007\n  type: \u0027test\u0027\n  ...\n# Subtest: support bootstrap owns cleanup and isolates plugin state between apps\n    # Subtest: first app registers an instance-only route and closes\n    ok 1 - first app registers an instance-only route and closes\n      ---\n      duration_ms: 102.4296\n      type: \u0027test\u0027\n      ...\n    1..1\nok 8 - support bootstrap owns cleanup and isolates plugin state between apps\n  ---\n  duration_ms: 106.2866\n  type: \u0027test\u0027\n  ...\n1..8\n# tests 9\n# suites 0\n# pass 9\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 508.803"
+    }
+]

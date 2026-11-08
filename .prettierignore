@@ -1,0 +1,5 @@
+node_modules/
+dist/
+docs/
+CONTRIBUTING.md
+.github/
