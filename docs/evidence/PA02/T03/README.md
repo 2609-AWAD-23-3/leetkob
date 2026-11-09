@@ -10,7 +10,8 @@ Bản ghi số liệu kiểm chứng: [verification.json](verification.json).
 
 - **Hệ điều hành:** Windows x64 (`d:\HCMUS\Year4\Sem1\AdvancedWeb\DoAn_NhomWebNC\leetkob`).
 - **Nhánh làm việc:** `feat/t03-publish-auth-errors` tách từ `origin/develop` (`2dfff8f11cc6c28a8f5d8795bf915735b117902c`).
-- **Runtime thực tế trên máy:** Node `v22.19.0`, npm `10.9.3` (ghi nhận cảnh báo `EBADENGINE` khi chạy `npm.cmd ci` vì `package.json` khai báo `>=24.22.1 <25`; không sửa `package.json` hay `package-lock.json` của T01/T04).
+- **Target Runtime (Chuẩn theo yêu cầu đồ án):** Node `v24.22.1`, npm `11.19.1` (cài đặt portable qua `%TEMP%\leetkob-t02-runtime-24.22.1\npm-tools` theo quy trình T02). Khi cài đặt bằng đúng runtime này, `npm ci` hoàn tất sạch sẽ 55 packages và không xuất hiện cảnh báo `EBADENGINE`.
+- **Host Runtime (Môi trường máy host):** Node `v22.19.0`, npm `10.9.3`. Toàn bộ 65 tests và build cũng đã được kiểm tra tương thích ngược và chạy pass 100% trên Node 22.19.0.
 
 ## 2. Đối chiếu yêu cầu T03 với kết quả kiểm thử
 
@@ -24,7 +25,17 @@ Bản ghi số liệu kiểm chứng: [verification.json](verification.json).
 
 ## 3. Lệnh kiểm chứng tái lập
 
-Chạy tại thư mục gốc repository:
+### Chạy bằng Node 24.22.1 / npm 11.19.1 (Chuẩn yêu cầu):
+
+```powershell
+$t02Tools = "$env:TEMP\leetkob-t02-runtime-24.22.1\npm-tools\node_modules"
+& "$t02Tools\node-win-x64\bin\node.exe" "$t02Tools\npm\bin\npm-cli.js" ci --ignore-scripts --no-audit --no-fund
+& "$t02Tools\node-win-x64\bin\node.exe" "$t02Tools\npm\bin\npm-cli.js" run build
+& "$t02Tools\node-win-x64\bin\node.exe" --test tests/auth/publish-auth-errors.test.mjs tests/data/publish-store.test.mjs tests/smoke/app.test.mjs
+git diff --check
+```
+
+### Chạy bằng Node hệ thống hiện tại (khi có Node trên PATH):
 
 ```powershell
 npm.cmd ci --ignore-scripts --no-audit --no-fund
@@ -33,8 +44,8 @@ node --test tests/auth/publish-auth-errors.test.mjs tests/data/publish-store.tes
 git diff --check
 ```
 
-Kết quả quan sát thực tế:
-- `npm.cmd run build`: Exit code `0`.
+Kết quả quan sát thực tế (cả hai runtime):
+- `build`: Exit code `0`.
 - `node --test tests/auth/publish-auth-errors.test.mjs tests/data/publish-store.test.mjs tests/smoke/app.test.mjs`: Tổng **65 tests** (18 auth/errors tests + 40 data tests + 7 smoke tests), **65 pass, 0 fail, 0 skipped**.
 - `git diff --check`: Exit code `0`.
 
