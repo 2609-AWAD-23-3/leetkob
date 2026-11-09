@@ -9,9 +9,7 @@
   "runtime": {
     "node": "24.22.1",
     "npm": "11.19.1",
-    "systemHostNode": "22.19.0",
-    "systemHostNpm": "10.9.3",
-    "note": "Verified with target engine Node 24.22.1 and npm 11.19.1 in %TEMP%\\leetkob-t02-runtime-24.22.1 per T02 procedure; also passed and backward-compatible with host system Node 22.19.0."
+    "runtimeSetup": "Active native environment via NVM (.node-version pinned to 24.22.1); verified matches package.json engine >=24.22.1 <25 and npm >=11 <12."
   },
   "commands": [
     {
