@@ -161,6 +161,28 @@ export function createInternalProblem(): ProblemDetails {
   };
 }
 
+export function createPayloadTooLargeProblem(
+  detail = 'Request payload exceeds the configured limit.',
+): ProblemDetails {
+  return {
+    type: 'https://leetkob.example/problems/payload-too-large',
+    title: 'Payload too large',
+    status: 413,
+    detail,
+  };
+}
+
+export function createUnsupportedMediaTypeProblem(
+  detail = 'The request payload content-type is unsupported.',
+): ProblemDetails {
+  return {
+    type: 'https://leetkob.example/problems/unsupported-media-type',
+    title: 'Unsupported media type',
+    status: 415,
+    detail,
+  };
+}
+
 export function mapAccessDecisionToProblem(
   decision: Exclude<PublishAccessDecision, { kind: 'authorized' }>,
 ): ProblemDetails {
@@ -227,36 +249,47 @@ export function sendProblem(
   problem: ProblemDetails,
 ): FastifyReply {
   const sanitized = cloneProblemDetails(problem);
+  if (sanitized.status === 401) {
+    reply.header('WWW-Authenticate', 'Bearer');
+  }
   return reply.code(sanitized.status).type(PROBLEM_CONTENT_TYPE).send(sanitized);
 }
 
 function isMalformedJsonError(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false;
   const candidate = error as { code?: unknown; statusCode?: unknown };
-  if (candidate.code === 'FST_ERR_CTP_INVALID_JSON_BODY') {
+  if (
+    candidate.code === 'FST_ERR_CTP_INVALID_JSON_BODY' ||
+    candidate.code === 'FST_ERR_CTP_EMPTY_JSON_BODY'
+  ) {
     return true;
   }
   return error instanceof SyntaxError && candidate.statusCode === 400;
 }
 
 // Registers RFC 9457 JSON parsing, error serialization and not-found handling on a Fastify scope.
+// Preserves Fastify default secure-json-parse protection against prototype pollution.
 // Never leaks stack traces, internal file paths, store internals or secrets in responses.
 export function registerPublishErrorHandling(scope: FastifyInstance): void {
+  const defaultParser = scope.getDefaultJsonParser('error', 'error');
+
   scope.removeContentTypeParser('application/json');
   scope.addContentTypeParser(
     'application/json',
     { parseAs: 'string' },
-    (_request, body, done) => {
+    (request, body, done) => {
       const raw = typeof body === 'string' ? body : String(body);
       if (raw.trim().length === 0) {
         done(null, undefined);
         return;
       }
-      try {
-        done(null, JSON.parse(raw));
-      } catch {
-        done(new ProblemError(createInvalidJsonProblem()), undefined);
-      }
+      defaultParser(request, raw, (err, parsed) => {
+        if (err) {
+          done(new ProblemError(createInvalidJsonProblem()), undefined);
+          return;
+        }
+        done(null, parsed);
+      });
     },
   );
 
@@ -267,6 +300,85 @@ export function registerPublishErrorHandling(scope: FastifyInstance): void {
     if (isMalformedJsonError(error)) {
       return sendProblem(reply, createInvalidJsonProblem());
     }
+
+    const candidate = error as {
+      statusCode?: unknown;
+      code?: unknown;
+      validation?: unknown;
+      message?: unknown;
+    };
+
+    if (
+      candidate.statusCode === 413 ||
+      candidate.code === 'FST_ERR_CTP_BODY_TOO_LARGE'
+    ) {
+      return sendProblem(reply, createPayloadTooLargeProblem());
+    }
+
+    if (
+      candidate.statusCode === 415 ||
+      candidate.code === 'FST_ERR_CTP_INVALID_MEDIA_TYPE'
+    ) {
+      return sendProblem(reply, createUnsupportedMediaTypeProblem());
+    }
+
+    if (
+      candidate.code === 'FST_ERR_VALIDATION' ||
+      (Array.isArray(candidate.validation) && candidate.validation.length > 0)
+    ) {
+      const issues: ValidationIssue[] = Array.isArray(candidate.validation)
+        ? candidate.validation.map((v: any) => {
+            const pointer =
+              typeof v?.instancePath === 'string' && v.instancePath.length > 0
+                ? v.instancePath
+                : v?.params && typeof v.params.missingProperty === 'string'
+                ? `/${v.params.missingProperty}`
+                : '';
+            return {
+              pointer,
+              detail:
+                typeof v?.message === 'string' ? v.message : 'validation failed',
+            };
+          })
+        : [
+            {
+              pointer: '',
+              detail:
+                typeof candidate.message === 'string'
+                  ? candidate.message
+                  : 'validation failed',
+            },
+          ];
+      return sendProblem(reply, createValidationProblem(issues));
+    }
+
+    if (
+      typeof candidate.statusCode === 'number' &&
+      candidate.statusCode >= 400 &&
+      candidate.statusCode < 500
+    ) {
+      if (candidate.statusCode === 404) {
+        return sendProblem(reply, createNotFoundProblem());
+      }
+      return sendProblem(
+        reply,
+        createValidationProblem(
+          [
+            {
+              pointer: '',
+              detail:
+                typeof candidate.message === 'string'
+                  ? candidate.message
+                  : 'Invalid request',
+            },
+          ],
+          typeof candidate.message === 'string'
+            ? candidate.message
+            : 'Invalid request',
+        ),
+      );
+    }
+
     return sendProblem(reply, createInternalProblem());
   });
 

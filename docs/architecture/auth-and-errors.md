@@ -82,16 +82,21 @@ Mọi phản hồi 4xx/5xx đều được chuẩn hóa qua `src/auth/problem-de
 
 | Slug (`https://leetkob.example/problems/<slug>`) | Status | Title | Trigger và trường mở rộng |
 | --- | ---: | --- | --- |
-| `unauthenticated` | `401` | `Authentication required` | Thiếu, sai định dạng hoặc không hợp lệ thông tin xác thực |
+| `unauthenticated` | `401` | `Authentication required` | Thiếu, sai định dạng hoặc không hợp lệ thông tin xác thực. Kèm header `WWW-Authenticate: Bearer` theo RFC 9110 mục 11.6.1 |
 | `forbidden` | `403` | `Forbidden` | Caller không có role `TA` hoặc không được phân công vào lớp của `labId` |
-| `invalid-json` | `400` | `Malformed JSON` | Body không phải JSON hợp lệ (bao gồm lỗi parser của Fastify) |
-| `validation` | `400` | `Invalid request` | `labId` sai cú pháp (`^[a-zA-Z0-9_-]{1,64}$`) hoặc JSON body không phải object; kèm mảng `errors` (`{ parameter, detail }` hoặc `{ pointer, detail }`) |
+| `invalid-json` | `400` | `Malformed JSON` | Body không phải JSON hợp lệ hoặc chứa khóa độc hại prototype pollution (`__proto__`, `constructor.prototype`) |
+| `validation` | `400` | `Invalid request` | `labId` sai cú pháp, schema route vi phạm (`FST_ERR_VALIDATION`) hoặc body không phải object; kèm mảng `errors` (`{ parameter, detail }` hoặc `{ pointer, detail }`) |
 | `not-found` | `404` | `Not found` | Không tìm thấy `labId` (hoặc route không tồn tại trong scope) |
 | `before-deadline` | `409` | `Lab deadline has not passed` | Gọi publish khi `now < lab.deadline` (`PublishResult.kind === 'before_deadline'`), kèm `deadline` |
 | `pending-reviews` | `409` | `Pending reviews block publication` | Còn mục review chưa có quyết định TA (`PublishResult.kind === 'pending_reviews'`), kèm `pendingCount` |
-| `internal` | `500` | `Internal error` | Mọi ngoại lệ không mong đợi; luôn trả câu `detail` cố định, loại bỏ hoàn toàn stack trace, đường dẫn file và secrets |
+| `payload-too-large` | `413` | `Payload too large` | Payload vượt quá giới hạn cấu hình của server (`FST_ERR_CTP_BODY_TOO_LARGE`) |
+| `unsupported-media-type` | `415` | `Unsupported media type` | Content-Type không được hỗ trợ (`FST_ERR_CTP_INVALID_MEDIA_TYPE`) |
+| `internal` | `500` | `Internal error` | Mọi ngoại lệ server không mong đợi; luôn trả câu `detail` cố định, loại bỏ hoàn toàn stack trace, đường dẫn file và secrets |
 
-Hàm `registerPublishErrorHandling(scope)` gắn content-type parser cho `application/json` (cho phép body rỗng hoặc JSON object hợp lệ, chuyển JSON lỗi thành `400 invalid-json`), `setErrorHandler` và `setNotFoundHandler` vào Fastify plugin scope mà không làm rò rỉ chi tiết nội bộ.
+Hàm `registerPublishErrorHandling(scope)`:
+- Kế thừa parser JSON mặc định của Fastify (`scope.getDefaultJsonParser('error', 'error')`) để giữ trọn vẹn cơ chế chống Prototype Pollution của `secure-json-parse`, đồng thời hỗ trợ body rỗng an toàn khi có header JSON.
+- Đặt `setErrorHandler` ánh xạ chính xác các lỗi client 4xx (400 validation, 413 payload too large, 415 unsupported media type, 404 not found) sang RFC 9457 mà không bị biến thành 500. Chỉ các lỗi server không mong đợi mới trả về 500 `internal`.
+- `sendProblem()` tự động bổ sung header `WWW-Authenticate: Bearer` cho mọi phản hồi có status `401`.
 
 ## 5. Giới hạn chưa Production-Ready
 

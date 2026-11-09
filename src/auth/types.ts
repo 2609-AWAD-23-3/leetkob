@@ -66,6 +66,8 @@ export type ProblemSlug =
   | 'not-found'
   | 'before-deadline'
   | 'pending-reviews'
+  | 'payload-too-large'
+  | 'unsupported-media-type'
   | 'internal';
 
 export type ValidationIssue =
@@ -75,7 +77,7 @@ export type ValidationIssue =
 export interface ProblemDetails {
   readonly type: `https://leetkob.example/problems/${ProblemSlug}`;
   readonly title: string;
-  readonly status: 400 | 401 | 403 | 404 | 409 | 500;
+  readonly status: 400 | 401 | 403 | 404 | 409 | 413 | 415 | 500;
   readonly detail: string;
   readonly errors?: readonly ValidationIssue[];
   readonly deadline?: string;

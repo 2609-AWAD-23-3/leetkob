@@ -39,12 +39,12 @@
     }
   ],
   "sha256WorkingFiles": {
-    "src/auth/types.ts": "28a50b437edafe6e49c75af231fe30f9cd00ef192c7f498a9f01b1ee5162c13f",
+    "src/auth/types.ts": "fdcde5b1470a4396a5013b9f036e0558ca87bd26d2ab1268e94cb907016d7514",
     "src/auth/identity.ts": "654b8f300dffb79ac6037fe69f015dd25db071cbf5b19fb79c5f85d98554d37d",
-    "src/auth/problem-details.ts": "a34ec063e15c85605ae40333851e639153b203bb7934162a393ccb78796bbbaf",
-    "src/auth/index.ts": "d004fff0a1357714769a0d39e366ddebc2c5dccc0288adf2116a41573755a672",
-    "tests/auth/publish-auth-errors.test.mjs": "755fbfde5fc121ddee5f7bbdffc3d3d6c4f9577b0daca4e08df3d455e117088e",
-    "docs/architecture/auth-and-errors.md": "bcc875fffb5204103241032383e6d00dc88ab246fd5d52d9a3cfad8cf4d876fb",
+    "src/auth/problem-details.ts": "dba1abec055eb0266cd0143bce72e4112505cdd454fe4f784253c0576f97c290",
+    "src/auth/index.ts": "42c6e144247033f20ac673fb20c1432bab9d573310bceb19c3f90836472acd12",
+    "tests/auth/publish-auth-errors.test.mjs": "58aa8401dca64f22a4a727cdfa6f0ed33565bfb859db740e00e3c6718d4fbed6",
+    "docs/architecture/auth-and-errors.md": "e421bf19ea3dec04da04e0b0744f1ef6c1ff029b1a2151a92bb29ace9776e65b",
     "package.json": "21bbd14288cf6fc048e78f02f8d83b895e262cb84b1b0c836fc6a78d2087fb01",
     "package-lock.json": "c80afb325e99ce5780d67ef3a205efade096630ea995a4cb82c20b2e0efd1014",
     "tsconfig.json": "89c14a1bae6d76d77873bee60be30c216e8d77a68286f19ac19dc4016cbb1656"

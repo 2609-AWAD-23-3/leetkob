@@ -9,11 +9,13 @@ import {
   createInternalProblem,
   createInvalidJsonProblem,
   createNotFoundProblem,
+  createPayloadTooLargeProblem,
   createPendingReviewsProblem,
   createPublishFixtureTokens,
   createTestHeaderIdentityResolver,
   createTokenIdentityResolver,
   createUnauthenticatedProblem,
+  createUnsupportedMediaTypeProblem,
   createValidationProblem,
   isValidLabId,
   mapAccessDecisionToProblem,
@@ -50,6 +52,27 @@ function createPublishProbeApp({
     modules: {
       publish: async (scope) => {
         registerPublishErrorHandling(scope);
+
+        scope.post(
+          '/probe/limited',
+          { bodyLimit: 32 },
+          async () => ({ ok: true }),
+        );
+        scope.post(
+          '/probe/schema',
+          {
+            schema: {
+              body: {
+                type: 'object',
+                required: ['reason'],
+                properties: {
+                  reason: { type: 'string' },
+                },
+              },
+            },
+          },
+          async () => ({ ok: true }),
+        );
 
         scope.post('/labs/:labId/publish', async (request, reply) => {
           if (throwInternalError) {
@@ -325,7 +348,7 @@ test('HTTP boundary rejects missing/invalid identity, wrong role and cross-class
   const { app, fixture } = createPublishProbeApp({ scenario: 'resolved' });
   t.after(() => app.close());
 
-  // Missing credentials -> 401
+  // Missing credentials -> 401 with WWW-Authenticate challenge (RFC 9110 section 11.6.1)
   const missingAuth = await app.inject({
     method: 'POST',
     url: '/labs/lab-1/publish',
@@ -333,11 +356,44 @@ test('HTTP boundary rejects missing/invalid identity, wrong role and cross-class
   });
   assert.equal(missingAuth.statusCode, 401);
   assert.equal(missingAuth.headers['content-type'], PROBLEM_CONTENT_TYPE);
+  assert.equal(missingAuth.headers['www-authenticate'], 'Bearer');
   assert.deepEqual(missingAuth.json(), {
     type: 'https://leetkob.example/problems/unauthenticated',
     title: 'Authentication required',
     status: 401,
     detail: 'Authentication credentials are required.',
+  });
+
+  // Malformed credentials -> 401 with WWW-Authenticate
+  const malformedAuth = await app.inject({
+    method: 'POST',
+    url: '/labs/lab-1/publish',
+    headers: { authorization: 'Basic dXNlcjpwYXNz' },
+  });
+  assert.equal(malformedAuth.statusCode, 401);
+  assert.equal(malformedAuth.headers['content-type'], PROBLEM_CONTENT_TYPE);
+  assert.equal(malformedAuth.headers['www-authenticate'], 'Bearer');
+  assert.deepEqual(malformedAuth.json(), {
+    type: 'https://leetkob.example/problems/unauthenticated',
+    title: 'Authentication required',
+    status: 401,
+    detail: 'Authentication credentials are malformed.',
+  });
+
+  // Invalid credentials -> 401 with WWW-Authenticate
+  const invalidAuth = await app.inject({
+    method: 'POST',
+    url: '/labs/lab-1/publish',
+    headers: { authorization: 'Bearer token-unknown-123' },
+  });
+  assert.equal(invalidAuth.statusCode, 401);
+  assert.equal(invalidAuth.headers['content-type'], PROBLEM_CONTENT_TYPE);
+  assert.equal(invalidAuth.headers['www-authenticate'], 'Bearer');
+  assert.deepEqual(invalidAuth.json(), {
+    type: 'https://leetkob.example/problems/unauthenticated',
+    title: 'Authentication required',
+    status: 401,
+    detail: 'Authentication credentials are invalid.',
   });
 
   // Student role attempting to spoof TA in request body -> 403
@@ -414,6 +470,79 @@ test('HTTP boundary maps parser errors, validation errors, deadline/pending conf
     status: 400,
     detail: 'The request body is not valid JSON.',
   });
+
+  // Prototype pollution attempt -> rejected as 400 invalid-json without polluting Object.prototype
+  const protoPollution = await app.inject({
+    method: 'POST',
+    url: '/labs/lab-1/publish',
+    headers: {
+      authorization: 'Bearer token-ta-one',
+      'content-type': 'application/json',
+    },
+    payload: '{"__proto__":{"polluted":true}}',
+  });
+  assert.equal(protoPollution.statusCode, 400);
+  assert.equal(protoPollution.headers['content-type'], PROBLEM_CONTENT_TYPE);
+  assert.deepEqual(protoPollution.json(), {
+    type: 'https://leetkob.example/problems/invalid-json',
+    title: 'Malformed JSON',
+    status: 400,
+    detail: 'The request body is not valid JSON.',
+  });
+  assert.equal(Object.prototype.polluted, undefined);
+
+  // Body exceeds payload limit -> 413 payload-too-large (does not collapse into 500)
+  const tooLarge = await app.inject({
+    method: 'POST',
+    url: '/probe/limited',
+    headers: {
+      'content-type': 'application/json',
+    },
+    payload: JSON.stringify({ data: 'x'.repeat(100) }),
+  });
+  assert.equal(tooLarge.statusCode, 413);
+  assert.equal(tooLarge.headers['content-type'], PROBLEM_CONTENT_TYPE);
+  assert.deepEqual(tooLarge.json(), {
+    type: 'https://leetkob.example/problems/payload-too-large',
+    title: 'Payload too large',
+    status: 413,
+    detail: 'Request payload exceeds the configured limit.',
+  });
+
+  // Unsupported media type -> 415 unsupported-media-type (does not collapse into 500)
+  const unsupportedMedia = await app.inject({
+    method: 'POST',
+    url: '/probe/limited',
+    headers: {
+      'content-type': 'application/xml',
+    },
+    payload: '<xml></xml>',
+  });
+  assert.equal(unsupportedMedia.statusCode, 415);
+  assert.equal(unsupportedMedia.headers['content-type'], PROBLEM_CONTENT_TYPE);
+  assert.deepEqual(unsupportedMedia.json(), {
+    type: 'https://leetkob.example/problems/unsupported-media-type',
+    title: 'Unsupported media type',
+    status: 415,
+    detail: 'The request payload content-type is unsupported.',
+  });
+
+  // Route schema validation failure -> 400 validation with structured issues (does not collapse into 500)
+  const schemaError = await app.inject({
+    method: 'POST',
+    url: '/probe/schema',
+    headers: {
+      'content-type': 'application/json',
+    },
+    payload: JSON.stringify({ wrongField: 123 }),
+  });
+  assert.equal(schemaError.statusCode, 400);
+  assert.equal(schemaError.headers['content-type'], PROBLEM_CONTENT_TYPE);
+  const schemaJson = schemaError.json();
+  assert.equal(schemaJson.type, 'https://leetkob.example/problems/validation');
+  assert.equal(schemaJson.status, 400);
+  assert.ok(Array.isArray(schemaJson.errors));
+  assert.ok(schemaJson.errors.length > 0);
 
   // Non-object JSON body and invalid labId -> 400 validation with errors[]
   const invalidInputs = await app.inject({
@@ -540,5 +669,7 @@ test('problem factories validate inputs and return defensive copies', () => {
   assert.equal(createForbiddenProblem().status, 403);
   assert.equal(createInvalidJsonProblem().status, 400);
   assert.equal(createNotFoundProblem().status, 404);
+  assert.equal(createPayloadTooLargeProblem().status, 413);
+  assert.equal(createUnsupportedMediaTypeProblem().status, 415);
   assert.equal(createInternalProblem().status, 500);
 });
