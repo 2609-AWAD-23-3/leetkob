@@ -1,0 +1,45 @@
+export type {
+  AuthorizePublishInput,
+  IdentityResolution,
+  IdentityResolver,
+  IncomingHeaders,
+  Principal,
+  PrincipalRole,
+  ProblemDetails,
+  ProblemSlug,
+  PublishAccessDecision,
+  PublishResultProblem,
+  TestHeaderIdentityResolverOptions,
+  TokenIdentityResolverOptions,
+  UnauthenticatedReason,
+  ValidationIssue,
+} from './types.js';
+
+export {
+  authorizePublishAccess,
+  createPublishFixtureTokens,
+  createTestHeaderIdentityResolver,
+  createTokenIdentityResolver,
+  validatePrincipal,
+} from './identity.js';
+
+export {
+  cloneProblemDetails,
+  createBeforeDeadlineProblem,
+  createForbiddenProblem,
+  createInternalProblem,
+  createInvalidJsonProblem,
+  createNotFoundProblem,
+  createPendingReviewsProblem,
+  createUnauthenticatedProblem,
+  createValidationProblem,
+  isValidLabId,
+  mapAccessDecisionToProblem,
+  mapPublishResultToProblem,
+  PROBLEM_CONTENT_TYPE,
+  PROBLEM_TYPE_PREFIX,
+  ProblemError,
+  registerPublishErrorHandling,
+  sendProblem,
+  validatePublishRequestInput,
+} from './problem-details.js';

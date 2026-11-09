@@ -1,0 +1,58 @@
+{
+  "recordedAtUtc": "2026-11-09T16:01:30.000Z",
+  "executionDateLocal": "2026-11-09",
+  "timezone": "Asia/Bangkok",
+  "platform": "Windows x64",
+  "baseBranchCommit": "2dfff8f11cc6c28a8f5d8795bf915735b117902c",
+  "branch": "feat/t03-publish-auth-errors",
+  "sourceNote": "Local verification on feat/t03-publish-auth-errors branched from origin/develop (2dfff8f). No remote push or PR opened before user confirmation.",
+  "runtime": {
+    "node": "22.19.0",
+    "npm": "10.9.3",
+    "engineWarningNote": "package.json declares node >=24.22.1 <25 and npm >=11 <12; existing manifest and lockfile were preserved unchanged."
+  },
+  "commands": [
+    {
+      "command": "npm.cmd ci --ignore-scripts --no-audit --no-fund",
+      "exitCode": 0,
+      "packagesAdded": 55
+    },
+    {
+      "command": "npm.cmd run build",
+      "exitCode": 0
+    },
+    {
+      "command": "node --test tests/auth/publish-auth-errors.test.mjs tests/data/publish-store.test.mjs tests/smoke/app.test.mjs",
+      "exitCode": 0,
+      "tests": 65,
+      "authTests": 18,
+      "dataTests": 40,
+      "smokeTests": 7,
+      "pass": 65,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "sha256WorkingFiles": {
+    "src/auth/types.ts": "28a50b437edafe6e49c75af231fe30f9cd00ef192c7f498a9f01b1ee5162c13f",
+    "src/auth/identity.ts": "654b8f300dffb79ac6037fe69f015dd25db071cbf5b19fb79c5f85d98554d37d",
+    "src/auth/problem-details.ts": "a34ec063e15c85605ae40333851e639153b203bb7934162a393ccb78796bbbaf",
+    "src/auth/index.ts": "d004fff0a1357714769a0d39e366ddebc2c5dccc0288adf2116a41573755a672",
+    "tests/auth/publish-auth-errors.test.mjs": "755fbfde5fc121ddee5f7bbdffc3d3d6c4f9577b0daca4e08df3d455e117088e",
+    "docs/architecture/auth-and-errors.md": "bcc875fffb5204103241032383e6d00dc88ab246fd5d52d9a3cfad8cf4d876fb",
+    "package.json": "21bbd14288cf6fc048e78f02f8d83b895e262cb84b1b0c836fc6a78d2087fb01",
+    "package-lock.json": "c80afb325e99ce5780d67ef3a205efade096630ea995a4cb82c20b2e0efd1014",
+    "tsconfig.json": "89c14a1bae6d76d77873bee60be30c216e8d77a68286f19ac19dc4016cbb1656"
+  },
+  "limitations": [
+    "Local verification on Windows x64; not a CI or Linux run",
+    "Executed on system Node 22.19.0 / npm 10.9.3 without modifying locked dependencies",
+    "Covers T03 auth/ownership/problem-details boundary; full T08 publish endpoint module and T09 CI remain separate tasks",
+    "No independent review by @vinny2707 or merge into develop is claimed yet"
+  ]
+}
