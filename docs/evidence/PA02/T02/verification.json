@@ -1,0 +1,62 @@
+{
+    "recordedAtUtc":  "2026-11-08T19:43:20.2168465Z",
+    "executionDateLocal":  "2026-11-09",
+    "timezone":  "Asia/Bangkok",
+    "platform":  "Windows x64",
+    "sourceCommit":  "94d9e22057a2d5d5f0db21fa61147bc7c00e4f6f",
+    "sourceNote":  "Checks ran on the same source before the implementation commit. No source/test changes between the baseline run and commit. Per-command timestamps were not captured; these are observed results, not a raw transcript.",
+    "baseline":  {
+                     "temporaryRuntime":  true,
+                     "node":  "24.22.1",
+                     "systemRuntimeChanged":  false,
+                     "npm":  "11.19.1"
+                 },
+    "commands":  [
+                     {
+                         "note":  "Engine warning during bootstrap; existing lockfile unchanged",
+                         "exitCode":  0,
+                         "node":  "24.14.0",
+                         "command":  "npm.cmd ci --ignore-scripts --no-audit --no-fund --fetch-retries=0 --fetch-timeout=30000",
+                         "npm":  "11.9.0",
+                         "packagesAdded":  55
+                     },
+                     {
+                         "exitCode":  0,
+                         "command":  "npm run build",
+                         "invocation":  "node \u003ctemporary npm 11.19.1\u003e/bin/npm-cli.js run build, with Node 24.22.1 first on PATH"
+                     },
+                     {
+                         "dataTests":  40,
+                         "pass":  47,
+                         "command":  "node --test tests/data/publish-store.test.mjs tests/smoke/app.test.mjs",
+                         "skipped":  0,
+                         "smokeTests":  7,
+                         "tests":  47,
+                         "fail":  0,
+                         "exitCode":  0,
+                         "cancelled":  0
+                     },
+                     {
+                         "exitCode":  0,
+                         "command":  "git diff --check",
+                         "note":  "Before the implementation commit"
+                     }
+                 ],
+    "sha256WorkingFiles":  {
+                               "src/data/types.ts":  "2e99f71b90f52e997276a960d63619ed9938474ce85d2a47914a8e54ad4f8c2f",
+                               "src/data/in-memory-publish-store.ts":  "1199ad1b93ef3ebc8ffdc0dd7aa6df8ddd3aba6a2b73b39637dc56c45d0d20ca",
+                               "src/data/fixtures.ts":  "5ea61ac83da0f7efbf215f042f5418164f143e595a260e883ae224cf3441171b",
+                               "src/data/index.ts":  "9765990310098cad141a49f7a32307694093598e77b537be32eb66675f001466",
+                               "tests/data/publish-store.test.mjs":  "81959f95172fd13d834510a77edd057c7e72cfec19b069ec9383db30c17099e2",
+                               "package.json":  "21bbd14288cf6fc048e78f02f8d83b895e262cb84b1b0c836fc6a78d2087fb01",
+                               "package-lock.json":  "c80afb325e99ce5780d67ef3a205efade096630ea995a4cb82c20b2e0efd1014",
+                               "tsconfig.json":  "89c14a1bae6d76d77873bee60be30c216e8d77a68286f19ac19dc4016cbb1656"
+                           },
+    "limitations":  [
+                        "Local verification, not a fresh clone or CI run",
+                        "No Linux verification",
+                        "No HTTP authorization or endpoint implementation",
+                        "No full T04 quality gate",
+                        "No independent review or integration claimed"
+                    ]
+}
