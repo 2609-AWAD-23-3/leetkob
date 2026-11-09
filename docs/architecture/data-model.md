@@ -1,52 +1,62 @@
-# LeeTKOB — T02 data model and publish store
+# LeeTKOB — Mô hình dữ liệu và store publish của T02
 
-Executor: Vuong (vinny2707). Independent reviewer: Vy (tranquocvy).
-Acceptance: [PA02/T02](../plans/PA02.md#t02--data-foundation), [Issue #2](https://github.com/2609-AWAD-23-3/leetkob/issues/2).
+**Thực hiện:** Vượng (vinny2707). **Reviewer độc lập:** Vỹ (tranquocvy).
+**Tiêu chí nghiệm thu:** [PA02/T02](../plans/PA02.md#t02--data-foundation), [Issue #2](https://github.com/2609-AWAD-23-3/leetkob/issues/2).
 
-Status: implementation candidate on feat/t02-publish-state, based on 9ac6bf5.
-The original uncommitted T02 plan has been developed into this specification and implementation; it was not treated as completed work. See [T02 evidence](../evidence/PA02/T02/README.md) for actual checks and remaining gates. Independent review and integration are required. This document does not establish HTTP contracts or mark T03/T08 complete.
+**Trạng thái:** bản triển khai chờ review trên nhánh feat/t02-publish-state, phát triển từ 9ac6bf5. Kế hoạch T02 chưa commit ban đầu đã được phát triển thành thiết kế và implementation bên dưới. Xem [evidence T02](../evidence/PA02/T02/README.md) để biết kết quả kiểm tra thực tế và những bước còn thiếu. Vẫn cần review độc lập và tích hợp; tài liệu này chưa xác nhận T03/T08 hoàn thành hoặc chốt HTTP contract.
 
-## Requirements and boundaries
+## 1. Yêu cầu và phạm vi
 
-Sources are the [class brief](../reference/leetkob/LeeTKOB%20%E2%80%94%20class%20project%20brief_vn.md), sections 3–4, and the product-owner FAQ available through Classroom. The local source inspected is D:/semester1-year4/advanced_web_development/project/docs/FAQ.md; it is outside this repo and is not a runtime dependency. These paraphrases preserve the FAQ identifiers for comparison against the course source without copying the full document.
+Nguồn là brief môn học, mục 3–4, và FAQ của product owners trên Classroom. Bản FAQ đã đối chiếu nằm tại D:/semester1-year4/advanced_web_development/project/docs/FAQ.md, ngoài repo; ứng dụng không phụ thuộc đường dẫn này. Bảng dưới diễn giải các yêu cầu, giữ mã FAQ để reviewer tra lại nguồn môn học.
 
-| Source | Requirement used here |
+| Nguồn | Yêu cầu áp dụng |
 | --- | --- |
-| FAQ-01 | Each lab belongs to a class. Classes may have multiple TAs and TAs may serve multiple classes. TA access is limited to their assigned classes. |
-| FAQ-02 | The counted submission is the student's last submission before the deadline, regardless of judging result. Only the current counted submission contributes to the current queue. |
-| FAQ-09 | An unsure result requires an explicit TA pass/violation decision; it never becomes a deduction automatically. |
-| FAQ-10 | Queue items represent counted-submission/constraint pairs: all violation/unsure results and a sample of pass results. Pending is not synonymous with unsure. |
-| FAQ-12 | Publish the whole lab when the submission period has ended and every queued item has a TA decision. Repeating publish changes nothing. There is no unpublish. Later individual score corrections are separate work. |
+| FAQ-01 | Mỗi lab thuộc một lớp. Một lớp có nhiều TA; một TA có thể phụ trách nhiều lớp. TA chỉ truy cập dữ liệu lớp mình phụ trách. |
+| FAQ-02 | Bài được tính là bài cuối trước deadline, bất kể kết quả chấm. Queue hiện hành chỉ xét bài được tính. |
+| FAQ-09 | Verdict unsure phải được TA quyết định pass hoặc violation; không tự động trở thành khoản trừ. |
+| FAQ-10 | Một mục queue ứng với một cặp bài được tính–constraint. Queue gồm mọi violation/unsure và một mẫu pass. Vì vậy pending không đồng nghĩa với unsure. |
+| FAQ-12 | Công bố điểm cả lab khi hết hạn nộp và mọi mục queue đã có quyết định TA. Gọi lại không thay đổi publication; không unpublish. Chỉnh điểm từng bài sau đó thuộc phần việc khác. |
 
-T02 is Vuong's data contract for Phuc to consume in T03/T08. Phuc's draft is not a binding design input. T01 supplies the existing skeleton. T02 does not implement authentication, HTTP routes/errors, submissions selection, queue sampling, model calls, grading, database/ORM, accounts, or appeals.
+T02 do Vượng đề xuất để Phúc dùng cho T03/T08; draft của Phúc không ràng buộc thiết kế này. T01 đã cung cấp skeleton. T02 chỉ làm dữ liệu/store/fixtures; chưa làm xác thực, HTTP routes/errors, chọn bài được tính, chọn mẫu queue, gọi model, tính điểm, database/ORM, quản lý tài khoản hoặc khiếu nại.
 
-## Model
+## 2. Mô hình dữ liệu
 
-Public exports: [data entrypoint](../../src/data/index.ts). Types/store have no Fastify dependency and add no packages.
+Các thành phần được export qua [data/index.ts](../../src/data/index.ts). Types và store độc lập với Fastify, không thêm package.
 
-| Type | Fields and meaning |
+| Type | Trường và ý nghĩa |
 | --- | --- |
-| Lab | id, classId, deadline |
-| TaClassMembership | taId, classId; unique pair, many-to-many |
+| Lab | id: ID lab; classId: lớp của lab; deadline: hạn nộp |
+| TaClassMembership | taId, classId: một cặp TA–lớp duy nhất; hỗ trợ quan hệ nhiều–nhiều |
 | ReviewQueueItem | id, labId, submissionId, constraintId, verdict, taDecision |
-| PublicationSummary | queueItemCount, passDecisionCount, violationDecisionCount |
-| ReviewState | Summary counts plus pendingCount |
-| Publication | labId, publishedAt, publishedBy, summary; at most one per lab |
-| SeedState | Arrays labs, memberships, queueItems, publications |
+| PublicationSummary | queueItemCount: tổng mục queue; passDecisionCount: số TA chọn pass; violationDecisionCount: số TA chọn violation |
+| ReviewState | Các số đếm của summary và pendingCount: số mục chưa có quyết định TA |
+| Publication | labId, publishedAt: thời điểm công bố; publishedBy: TA công bố; summary. Tối đa một bản ghi cho mỗi lab |
+| SeedState | Bốn mảng labs, memberships, queueItems, publications để khởi tạo/reset |
 
-IDs are case-sensitive nonempty strings without leading/trailing whitespace, not necessarily UUIDs. Stored timestamps must be canonical UTC ISO strings, e.g. 2026-11-09T15:00:00.000Z. Submission/constraint IDs are fixture references; T02 does not build those entities. Membership may reference a class without a seeded lab; no class master table or user registry is implied.
+ID là chuỗi không rỗng, phân biệt hoa/thường, không có khoảng trắng đầu/cuối; không bắt buộc UUID. Thời gian lưu theo UTC ISO chuẩn, ví dụ 2026-11-09T15:00:00.000Z, tương ứng 22:00 giờ Việt Nam. submissionId/constraintId chỉ là tham chiếu do fixture cung cấp; T02 chưa xây entity tương ứng. Membership có thể chứa lớp chưa có lab trong seed; chưa có bảng lớp hoặc danh sách tài khoản đầy đủ.
 
-The verdict type is pass | violation | unsure. The taDecision type is null | pass | violation, where null is pending. An omitted decision field is invalid seed data. A model violation overridden to TA pass is resolved and contributes to passDecisionCount. A sampled model pass without a TA decision remains pending.
+### Verdict và quyết định TA
 
-Queue IDs and (labId, submissionId, constraintId) pairs are unique. Queue items represent only the current queue, not historical submissions or all verdicts. Seed producers supply the counted submissions and correctly selected queue; T02 cannot verify selection without the deferred pipeline. The store retains aggregate review state, without an individual-item read/edit API or a TA review workflow.
+- verdict nhận pass | violation | unsure.
+- taDecision nhận null | pass | violation. null nghĩa là pending; bỏ hẳn trường taDecision là seed sai.
+- Ví dụ verdict là violation nhưng TA chọn pass: mục đó đã resolved và được đếm vào passDecisionCount.
+- Một verdict pass được chọn vào queue nhưng chưa có quyết định TA vẫn pending.
 
-### Publication summary
+ID của các mục queue phải duy nhất; bộ (labId, submissionId, constraintId) cũng phải duy nhất. Seed chỉ chứa queue hiện hành, không chứa lịch sử submissions hoặc toàn bộ verdict. Bên tạo seed chịu trách nhiệm chọn đúng bài được tính và đúng queue; T02 chưa có pipeline để kiểm chứng việc chọn đó.
 
-The requester selected review statistics, not student scores. Summary counts TA decisions at publication time. Successful publication has passDecisionCount + violationDecisionCount === queueItemCount. An empty queue has all three counts zero. This is not a grade report, a count of all students or a deduction calculation.
+Store giữ các số đếm review tối thiểu phục vụ publish; chưa cung cấp API đọc/sửa từng mục hoặc quy trình TA duyệt bài.
 
-The original summary, publisher and timestamp remain unchanged on repeat. Later score corrections do not mutate this snapshot and are outside T02.
+### Summary khi công bố
 
-## Runtime interface and transition
+Người yêu cầu chọn thống kê review, không chứa điểm sinh viên. Summary đếm quyết định TA tại lúc publish; khi thành công:
+
+~~~text
+passDecisionCount + violationDecisionCount === queueItemCount
+~~~
+
+Queue rỗng có cả ba số đếm bằng 0. Summary không phải bảng điểm, số sinh viên hoặc phép tính khoản trừ. Gọi publish lại giữ nguyên summary, người công bố và thời điểm ban đầu. Chỉnh điểm về sau không sửa snapshot này và nằm ngoài T02.
+
+## 3. Interface và luồng publish
 
 ~~~ts
 interface PublishStore {
@@ -58,29 +68,29 @@ interface PublishStore {
 }
 ~~~
 
-Methods are synchronous and return copies. Missing lab/review-state lookup returns undefined. Publication lookup returns undefined for both a missing lab and an unpublished lab; use lab lookup to distinguish them. Absent membership returns false.
+Các hàm chạy đồng bộ và trả bản sao dữ liệu. Lab/review state không tồn tại thì trả undefined. getPublication trả undefined cho cả lab không tồn tại và lab chưa công bố; dùng getLab để phân biệt. Không có cặp membership thì trả false.
 
-PublishResult is a discriminated union, with conditions evaluated in this order:
+PublishResult có trường kind để bên gọi phân biệt kết quả. Thứ tự kiểm tra:
 
-| Condition | Result | Effect |
+| Điều kiện | Kết quả | Thay đổi state |
 | --- | --- | --- |
-| Lab does not exist | kind: lab_not_found | None |
-| Publication exists | kind: already_published; publication | Return original; do not consult clock |
-| now < deadline | kind: before_deadline; deadline | None |
-| Queue has pending decisions | kind: pending_reviews; pendingCount | None |
-| Otherwise | kind: published; publication | Save one publication and return a copy |
+| Không có lab | kind: lab_not_found | Không |
+| Đã có publication | kind: already_published; kèm publication cũ | Không; không đọc clock |
+| now < deadline | kind: before_deadline; kèm deadline | Không |
+| Còn pending | kind: pending_reviews; kèm pendingCount | Không |
+| Đủ điều kiện | kind: published; kèm publication vừa lưu | Lưu một bản ghi và trả bản sao |
 
-The chosen deadline boundary is now >= deadline; exactly at the deadline is eligible. Read the clock once for a new transition and use that instant for publishedAt. Empty queues are eligible after the deadline. Pending in another lab has no effect.
+Quy ước được chọn là now >= deadline: đúng deadline đã đủ điều kiện về thời gian. Mỗi lần publish mới chỉ đọc clock một lần, dùng cùng thời điểm cho kiểm tra và publishedAt. Queue rỗng được công bố khi hết hạn; pending của lab khác không ảnh hưởng.
 
-For a new transition, publishedBy must be a valid ID; invalid IDs throw TypeError without a write. The default clock is () => new Date(). An invalid or throwing clock does not create a publication. The injected clock is trusted, synchronous and must not re-enter the store or invoke reset. Repeat returns the original before validating new transition inputs or consulting the clock.
+Với chuyển trạng thái mới, publishedBy phải là ID hợp lệ; sai thì ném TypeError và không ghi state. Clock mặc định là () => new Date(). Clock trả Date không hợp lệ hoặc ném lỗi thì không tạo publication. Clock được inject phải đáng tin cậy, chạy đồng bộ và không gọi ngược vào store/reset. Khi đã có publication, lời gọi lặp trả bản gốc trước khi kiểm tra đầu vào mới hoặc đọc clock.
 
-### Authorization handoff to T03/T08
+### Trách nhiệm của T03/T08
 
-The store does not authenticate callers or enforce role/membership. T03/T08 must resolve a trusted principal, verify TA role, look up the lab and check isTaAssignedToClass(principal.id, lab.classId) before exposing review/publication data or publishing. publishedBy comes from that principal, never directly from client identity fields. Repeat requests still require authorization. Lab-not-found/auth-error disclosure policy and HTTP response mapping belong to T03/T08.
+Store chưa xác thực caller hoặc thực thi role/membership. T03/T08 phải xác định principal tin cậy, kiểm tra role TA, tra lab rồi kiểm tra isTaAssignedToClass(principal.id, lab.classId) trước khi cho đọc dữ liệu hoặc publish. publishedBy lấy từ principal đã xác thực, không lấy thẳng từ dữ liệu client tự khai. Gọi publish lặp vẫn phải qua authorization.
 
-The diagnostic getReviewState must not become the endpoint's sole precondition check: publishLab itself checks deadline/pending and writes the transition together. T02 does not prescribe HTTP status codes or headers.
+Phúc quyết định HTTP status/error serialization và cách tránh lộ thông tin khi lab không tồn tại hoặc caller không có quyền. getReviewState chỉ hỗ trợ đọc trạng thái; endpoint không được dùng nó làm bước kiểm tra duy nhất rồi tự ghi publication. publishLab đã gộp kiểm tra deadline/pending và ghi chuyển trạng thái.
 
-## Lifecycle, validation and guarantees
+## 4. Khởi tạo, reset, validation và guarantees
 
 ~~~ts
 createInMemoryPublishStore({ initialState?, clock? }): {
@@ -89,15 +99,17 @@ createInMemoryPublishStore({ initialState?, clock? }): {
 }
 ~~~
 
-No initialState means empty state. Reset without arguments empties it; reset with a seed replaces all state. Reset is fixture/setup control outside PublishStore; do not expose it via HTTP or treat it as a product unpublish operation. There is no runtime unpublish or review-edit method.
+Không truyền initialState thì store rỗng. reset() xóa state; reset(seed) thay toàn bộ state. Reset chỉ dùng setup/test, nằm ngoài PublishStore, không được mở qua HTTP hoặc coi là chức năng unpublish. Chưa có hàm unpublish hoặc chỉnh review lúc chạy nghiệp vụ.
 
-Validation precedes replacement. Reject invalid IDs/timestamps/arrays, duplicate IDs or membership/review pairs, unknown lab references, unsupported verdicts/decisions, duplicate lab publications, publications before deadline, publications with pending reviews, and summaries that differ from the resolved queue. A seeded publication does not depend on the current clock. Invalid typed seed data throws TypeError; failed reset retains the complete old state. These setup helpers expect the SeedState object shape; they are not an untrusted JSON ingestion API.
+Seed được validate trước khi thay state. Các trường hợp bị từ chối: ID/thời gian/mảng sai; ID, membership hoặc cặp review trùng; tham chiếu lab không tồn tại; verdict/decision không hỗ trợ; publication trùng lab, trước deadline, còn pending hoặc summary không khớp queue đã resolved. Publication seed không phụ thuộc clock hiện tại. Seed sai ném TypeError; reset thất bại giữ nguyên toàn bộ state cũ. Helper này nhận object theo SeedState, không phải API tiếp nhận JSON không tin cậy.
 
-Input seeds and returned objects do not share mutable internal state. Mutating a seed, lookup result, publication result or nested summary cannot update the store. Fixture builders return fresh objects; fixed clocks return a fresh Date each time.
+Seed đầu vào và object trả về không chia sẻ state mutable bên trong. Sửa seed, lab/review/publication lấy ra hoặc summary lồng bên trong không sửa ngầm store. Mỗi lần gọi fixture builder trả object mới; fixed clock trả Date mới.
 
-Each factory owns its maps/sets. After reading the trusted clock, publish condition checks and write execute synchronously without asynchronous work or external callbacks. Calls scheduled together in one JavaScript thread are serialized: one creates the publication and later calls return it. This does not claim cross-worker/process or distributed atomicity. State is not durable, is lost on restart and is not shared between application instances. No notifications or external side effects are performed.
+Mỗi factory sở hữu Map/Set riêng. Sau khi đọc clock tin cậy, kiểm tra điều kiện và ghi publish chạy đồng bộ, không await hoặc gọi callback bên ngoài. Các lời gọi được lên lịch cùng lúc trong một luồng JavaScript sẽ lần lượt thực thi: một lời gọi tạo publication, các lời gọi sau nhận bản cũ.
 
-## Fixture usage and integration
+Guarantee này chỉ áp dụng cùng instance/một luồng JavaScript; không bảo đảm atomicity giữa worker/process hoặc hệ thống phân tán. Dữ liệu mất khi restart, không chia sẻ giữa các app instance. Store không gửi thông báo hoặc tạo side effect bên ngoài.
+
+## 5. Fixtures và ví dụ kiểm tra
 
 ~~~ts
 import {
@@ -110,21 +122,60 @@ const fixture = createInMemoryPublishStore({
   initialState: createPublishSeed('pending'),
   clock: createFixedClock(),
 });
-fixture.store.getLab('lab-1'); // class-1
+fixture.store.getLab('lab-1'); // thuộc class-1
 fixture.store.isTaAssignedToClass('ta-multi', 'class-1'); // true
 fixture.store.isTaAssignedToClass('ta-multi', 'class-2'); // true
 fixture.store.publishLab({ labId: 'lab-1', publishedBy: 'ta-one' });
 // { kind: 'pending_reviews', pendingCount: 1 }
 
-fixture.reset(createPublishSeed('resolved')); // test setup only
+fixture.reset(createPublishSeed('resolved')); // chỉ dùng setup/test
 const first = fixture.store.publishLab({ labId: 'lab-1', publishedBy: 'ta-one' });
-// published: 3 queue items, 2 TA pass decisions, 1 TA violation decision
+// published: tổng 3 mục, TA quyết định 2 pass và 1 violation
 const repeat = fixture.store.publishLab({ labId: 'lab-1', publishedBy: 'ta-multi' });
-// already_published: same original timestamp, ta-one and summary
+// already_published: giữ nguyên thời điểm, ta-one và summary ban đầu
 ~~~
 
-createPublishSeed defaults to resolved; pending, empty and published are also supported. It supplies fictional IDs, two classes/labs, single-class TAs and a TA assigned to both classes. createFixedClock defaults to one millisecond after FIXTURE_DEADLINE; tests inject before/at-deadline values explicitly.
+| Scenario của createPublishSeed | Trạng thái lab-1 |
+| --- | --- |
+| resolved (mặc định) | 3 mục đã có quyết định TA: 2 pass, 1 violation |
+| pending | 3 mục, trong đó 1 mục chưa có quyết định TA |
+| empty | Queue rỗng |
+| published | Đã có publication tương ứng queue resolved |
 
-Vy owns app composition, manifests/lockfile and shared runner changes. Construct one fixture/store per app or test; pass only fixture.store to Phuc's module through composition. Keep reset with test setup. T02 does not change createApp or introduce a singleton. Phuc owns authorization and endpoint integration.
+Seed dùng ID giả, có hai lớp/lab, TA một lớp và TA phụ trách cả hai lớp. createFixedClock mặc định ở thời điểm sau FIXTURE_DEADLINE 1 ms; test truyền clock trước hoặc đúng deadline khi cần.
 
-Run npm run build, then node --test tests/data/publish-store.test.mjs and the existing T01 smoke suite. See [data tests](../../tests/data/publish-store.test.mjs) and [evidence](../evidence/PA02/T02/README.md). Data tests do not prove HTTP authorization, full T04 harness, CI or production persistence.
+Vỹ phụ trách app composition, manifest/lockfile và runner chung. Mỗi app/test tạo store riêng; chỉ truyền fixture.store cho module của Phúc, giữ reset ở phần setup test. T02 chưa sửa createApp hoặc tạo singleton; Phúc phụ trách authorization và endpoint.
+
+## 6. Cách chạy kiểm thử
+
+Tại thư mục gốc repo, dùng Node 24.22.1 và npm 11.19.1:
+
+~~~powershell
+npm.cmd run build
+node --test tests/data/publish-store.test.mjs
+node --test tests/smoke/app.test.mjs
+git diff --check
+~~~
+
+Nếu chưa cài dependencies, chạy npm.cmd ci --ignore-scripts trước. Tests import file đã biên dịch trong dist nên phải build trước. Tổng mong đợi là 40 data tests và 7 smoke tests đạt. Chưa có npm test chung trong baseline T01.
+
+Để thử từng hàm, build xong rồi chạy node để vào REPL và dùng dynamic import:
+
+~~~js
+const { createInMemoryPublishStore, createPublishSeed, createFixedClock } =
+  await import('./dist/data/index.js');
+const f = createInMemoryPublishStore({
+  initialState: createPublishSeed('pending'),
+  clock: createFixedClock()
+});
+f.store.getReviewState('lab-1');
+f.store.publishLab({ labId: 'lab-1', publishedBy: 'ta-one' });
+// pending_reviews; chưa có publication
+f.reset(createPublishSeed('resolved'));
+f.store.publishLab({ labId: 'lab-1', publishedBy: 'ta-one' });
+// published
+f.store.publishLab({ labId: 'lab-1', publishedBy: 'ta-multi' });
+// already_published; vẫn giữ publishedBy là ta-one
+~~~
+
+Xem [data tests](../../tests/data/publish-store.test.mjs) và [evidence](../evidence/PA02/T02/README.md). Kết quả data tests không chứng minh HTTP authorization, toàn bộ harness T04, CI hoặc persistence production.
