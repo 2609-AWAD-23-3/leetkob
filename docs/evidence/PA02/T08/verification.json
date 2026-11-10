@@ -1,0 +1,55 @@
+{
+  "task": "T08",
+  "milestone": "PA02",
+  "executor": "BHVPhuc",
+  "reviewer": "vinny2707",
+  "branch": "feat/t08-publish",
+  "environment": {
+    "os": "win32",
+    "arch": "x64",
+    "node": "v24.22.1",
+    "npm": "11.19.1"
+  },
+  "verifiedAt": "2026-11-10T06:30:00.000Z",
+  "records": [
+    {
+      "command": "npm run build",
+      "exitCode": 0,
+      "stdout": "\n> leetkob@0.1.0 build\n> tsc -p tsconfig.json\n\n",
+      "stderr": ""
+    },
+    {
+      "command": "node --test tests/auth/publish-auth-errors.test.mjs tests/data/publish-store.test.mjs tests/smoke/app.test.mjs tests/contract/publish.test.mjs",
+      "exitCode": 0,
+      "summary": {
+        "tests": 76,
+        "pass": 76,
+        "fail": 0,
+        "suites": [
+          { "name": "tests/auth/publish-auth-errors.test.mjs", "tests": 18, "pass": 18 },
+          { "name": "tests/contract/publish.test.mjs", "tests": 11, "pass": 11 },
+          { "name": "tests/data/publish-store.test.mjs", "tests": 40, "pass": 40 },
+          { "name": "tests/smoke/app.test.mjs", "tests": 7, "pass": 7 }
+        ]
+      }
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "limits": [
+    "In-memory store only; resets on server restart",
+    "No external judge, queue, database, or LLM pipeline",
+    "Single-process concurrency guarantees within Node.js event loop",
+    "Deferred endpoints (submissions, review-queue) remain unimplemented in PA02"
+  ],
+  "invariantHandover": {
+    "targetTask": "T10",
+    "invariant": "Pending-Review Gate (409 pending-reviews)",
+    "testName": "POST /labs/{labId}/publish — 409 pending-reviews with pendingCount member when reviews remain pending",
+    "testFile": "tests/contract/publish.test.mjs"
+  }
+}
