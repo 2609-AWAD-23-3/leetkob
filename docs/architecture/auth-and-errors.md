@@ -89,14 +89,19 @@ Mọi phản hồi 4xx/5xx đều được chuẩn hóa qua `src/auth/problem-de
 | `not-found` | `404` | `Not found` | Không tìm thấy `labId` (hoặc route không tồn tại trong scope) |
 | `before-deadline` | `409` | `Lab deadline has not passed` | Gọi publish khi `now < lab.deadline` (`PublishResult.kind === 'before_deadline'`), kèm `deadline` |
 | `pending-reviews` | `409` | `Pending reviews block publication` | Còn mục review chưa có quyết định TA (`PublishResult.kind === 'pending_reviews'`), kèm `pendingCount` |
+| `conflict` | `409` | `Conflict` | Trạng thái tài nguyên xung đột với yêu cầu thực hiện |
 | `payload-too-large` | `413` | `Payload too large` | Payload vượt quá giới hạn cấu hình của server (`FST_ERR_CTP_BODY_TOO_LARGE`) |
 | `unsupported-media-type` | `415` | `Unsupported media type` | Content-Type không được hỗ trợ (`FST_ERR_CTP_INVALID_MEDIA_TYPE`) |
+| `unprocessable-content` | `422` | `Unprocessable content` | Dữ liệu đúng định dạng cú pháp nhưng vi phạm ngữ nghĩa nghiệp vụ |
+| `rate-limited` | `429` | `Too many requests` | Vượt ngưỡng giới hạn tần suất yêu cầu |
+| `client-error` | `4xx` | `Client error` | Các lỗi 4xx client khác; bảo toàn chính xác mã HTTP status |
 | `internal` | `500` | `Internal error` | Mọi ngoại lệ server không mong đợi; luôn trả câu `detail` cố định, loại bỏ hoàn toàn stack trace, đường dẫn file và secrets |
 
 Hàm `registerPublishErrorHandling(scope)`:
 - Kế thừa parser JSON mặc định của Fastify (`scope.getDefaultJsonParser('error', 'error')`) để giữ trọn vẹn cơ chế chống Prototype Pollution của `secure-json-parse`, đồng thời hỗ trợ body rỗng an toàn khi có header JSON.
-- Đặt `setErrorHandler` ánh xạ chính xác các lỗi client 4xx (400 validation, 413 payload too large, 415 unsupported media type, 404 not found) sang RFC 9457 mà không bị biến thành 500. Chỉ các lỗi server không mong đợi mới trả về 500 `internal`.
-- `sendProblem()` tự động bổ sung header `WWW-Authenticate: Bearer` cho mọi phản hồi có status `401`.
+- Đặt `setErrorHandler` ánh xạ chính xác và bảo toàn từng mã lỗi client 4xx (400 validation, 401 unauthenticated, 403 forbidden, 404 not found, 409 conflict, 413 payload too large, 415 unsupported media type, 422 unprocessable content, 429 rate limited, và 4xx client errors) sang RFC 9457 mà không bị biến thành 500 hay ép tất cả thành 400.
+- Tuyệt đối không đưa trực tiếp `error.message` của lỗi chưa được nhận diện ra client; luôn sử dụng thông điệp cố định an toàn để ngăn chặn nguy cơ rò rỉ credential markers hay đường dẫn file nội bộ.
+- `sendProblem()` tự động bổ sung header `WWW-Authenticate: Bearer` cho mọi phản hồi có status `401` theo RFC 9110 mục 11.6.1.
 
 ## 5. Giới hạn chưa Production-Ready
 

@@ -5,6 +5,8 @@ import {
   authorizePublishAccess,
   cloneProblemDetails,
   createBeforeDeadlineProblem,
+  createClientErrorProblem,
+  createConflictProblem,
   createForbiddenProblem,
   createInternalProblem,
   createInvalidJsonProblem,
@@ -12,9 +14,11 @@ import {
   createPayloadTooLargeProblem,
   createPendingReviewsProblem,
   createPublishFixtureTokens,
+  createRateLimitedProblem,
   createTestHeaderIdentityResolver,
   createTokenIdentityResolver,
   createUnauthenticatedProblem,
+  createUnprocessableContentProblem,
   createUnsupportedMediaTypeProblem,
   createValidationProblem,
   isValidLabId,
@@ -73,6 +77,17 @@ function createPublishProbeApp({
           },
           async () => ({ ok: true }),
         );
+        scope.get('/probe/status-error', async (request) => {
+          const query = request.query ?? {};
+          const status = Number(query.status) || 400;
+          const err = new Error(
+            typeof query.msg === 'string'
+              ? query.msg
+              : 'REVIEW_DUMMY_CREDENTIAL at D:\\private\\config.json',
+          );
+          err.statusCode = status;
+          throw err;
+        });
 
         scope.post('/labs/:labId/publish', async (request, reply) => {
           if (throwInternalError) {
@@ -544,6 +559,57 @@ test('HTTP boundary maps parser errors, validation errors, deadline/pending conf
   assert.ok(Array.isArray(schemaJson.errors));
   assert.ok(schemaJson.errors.length > 0);
 
+  // Generic 400 error does NOT leak unverified internal messages, paths or credential markers
+  const leakedError = await app.inject({
+    method: 'GET',
+    url: '/probe/status-error?status=400&msg=REVIEW_DUMMY_CREDENTIAL%20at%20D:%5Cprivate%5Cconfig.json',
+  });
+  assert.equal(leakedError.statusCode, 400);
+  assert.equal(leakedError.headers['content-type'], PROBLEM_CONTENT_TYPE);
+  assert.equal(leakedError.body.includes('REVIEW_DUMMY_CREDENTIAL'), false);
+  assert.equal(leakedError.body.includes('D:\\private'), false);
+  assert.equal(leakedError.body.includes('config.json'), false);
+  assert.deepEqual(leakedError.json(), {
+    type: 'https://leetkob.example/problems/validation',
+    title: 'Invalid request',
+    status: 400,
+    detail: 'Invalid request',
+    errors: [
+      {
+        pointer: '',
+        detail: 'The request parameters or payload are invalid.',
+      },
+    ],
+  });
+
+  // Explicit 4xx fallback errors preserve their status codes and challenges without collapsing to 400
+  const statusCases = [
+    { status: 401, type: 'https://leetkob.example/problems/unauthenticated', challenge: true },
+    { status: 403, type: 'https://leetkob.example/problems/forbidden' },
+    { status: 404, type: 'https://leetkob.example/problems/not-found' },
+    { status: 409, type: 'https://leetkob.example/problems/conflict' },
+    { status: 422, type: 'https://leetkob.example/problems/unprocessable-content' },
+    { status: 429, type: 'https://leetkob.example/problems/rate-limited' },
+    { status: 405, type: 'https://leetkob.example/problems/client-error' },
+  ];
+
+  for (const tc of statusCases) {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/probe/status-error?status=${tc.status}`,
+    });
+    assert.equal(res.statusCode, tc.status);
+    assert.equal(res.headers['content-type'], PROBLEM_CONTENT_TYPE);
+    if (tc.challenge) {
+      assert.equal(res.headers['www-authenticate'], 'Bearer');
+    }
+    const body = res.json();
+    assert.equal(body.status, tc.status);
+    assert.equal(body.type, tc.type);
+    assert.equal(res.body.includes('REVIEW_DUMMY_CREDENTIAL'), false);
+    assert.equal(res.body.includes('D:\\private'), false);
+  }
+
   // Non-object JSON body and invalid labId -> 400 validation with errors[]
   const invalidInputs = await app.inject({
     method: 'POST',
@@ -669,7 +735,11 @@ test('problem factories validate inputs and return defensive copies', () => {
   assert.equal(createForbiddenProblem().status, 403);
   assert.equal(createInvalidJsonProblem().status, 400);
   assert.equal(createNotFoundProblem().status, 404);
+  assert.equal(createConflictProblem().status, 409);
   assert.equal(createPayloadTooLargeProblem().status, 413);
   assert.equal(createUnsupportedMediaTypeProblem().status, 415);
+  assert.equal(createUnprocessableContentProblem().status, 422);
+  assert.equal(createRateLimitedProblem().status, 429);
+  assert.equal(createClientErrorProblem(405).status, 405);
   assert.equal(createInternalProblem().status, 500);
 });

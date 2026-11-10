@@ -183,6 +183,51 @@ export function createUnsupportedMediaTypeProblem(
   };
 }
 
+export function createConflictProblem(
+  detail = 'The request could not be completed due to a conflict with current resource state.',
+): ProblemDetails {
+  return {
+    type: 'https://leetkob.example/problems/conflict',
+    title: 'Conflict',
+    status: 409,
+    detail,
+  };
+}
+
+export function createUnprocessableContentProblem(
+  detail = 'The request was well-formed but was unable to be followed due to semantic errors.',
+): ProblemDetails {
+  return {
+    type: 'https://leetkob.example/problems/unprocessable-content',
+    title: 'Unprocessable content',
+    status: 422,
+    detail,
+  };
+}
+
+export function createRateLimitedProblem(
+  detail = 'Too many requests have been sent. Please try again later.',
+): ProblemDetails {
+  return {
+    type: 'https://leetkob.example/problems/rate-limited',
+    title: 'Too many requests',
+    status: 429,
+    detail,
+  };
+}
+
+export function createClientErrorProblem(
+  status: 400 | 401 | 403 | 404 | 405 | 409 | 413 | 415 | 422 | 429 = 400,
+  detail = 'A client error occurred processing the request.',
+): ProblemDetails {
+  return {
+    type: 'https://leetkob.example/problems/client-error',
+    title: 'Client error',
+    status,
+    detail,
+  };
+}
+
 export function mapAccessDecisionToProblem(
   decision: Exclude<PublishAccessDecision, { kind: 'authorized' }>,
 ): ProblemDetails {
@@ -343,10 +388,7 @@ export function registerPublishErrorHandling(scope: FastifyInstance): void {
         : [
             {
               pointer: '',
-              detail:
-                typeof candidate.message === 'string'
-                  ? candidate.message
-                  : 'validation failed',
+              detail: 'One or more request parameters failed validation.',
             },
           ];
       return sendProblem(reply, createValidationProblem(issues));
@@ -357,26 +399,48 @@ export function registerPublishErrorHandling(scope: FastifyInstance): void {
       candidate.statusCode >= 400 &&
       candidate.statusCode < 500
     ) {
-      if (candidate.statusCode === 404) {
-        return sendProblem(reply, createNotFoundProblem());
+      switch (candidate.statusCode) {
+        case 400:
+          return sendProblem(
+            reply,
+            createValidationProblem(
+              [
+                {
+                  pointer: '',
+                  detail: 'The request parameters or payload are invalid.',
+                },
+              ],
+              'Invalid request',
+            ),
+          );
+        case 401:
+          return sendProblem(
+            reply,
+            createUnauthenticatedProblem('missing_credentials'),
+          );
+        case 403:
+          return sendProblem(reply, createForbiddenProblem('role'));
+        case 404:
+          return sendProblem(reply, createNotFoundProblem());
+        case 409:
+          return sendProblem(reply, createConflictProblem());
+        case 413:
+          return sendProblem(reply, createPayloadTooLargeProblem());
+        case 415:
+          return sendProblem(reply, createUnsupportedMediaTypeProblem());
+        case 422:
+          return sendProblem(reply, createUnprocessableContentProblem());
+        case 429:
+          return sendProblem(reply, createRateLimitedProblem());
+        default:
+          return sendProblem(
+            reply,
+            createClientErrorProblem(
+              candidate.statusCode as any,
+              'A client error occurred processing the request.',
+            ),
+          );
       }
-      return sendProblem(
-        reply,
-        createValidationProblem(
-          [
-            {
-              pointer: '',
-              detail:
-                typeof candidate.message === 'string'
-                  ? candidate.message
-                  : 'Invalid request',
-            },
-          ],
-          typeof candidate.message === 'string'
-            ? candidate.message
-            : 'Invalid request',
-        ),
-      );
     }
 
     return sendProblem(reply, createInternalProblem());
