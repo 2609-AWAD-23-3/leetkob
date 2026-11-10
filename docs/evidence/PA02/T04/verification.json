@@ -1,0 +1,191 @@
+[
+  {
+    "command": "npx prettier --write scripts/test.mjs",
+    "cwd": "D:/Workspace/Web/leetkob",
+    "start": "2026-11-07T18:05:51.182Z",
+    "end": "2026-11-07T18:05:52.635Z",
+    "exitCode": 0,
+    "stdout": "scripts/test.mjs 46ms (unchanged)\n",
+    "stderr": ""
+  },
+  {
+    "command": "npm run lint",
+    "cwd": "D:/Workspace/Web/leetkob",
+    "start": "2026-11-07T18:05:52.638Z",
+    "end": "2026-11-07T18:05:53.404Z",
+    "exitCode": 0,
+    "stdout": "\n> leetkob@0.1.0 lint\n> oxlint --deny-warnings src tests scripts\n\n",
+    "stderr": ""
+  },
+  {
+    "command": "npm run format-check",
+    "cwd": "D:/Workspace/Web/leetkob",
+    "start": "2026-11-07T18:05:53.405Z",
+    "end": "2026-11-07T18:05:54.572Z",
+    "exitCode": 0,
+    "stdout": "\n> leetkob@0.1.0 format-check\n> prettier --check .\n\nChecking formatting...\nAll matched files use Prettier code style!\n",
+    "stderr": ""
+  },
+  {
+    "command": "npm run type-check",
+    "cwd": "D:/Workspace/Web/leetkob",
+    "start": "2026-11-07T18:05:54.573Z",
+    "end": "2026-11-07T18:05:55.566Z",
+    "exitCode": 0,
+    "stdout": "\n> leetkob@0.1.0 type-check\n> tsc -p tsconfig.check.json\n\n",
+    "stderr": ""
+  },
+  {
+    "command": "npm test",
+    "cwd": "D:/Workspace/Web/leetkob",
+    "start": "2026-11-07T18:05:55.567Z",
+    "end": "2026-11-07T18:05:58.501Z",
+    "exitCode": 0,
+    "stdout": "\n> leetkob@0.1.0 test\n> npm run build && node scripts/test.mjs\n\n\n> leetkob@0.1.0 build\n> tsc -p tsconfig.json\n\nTAP version 13\n# Subtest: factory does not listen; health works through the real HTTP injection boundary\nok 1 - factory does not listen; health works through the real HTTP injection boundary\n  ---\n  duration_ms: 233.3053\n  type: 'test'\n  ...\n# Subtest: each module accepts its own real Fastify plugin in the same application\nok 2 - each module accepts its own real Fastify plugin in the same application\n  ---\n  duration_ms: 15.8649\n  type: 'test'\n  ...\n# Subtest: business routes are absent rather than fake successful implementations\nok 3 - business routes are absent rather than fake successful implementations\n  ---\n  duration_ms: 7.9859\n  type: 'test'\n  ...\n# Subtest: application instances have isolated plugin state and lifecycle hooks\nok 4 - application instances have isolated plugin state and lifecycle hooks\n  ---\n  duration_ms: 11.7527\n  type: 'test'\n  ...\n# Subtest: listener can start on loopback and close without hard-coded test ports\nok 5 - listener can start on loopback and close without hard-coded test ports\n  ---\n  duration_ms: 58.2783\n  type: 'test'\n  ...\n# Subtest: configuration has local defaults and validates explicit environment input\nok 6 - configuration has local defaults and validates explicit environment input\n  ---\n  duration_ms: 0.8824\n  type: 'test'\n  ...\n# Subtest: executable rejects invalid configuration with a nonzero exit\nok 7 - executable rejects invalid configuration with a nonzero exit\n  ---\n  duration_ms: 299.6072\n  type: 'test'\n  ...\n# Subtest: support bootstrap owns cleanup and isolates plugin state between apps\n    # Subtest: first app registers an instance-only route and closes\n    ok 1 - first app registers an instance-only route and closes\n      ---\n      duration_ms: 222.819\n      type: 'test'\n      ...\n    1..1\nok 8 - support bootstrap owns cleanup and isolates plugin state between apps\n  ---\n  duration_ms: 231.379\n  type: 'test'\n  ...\n1..8\n# tests 9\n# suites 0\n# pass 9\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 1165.1346\n",
+    "stderr": ""
+  },
+  {
+    "command": "git -c safe.directory=D:/Workspace/Web/leetkob clone --no-hardlinks --branch test/t04-quality-harness D:/Workspace/Web/leetkob D:/Workspace/Web/leetkob-t04-clean-20261108",
+    "cwd": "D:/Workspace/Web",
+    "start": "2026-11-07T18:05:58.503Z",
+    "end": "2026-11-07T18:05:59.030Z",
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": "Cloning into 'D:/Workspace/Web/leetkob-t04-clean-20261108'...\ndone.\n"
+  },
+  {
+    "command": "npm ci --ignore-scripts",
+    "cwd": "D:/Workspace/Web/leetkob-t04-clean-20261108",
+    "start": "2026-11-07T18:05:59.896Z",
+    "end": "2026-11-07T18:06:07.927Z",
+    "exitCode": 0,
+    "stdout": "\nadded 58 packages, and audited 59 packages in 7s\n\n21 packages are looking for funding\n  run `npm fund` for details\n\nfound 0 vulnerabilities\n",
+    "stderr": ""
+  },
+  {
+    "command": "npm run lint",
+    "cwd": "D:/Workspace/Web/leetkob-t04-clean-20261108",
+    "start": "2026-11-07T18:06:07.928Z",
+    "end": "2026-11-07T18:06:08.816Z",
+    "exitCode": 0,
+    "stdout": "\n> leetkob@0.1.0 lint\n> oxlint --deny-warnings src tests scripts\n\n",
+    "stderr": ""
+  },
+  {
+    "command": "npm run format-check",
+    "cwd": "D:/Workspace/Web/leetkob-t04-clean-20261108",
+    "start": "2026-11-07T18:06:08.817Z",
+    "end": "2026-11-07T18:06:10.212Z",
+    "exitCode": 0,
+    "stdout": "\n> leetkob@0.1.0 format-check\n> prettier --check .\n\nChecking formatting...\nAll matched files use Prettier code style!\n",
+    "stderr": ""
+  },
+  {
+    "command": "npm run type-check",
+    "cwd": "D:/Workspace/Web/leetkob-t04-clean-20261108",
+    "start": "2026-11-07T18:06:10.213Z",
+    "end": "2026-11-07T18:06:11.460Z",
+    "exitCode": 0,
+    "stdout": "\n> leetkob@0.1.0 type-check\n> tsc -p tsconfig.check.json\n\n",
+    "stderr": ""
+  },
+  {
+    "command": "npm test",
+    "cwd": "D:/Workspace/Web/leetkob-t04-clean-20261108",
+    "start": "2026-11-07T18:06:11.462Z",
+    "end": "2026-11-07T18:06:14.811Z",
+    "exitCode": 0,
+    "stdout": "\n> leetkob@0.1.0 test\n> npm run build && node scripts/test.mjs\n\n\n> leetkob@0.1.0 build\n> tsc -p tsconfig.json\n\nTAP version 13\n# Subtest: factory does not listen; health works through the real HTTP injection boundary\nok 1 - factory does not listen; health works through the real HTTP injection boundary\n  ---\n  duration_ms: 562.3721\n  type: 'test'\n  ...\n# Subtest: each module accepts its own real Fastify plugin in the same application\nok 2 - each module accepts its own real Fastify plugin in the same application\n  ---\n  duration_ms: 12.595\n  type: 'test'\n  ...\n# Subtest: business routes are absent rather than fake successful implementations\nok 3 - business routes are absent rather than fake successful implementations\n  ---\n  duration_ms: 10.5534\n  type: 'test'\n  ...\n# Subtest: application instances have isolated plugin state and lifecycle hooks\nok 4 - application instances have isolated plugin state and lifecycle hooks\n  ---\n  duration_ms: 12.7704\n  type: 'test'\n  ...\n# Subtest: listener can start on loopback and close without hard-coded test ports\nok 5 - listener can start on loopback and close without hard-coded test ports\n  ---\n  duration_ms: 59.6413\n  type: 'test'\n  ...\n# Subtest: configuration has local defaults and validates explicit environment input\nok 6 - configuration has local defaults and validates explicit environment input\n  ---\n  duration_ms: 1.1147\n  type: 'test'\n  ...\n# Subtest: executable rejects invalid configuration with a nonzero exit\nok 7 - executable rejects invalid configuration with a nonzero exit\n  ---\n  duration_ms: 264.9233\n  type: 'test'\n  ...\n# Subtest: support bootstrap owns cleanup and isolates plugin state between apps\n    # Subtest: first app registers an instance-only route and closes\n    ok 1 - first app registers an instance-only route and closes\n      ---\n      duration_ms: 518.5104\n      type: 'test'\n      ...\n    1..1\nok 8 - support bootstrap owns cleanup and isolates plugin state between apps\n  ---\n  duration_ms: 525.4695\n  type: 'test'\n  ...\n1..8\n# tests 9\n# suites 0\n# pass 9\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 1431.2898\n",
+    "stderr": ""
+  },
+  {
+    "command": "npm run lint",
+    "cwd": "D:/Workspace/Web/leetkob-t04-clean-20261108",
+    "start": "2026-11-07T18:06:14.813Z",
+    "end": "2026-11-07T18:06:15.699Z",
+    "exitCode": 1,
+    "stdout": "\n> leetkob@0.1.0 lint\n> oxlint --deny-warnings src tests scripts\n\nsrc/t04-negative.ts:1:1: error eslint(no-debugger): `debugger` statement is not allowed help: Remove the debugger statement\n",
+    "stderr": ""
+  },
+  {
+    "command": "npm run format-check",
+    "cwd": "D:/Workspace/Web/leetkob-t04-clean-20261108",
+    "start": "2026-11-07T18:06:15.700Z",
+    "end": "2026-11-07T18:06:16.857Z",
+    "exitCode": 1,
+    "stdout": "\n> leetkob@0.1.0 format-check\n> prettier --check .\n\nChecking formatting...\n",
+    "stderr": "[warn] src/t04-format.ts\n[warn] Code style issues found in the above file. Run Prettier with --write to fix.\n"
+  },
+  {
+    "command": "npm run type-check",
+    "cwd": "D:/Workspace/Web/leetkob-t04-clean-20261108",
+    "start": "2026-11-07T18:06:16.859Z",
+    "end": "2026-11-07T18:06:17.873Z",
+    "exitCode": 1,
+    "stdout": "\n> leetkob@0.1.0 type-check\n> tsc -p tsconfig.check.json\n\nsrc/t04-negative.ts(1,14): error TS2322: Type 'number' is not assignable to type 'string'.\n",
+    "stderr": ""
+  },
+  {
+    "command": "npm test",
+    "cwd": "D:/Workspace/Web/leetkob-t04-clean-20261108",
+    "start": "2026-11-07T18:06:17.874Z",
+    "end": "2026-11-07T18:06:20.836Z",
+    "exitCode": 1,
+    "stdout": "\n> leetkob@0.1.0 test\n> npm run build && node scripts/test.mjs\n\n\n> leetkob@0.1.0 build\n> tsc -p tsconfig.json\n\nTAP version 13\n# Subtest: contract discovery probe\nnot ok 1 - contract discovery probe\n  ---\n  duration_ms: 4.5232\n  type: 'test'\n  location: 'D:\\\\Workspace\\\\Web\\\\leetkob-t04-clean-20261108\\\\tests\\\\contract\\\\t04-negative.test.ts:1:68'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    1 !== 2\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 2\n  actual: 1\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (D:\\Workspace\\Web\\leetkob-t04-clean-20261108\\tests\\contract\\t04-negative.test.ts:1:115)\n    Test.runInAsyncScope (node:async_hooks:227:14)\n    Test.run (node:internal/test_runner/test:1402:25)\n    Test.start (node:internal/test_runner/test:1262:17)\n    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)\n  ...\n# Subtest: factory does not listen; health works through the real HTTP injection boundary\nok 2 - factory does not listen; health works through the real HTTP injection boundary\n  ---\n  duration_ms: 234.5963\n  type: 'test'\n  ...\n# Subtest: each module accepts its own real Fastify plugin in the same application\nok 3 - each module accepts its own real Fastify plugin in the same application\n  ---\n  duration_ms: 16.0919\n  type: 'test'\n  ...\n# Subtest: business routes are absent rather than fake successful implementations\nok 4 - business routes are absent rather than fake successful implementations\n  ---\n  duration_ms: 9.1211\n  type: 'test'\n  ...\n# Subtest: application instances have isolated plugin state and lifecycle hooks\nok 5 - application instances have isolated plugin state and lifecycle hooks\n  ---\n  duration_ms: 10.0642\n  type: 'test'\n  ...\n# Subtest: listener can start on loopback and close without hard-coded test ports\nok 6 - listener can start on loopback and close without hard-coded test ports\n  ---\n  duration_ms: 58.0503\n  type: 'test'\n  ...\n# Subtest: configuration has local defaults and validates explicit environment input\nok 7 - configuration has local defaults and validates explicit environment input\n  ---\n  duration_ms: 1.971\n  type: 'test'\n  ...\n# Subtest: executable rejects invalid configuration with a nonzero exit\nok 8 - executable rejects invalid configuration with a nonzero exit\n  ---\n  duration_ms: 281.421\n  type: 'test'\n  ...\n# Subtest: support bootstrap owns cleanup and isolates plugin state between apps\n    # Subtest: first app registers an instance-only route and closes\n    ok 1 - first app registers an instance-only route and closes\n      ---\n      duration_ms: 226.523\n      type: 'test'\n      ...\n    1..1\nok 9 - support bootstrap owns cleanup and isolates plugin state between apps\n  ---\n  duration_ms: 242.0418\n  type: 'test'\n  ...\n1..9\n# tests 10\n# suites 0\n# pass 9\n# fail 1\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 1204.8824\n",
+    "stderr": ""
+  },
+  {
+    "command": "npm test",
+    "cwd": "D:/Workspace/Web/leetkob-t04-clean-20261108",
+    "start": "2026-11-07T18:06:20.839Z",
+    "end": "2026-11-07T18:06:22.493Z",
+    "exitCode": 1,
+    "stdout": "\n> leetkob@0.1.0 test\n> npm run build && node scripts/test.mjs\n\n\n> leetkob@0.1.0 build\n> tsc -p tsconfig.json\n\n",
+    "stderr": "No test files discovered under tests/**/*.test.{mjs,js,ts}\n"
+  },
+  {
+    "command": "npm run lint",
+    "cwd": "D:/Workspace/Web/leetkob-t04-clean-20261108",
+    "start": "2026-11-07T18:06:22.494Z",
+    "end": "2026-11-07T18:06:23.237Z",
+    "exitCode": 0,
+    "stdout": "\n> leetkob@0.1.0 lint\n> oxlint --deny-warnings src tests scripts\n\n",
+    "stderr": ""
+  },
+  {
+    "command": "npm run format-check",
+    "cwd": "D:/Workspace/Web/leetkob-t04-clean-20261108",
+    "start": "2026-11-07T18:06:23.238Z",
+    "end": "2026-11-07T18:06:24.351Z",
+    "exitCode": 0,
+    "stdout": "\n> leetkob@0.1.0 format-check\n> prettier --check .\n\nChecking formatting...\nAll matched files use Prettier code style!\n",
+    "stderr": ""
+  },
+  {
+    "command": "npm run type-check",
+    "cwd": "D:/Workspace/Web/leetkob-t04-clean-20261108",
+    "start": "2026-11-07T18:06:24.352Z",
+    "end": "2026-11-07T18:06:25.367Z",
+    "exitCode": 0,
+    "stdout": "\n> leetkob@0.1.0 type-check\n> tsc -p tsconfig.check.json\n\n",
+    "stderr": ""
+  },
+  {
+    "command": "npm test",
+    "cwd": "D:/Workspace/Web/leetkob-t04-clean-20261108",
+    "start": "2026-11-07T18:06:25.368Z",
+    "end": "2026-11-07T18:06:28.218Z",
+    "exitCode": 0,
+    "stdout": "\n> leetkob@0.1.0 test\n> npm run build && node scripts/test.mjs\n\n\n> leetkob@0.1.0 build\n> tsc -p tsconfig.json\n\nTAP version 13\n# Subtest: factory does not listen; health works through the real HTTP injection boundary\nok 1 - factory does not listen; health works through the real HTTP injection boundary\n  ---\n  duration_ms: 244.6418\n  type: 'test'\n  ...\n# Subtest: each module accepts its own real Fastify plugin in the same application\nok 2 - each module accepts its own real Fastify plugin in the same application\n  ---\n  duration_ms: 18.3494\n  type: 'test'\n  ...\n# Subtest: business routes are absent rather than fake successful implementations\nok 3 - business routes are absent rather than fake successful implementations\n  ---\n  duration_ms: 5.7487\n  type: 'test'\n  ...\n# Subtest: application instances have isolated plugin state and lifecycle hooks\nok 4 - application instances have isolated plugin state and lifecycle hooks\n  ---\n  duration_ms: 9.4279\n  type: 'test'\n  ...\n# Subtest: listener can start on loopback and close without hard-coded test ports\nok 5 - listener can start on loopback and close without hard-coded test ports\n  ---\n  duration_ms: 53.2083\n  type: 'test'\n  ...\n# Subtest: configuration has local defaults and validates explicit environment input\nok 6 - configuration has local defaults and validates explicit environment input\n  ---\n  duration_ms: 1.4606\n  type: 'test'\n  ...\n# Subtest: executable rejects invalid configuration with a nonzero exit\nok 7 - executable rejects invalid configuration with a nonzero exit\n  ---\n  duration_ms: 280.8829\n  type: 'test'\n  ...\n# Subtest: support bootstrap owns cleanup and isolates plugin state between apps\n    # Subtest: first app registers an instance-only route and closes\n    ok 1 - first app registers an instance-only route and closes\n      ---\n      duration_ms: 232.3508\n      type: 'test'\n      ...\n    1..1\nok 8 - support bootstrap owns cleanup and isolates plugin state between apps\n  ---\n  duration_ms: 246.7747\n  type: 'test'\n  ...\n1..8\n# tests 9\n# suites 0\n# pass 9\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 1116.4399\n",
+    "stderr": ""
+  },
+  {
+    "command": "git -c safe.directory=D:/Workspace/Web/leetkob diff --check",
+    "cwd": "D:/Workspace/Web/leetkob",
+    "start": "2026-11-07T18:06:28.219Z",
+    "end": "2026-11-07T18:06:28.337Z",
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": ""
+  }
+]
