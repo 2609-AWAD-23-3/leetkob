@@ -19,14 +19,26 @@ function emptySeed(): SeedState {
 }
 
 function requireId(value: unknown, field: string): asserts value is string {
-  if (typeof value !== 'string' || value.length === 0 || value.trim() !== value) {
-    throw new TypeError(`${field} must be a nonempty ID without surrounding whitespace`);
+  if (
+    typeof value !== 'string' ||
+    value.length === 0 ||
+    value.trim() !== value
+  ) {
+    throw new TypeError(
+      `${field} must be a nonempty ID without surrounding whitespace`,
+    );
   }
 }
 
-function requireTimestamp(value: unknown, field: string): asserts value is string {
-  if (typeof value !== 'string' || !Number.isFinite(Date.parse(value)) ||
-      new Date(value).toISOString() !== value) {
+function requireTimestamp(
+  value: unknown,
+  field: string,
+): asserts value is string {
+  if (
+    typeof value !== 'string' ||
+    !Number.isFinite(Date.parse(value)) ||
+    new Date(value).toISOString() !== value
+  ) {
     throw new TypeError(`${field} must be a canonical UTC ISO timestamp`);
   }
 }
@@ -49,23 +61,40 @@ function buildState(seed: SeedState): State {
   const reviewIds = new Set<string>();
   const reviewPairs = new Set<string>();
 
-  for (const field of ['labs', 'memberships', 'queueItems', 'publications'] as const) {
-    if (!Array.isArray(seed[field])) throw new TypeError(`seed.${field} must be an array`);
+  for (const field of [
+    'labs',
+    'memberships',
+    'queueItems',
+    'publications',
+  ] as const) {
+    if (!Array.isArray(seed[field]))
+      throw new TypeError(`seed.${field} must be an array`);
   }
   for (const lab of seed.labs) {
     requireId(lab.id, 'lab.id');
     requireId(lab.classId, 'lab.classId');
     requireTimestamp(lab.deadline, 'lab.deadline');
     if (labs.has(lab.id)) throw new TypeError('Duplicate lab.id');
-    labs.set(lab.id, { id: lab.id, classId: lab.classId, deadline: lab.deadline });
+    labs.set(lab.id, {
+      id: lab.id,
+      classId: lab.classId,
+      deadline: lab.deadline,
+    });
     reviews.set(lab.id, {
-      queueItemCount: 0, pendingCount: 0, passDecisionCount: 0, violationDecisionCount: 0,
+      queueItemCount: 0,
+      pendingCount: 0,
+      passDecisionCount: 0,
+      violationDecisionCount: 0,
     });
   }
   for (const membership of seed.memberships) {
     requireId(membership.taId, 'membership.taId');
     requireId(membership.classId, 'membership.classId');
-    unique(memberships, tuple(membership.taId, membership.classId), 'membership');
+    unique(
+      memberships,
+      tuple(membership.taId, membership.classId),
+      'membership',
+    );
   }
   for (const item of seed.queueItems) {
     requireId(item.id, 'queueItem.id');
@@ -75,11 +104,19 @@ function buildState(seed: SeedState): State {
     const review = reviews.get(item.labId);
     if (!review) throw new TypeError('queueItem references an unknown lab');
     unique(reviewIds, item.id, 'queueItem.id');
-    unique(reviewPairs, tuple(item.labId, item.submissionId, item.constraintId), 'review pair');
+    unique(
+      reviewPairs,
+      tuple(item.labId, item.submissionId, item.constraintId),
+      'review pair',
+    );
     if (!['pass', 'violation', 'unsure'].includes(item.verdict)) {
       throw new TypeError('queueItem.verdict is invalid');
     }
-    if (item.taDecision !== null && item.taDecision !== 'pass' && item.taDecision !== 'violation') {
+    if (
+      item.taDecision !== null &&
+      item.taDecision !== 'pass' &&
+      item.taDecision !== 'violation'
+    ) {
       throw new TypeError('queueItem.taDecision is invalid');
     }
     review.queueItemCount += 1;
@@ -93,16 +130,22 @@ function buildState(seed: SeedState): State {
     requireTimestamp(publication.publishedAt, 'publication.publishedAt');
     const lab = labs.get(publication.labId);
     const review = reviews.get(publication.labId);
-    if (!lab || !review) throw new TypeError('publication references an unknown lab');
-    if (publications.has(publication.labId)) throw new TypeError('Duplicate publication.labId');
+    if (!lab || !review)
+      throw new TypeError('publication references an unknown lab');
+    if (publications.has(publication.labId))
+      throw new TypeError('Duplicate publication.labId');
     if (Date.parse(publication.publishedAt) < Date.parse(lab.deadline)) {
       throw new TypeError('publication cannot precede the deadline');
     }
-    if (review.pendingCount !== 0) throw new TypeError('publication cannot have pending reviews');
+    if (review.pendingCount !== 0)
+      throw new TypeError('publication cannot have pending reviews');
     const summary = publication.summary;
-    if (!summary || summary.queueItemCount !== review.queueItemCount ||
-        summary.passDecisionCount !== review.passDecisionCount ||
-        summary.violationDecisionCount !== review.violationDecisionCount) {
+    if (
+      !summary ||
+      summary.queueItemCount !== review.queueItemCount ||
+      summary.passDecisionCount !== review.passDecisionCount ||
+      summary.violationDecisionCount !== review.violationDecisionCount
+    ) {
       throw new TypeError('publication.summary must match the resolved queue');
     }
     publications.set(publication.labId, {
@@ -150,7 +193,11 @@ export function createInMemoryPublishStore(
         const lab = state.labs.get(labId);
         if (!lab) return { kind: 'lab_not_found' };
         const existing = state.publications.get(labId);
-        if (existing) return { kind: 'already_published', publication: copyPublication(existing) };
+        if (existing)
+          return {
+            kind: 'already_published',
+            publication: copyPublication(existing),
+          };
         requireId(publishedBy, 'publishedBy');
 
         // Read the trusted clock once before the deadline/pending checks and write.
@@ -168,7 +215,9 @@ export function createInMemoryPublishStore(
           return { kind: 'pending_reviews', pendingCount: review.pendingCount };
         }
         const publication: Publication = {
-          labId, publishedBy, publishedAt: timestamp,
+          labId,
+          publishedBy,
+          publishedAt: timestamp,
           summary: {
             queueItemCount: review.queueItemCount,
             passDecisionCount: review.passDecisionCount,

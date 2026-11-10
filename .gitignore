@@ -12,10 +12,21 @@
 /PA#2 rubric — Harness and quality gate.pdf
 /PA#2 rubric — Harness and quality gate_vn.md
 
-# T01 runtime/build hygiene; T05 owns the full security/env policy
+# Runtime/build và environment hygiene (T01/T05)
 /node_modules/
 /dist/
 *.tsbuildinfo
 .env
 .env.*
 !.env.example
+
+# Credential và private key local; file giả phục vụ test cần review trước khi track
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.credentials.json
+/.secrets/
+/secrets/
+/.npmrc
