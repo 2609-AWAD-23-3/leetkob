@@ -1,9 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {
-  createPublishApp,
-  createPublishModule,
-} from '../../dist/modules/publish/index.js';
+import { createPublishApp } from '../../dist/modules/publish/index.js';
 import {
   createPublishFixtureTokens,
   createTokenIdentityResolver,
@@ -278,7 +275,8 @@ test('POST /labs/{labId}/publish — 403 forbidden for student, admin, or cross-
     type: 'https://leetkob.example/problems/forbidden',
     title: 'Forbidden',
     status: 403,
-    detail: 'The authenticated TA is not assigned to the class that owns this lab.',
+    detail:
+      'The authenticated TA is not assigned to the class that owns this lab.',
   });
 });
 
@@ -438,7 +436,10 @@ test('POST /labs/{labId}/publish — client cannot spoof caller identity, role, 
   });
   // Server refuses based strictly on the trusted Bearer token principal (role: student)
   assert.equal(spoofAttempt.statusCode, 403);
-  assert.deepEqual(spoofAttempt.json().type, 'https://leetkob.example/problems/forbidden');
+  assert.deepEqual(
+    spoofAttempt.json().type,
+    'https://leetkob.example/problems/forbidden',
+  );
 });
 
 test('POST /labs/{labId}/publish — empty request body or omitted body succeeds', async (t) => {
@@ -453,4 +454,142 @@ test('POST /labs/{labId}/publish — empty request body or omitted body succeeds
   });
   assert.equal(resOmitted.statusCode, 200);
   assert.equal(resOmitted.json().status, 'published');
+});
+
+test('POST /labs/{labId}/publish — 413 payload-too-large when body exceeds 64 KB limit', async (t) => {
+  const { app } = createHarness({ scenario: 'resolved' });
+  t.after(() => app.close());
+
+  const largePayload = JSON.stringify({ padding: 'x'.repeat(70000) });
+  const res = await app.inject({
+    method: 'POST',
+    url: '/labs/lab-1/publish',
+    headers: {
+      authorization: 'Bearer token-ta-one',
+      'content-type': 'application/json',
+    },
+    payload: largePayload,
+  });
+
+  assert.equal(res.statusCode, 413);
+  assert.equal(res.headers['content-type'], PROBLEM_CONTENT_TYPE);
+  assert.deepEqual(res.json(), {
+    type: 'https://leetkob.example/problems/payload-too-large',
+    title: 'Payload too large',
+    status: 413,
+    detail: 'Request payload exceeds the configured limit.',
+  });
+});
+
+test('POST /labs/{labId}/publish — 415 unsupported-media-type when content-type is unsupported', async (t) => {
+  const { app } = createHarness({ scenario: 'resolved' });
+  t.after(() => app.close());
+
+  const res = await app.inject({
+    method: 'POST',
+    url: '/labs/lab-1/publish',
+    headers: {
+      authorization: 'Bearer token-ta-one',
+      'content-type': 'application/xml',
+    },
+    payload: '<publish />',
+  });
+
+  assert.equal(res.statusCode, 415);
+  assert.equal(res.headers['content-type'], PROBLEM_CONTENT_TYPE);
+  assert.deepEqual(res.json(), {
+    type: 'https://leetkob.example/problems/unsupported-media-type',
+    title: 'Unsupported media type',
+    status: 415,
+    detail: 'The request payload content-type is unsupported.',
+  });
+});
+
+test('POST /labs/{labId}/publish — precedence: malformed JSON body is rejected with 400 invalid-json before authentication', async (t) => {
+  const { app } = createHarness({ scenario: 'resolved' });
+  t.after(() => app.close());
+
+  // Request with NO Authorization header and malformed JSON body
+  const res = await app.inject({
+    method: 'POST',
+    url: '/labs/lab-1/publish',
+    headers: {
+      'content-type': 'application/json',
+    },
+    payload: '{"broken": json',
+  });
+
+  // Parser runs before route auth handler -> 400 invalid-json
+  assert.equal(res.statusCode, 400);
+  assert.equal(res.headers['content-type'], PROBLEM_CONTENT_TYPE);
+  assert.equal(res.headers['www-authenticate'], undefined);
+  assert.deepEqual(res.json(), {
+    type: 'https://leetkob.example/problems/invalid-json',
+    title: 'Malformed JSON',
+    status: 400,
+    detail: 'The request body is not valid JSON.',
+  });
+});
+
+test('POST /labs/{labId}/publish — precedence: caller role check precedes lab lookup (anti-enumeration defense)', async (t) => {
+  const { app } = createHarness({ scenario: 'resolved' });
+  t.after(() => app.close());
+
+  // 1. Student calls with non-existent lab -> 403 forbidden (NOT 404)
+  const studentRes = await app.inject({
+    method: 'POST',
+    url: '/labs/non-existent-lab/publish',
+    headers: { authorization: 'Bearer token-student-one' },
+  });
+  assert.equal(studentRes.statusCode, 403);
+  assert.equal(
+    studentRes.json().type,
+    'https://leetkob.example/problems/forbidden',
+  );
+  assert.equal(
+    studentRes.json().detail,
+    'Only an authenticated TA may publish lab grades.',
+  );
+
+  // 2. Admin calls with non-existent lab -> 403 forbidden (NOT 404)
+  const adminRes = await app.inject({
+    method: 'POST',
+    url: '/labs/non-existent-lab/publish',
+    headers: { authorization: 'Bearer token-admin-one' },
+  });
+  assert.equal(adminRes.statusCode, 403);
+  assert.equal(
+    adminRes.json().type,
+    'https://leetkob.example/problems/forbidden',
+  );
+  assert.equal(
+    adminRes.json().detail,
+    'Only an authenticated TA may publish lab grades.',
+  );
+
+  // 3. Authenticated TA calls with non-existent lab -> 404 not-found
+  const taRes = await app.inject({
+    method: 'POST',
+    url: '/labs/non-existent-lab/publish',
+    headers: { authorization: 'Bearer token-ta-one' },
+  });
+  assert.equal(taRes.statusCode, 404);
+  assert.equal(taRes.json().type, 'https://leetkob.example/problems/not-found');
+  assert.equal(taRes.json().detail, 'The requested lab was not found.');
+
+  // 4. Authenticated TA calls with existent lab belonging to unassigned class -> 403 forbidden (class_membership)
+  const unassignedTaRes = await app.inject({
+    method: 'POST',
+    url: '/labs/lab-1/publish',
+    headers: { authorization: 'Bearer token-ta-other' },
+  });
+  assert.equal(unassignedTaRes.statusCode, 403);
+  assert.equal(
+    unassignedTaRes.json().type,
+    'https://leetkob.example/problems/forbidden',
+  );
+  assert.equal(
+    unassignedTaRes.json().detail,
+    'The authenticated TA is not assigned to the class that owns this lab.',
+  );
 });

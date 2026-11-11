@@ -21,6 +21,7 @@ This document specifies the contract for publishing lab grades after TA constrai
   ```
   The server never reads `userId`, `role`, or `classId` from the request body or query string to establish caller identity.
 - **Request body:** The request body is optional. When provided, it must be a valid JSON object (`{}`). Client-supplied body fields (such as `role`, `userId`, `classId`, `force`, or `publishedAt`) are ignored and never override authentication, ownership checks, or publication prerequisites. Non-object payloads (arrays, primitives) are rejected.
+- **Request body size limit:** The maximum allowed request payload size is 65,536 bytes (64 KB). Any payload exceeding this limit is rejected by the HTTP body parser with `413 payload-too-large`.
 - **Unknown fields policy:** Clients ignore response fields they do not recognize. The server ignores unrecognized top-level JSON body fields after validating object syntax.
 - **Storage and concurrency bounds:** In the PA02 checkpoint, the backend utilizes an in-memory data store (`PublishStore`). Storage is ephemeral and resets on process restart. Concurrency guarantees (atomic check-and-publish and repeat-call safety) apply within a single JavaScript thread/process; distributed locks or multi-process synchronization are outside the scope of PA02.
 
@@ -60,6 +61,8 @@ Content-Type: application/problem+json; charset=utf-8
 | Slug | Status | Title | Trigger |
 | --- | ---: | --- | --- |
 | `unauthenticated` | 401 | Authentication required | Request is missing the `Authorization` header, uses an unsupported scheme, or provides an unrecognized token. Response includes `WWW-Authenticate: Bearer` challenge header per RFC 9110 section 11.6.1. |
+| `payload-too-large` | 413 | Payload too large | Request body size exceeds the configured maximum limit of 65,536 bytes (64 KB). |
+| `unsupported-media-type` | 415 | Unsupported media type | Request payload uses an unsupported media type (content-type other than `application/json`). |
 | `invalid-json` | 400 | Malformed JSON | Request includes a body that cannot be parsed as valid JSON, or contains forbidden prototype pollution keys (`__proto__`, `constructor.prototype`). |
 | `validation` | 400 | Invalid request | Path parameter `labId` violates `^[a-zA-Z0-9_-]{1,64}$`, or request body is valid JSON but not an object (e.g. an array or primitive). Member `errors` describes each issue. |
 | `not-found` | 404 | Not found | No lab exists with identifier `labId` in the store. |
@@ -134,18 +137,23 @@ Optional JSON object (`{}`). When omitted or empty (`{}`), publication proceeds 
 
 The server processes the request following this exact sequence and halts at the first failing condition:
 
-1. **Authentication:** The `Authorization` header is validated. Missing, malformed, or invalid tokens yield `401 unauthenticated` with `WWW-Authenticate: Bearer`.
-2. **Input syntax validation:**
-   - If a request body is present and not valid JSON, or contains prototype keys (`__proto__`), return `400 invalid-json`.
-   - If `labId` does not match `^[a-zA-Z0-9_-]{1,64}$`, or if a parsed JSON body is not a JSON object, return `400 validation` with details in `errors`.
-3. **Lab existence:** The lab `{labId}` is looked up in the store. If not found, return `404 not-found`.
-4. **Role and class ownership:**
-   - The authenticated caller must have `role === "TA"`; otherwise return `403 forbidden`.
-   - The caller must be assigned to `lab.classId` (`store.isTaAssignedToClass(principal.id, lab.classId)`); otherwise return `403 forbidden`.
-5. **Repeat-call check (already published):** If the lab is already in `published` status, return `200 OK` with `Idempotent-Replayed: true` and the stored `LabPublication` resource.
-6. **Deadline gate:** If current server time is before `lab.deadline` (`now < lab.deadline`), return `409 before-deadline`.
-7. **Pending-reviews gate:** If `review.pendingCount > 0`, return `409 pending-reviews` with `pendingCount: review.pendingCount`.
-8. **State transition:** The lab transitions from unpublished to `published`. The store records `publishedAt` (from server clock) and `publishedBy` (caller's trusted principal ID), freezes summary counts, and returns `200 OK` with `Content-Type: application/json; charset=utf-8` and the `LabPublication` body.
+1. **HTTP framing and payload syntax (Transport / Parser layer):**
+   - If the request body size exceeds 65,536 bytes (64 KB), return `413 payload-too-large`.
+   - If the request body is sent with an unsupported `Content-Type` (e.g. `application/xml`), return `415 unsupported-media-type`.
+   - If the request payload is not valid JSON or contains forbidden prototype pollution keys (`__proto__`, `constructor.prototype`), return `400 invalid-json`.
+   *Note: As an HTTP transport-level concern, Fastify's body framing and content-type parsing run before route-level handlers. A malformed or oversized payload is rejected with `400`, `413`, or `415` even if the `Authorization` header is absent.*
+2. **Authentication:** The `Authorization` header is validated via trusted Bearer tokens. Missing, malformed, or unrecognized credentials yield `401 unauthenticated` with `WWW-Authenticate: Bearer`.
+3. **Input syntax validation:**
+   - If `labId` does not match `^[a-zA-Z0-9_-]{1,64}$`, or if a parsed JSON body is not a JSON object (e.g. an array or primitive), return `400 validation` with details in `errors`.
+4. **Caller role (Anti-enumeration defense):**
+   - The authenticated caller must have `role === "TA"`; if the caller is an unprivileged role (`student` or `admin`), return `403 forbidden` immediately.
+   *Note: Role verification strictly precedes lab lookup in the store to prevent unprivileged users from enumerating whether arbitrary lab IDs exist.*
+5. **Lab existence:** The lab `{labId}` is looked up in the store. If no lab exists with this identifier, return `404 not-found`.
+6. **Class ownership:** The authenticated TA must be assigned to the class that owns the lab (`store.isTaAssignedToClass(principal.id, lab.classId)`); otherwise return `403 forbidden`.
+7. **Repeat-call check (already published):** If the lab is already in `published` status, return `200 OK` with `Idempotent-Replayed: true` and the stored `LabPublication` resource.
+8. **Deadline gate:** If current server time is strictly before the lab's deadline (`now < lab.deadline`), return `409 before-deadline`.
+9. **Pending-reviews gate:** If `review.pendingCount > 0`, return `409 pending-reviews` with `pendingCount: review.pendingCount`.
+10. **State transition:** The lab transitions from unpublished to `published`. The store records `publishedAt` (from server clock) and `publishedBy` (caller's trusted principal ID), freezes summary counts, and returns `200 OK` with `Content-Type: application/json; charset=utf-8` and the `LabPublication` body.
 
 #### Idempotency and repeat safety
 

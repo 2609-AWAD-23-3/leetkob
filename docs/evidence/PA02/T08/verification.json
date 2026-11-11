@@ -10,26 +10,40 @@
     "node": "v24.22.1",
     "npm": "11.19.1"
   },
-  "verifiedAt": "2026-11-10T06:30:00.000Z",
+  "verifiedAt": "2026-11-11T04:45:00.000Z",
   "records": [
     {
-      "command": "npm run build",
+      "command": "npm run lint",
       "exitCode": 0,
-      "stdout": "\n> leetkob@0.1.0 build\n> tsc -p tsconfig.json\n\n",
+      "stdout": "\n> leetkob@0.1.0 lint\n> oxlint --deny-warnings src tests scripts\n\nFound 0 warnings and 0 errors.\nFinished in 9ms on 22 files with 96 rules using 16 threads.\n",
       "stderr": ""
     },
     {
-      "command": "node --test tests/auth/publish-auth-errors.test.mjs tests/data/publish-store.test.mjs tests/smoke/app.test.mjs tests/contract/publish.test.mjs",
+      "command": "npm run format-check",
+      "exitCode": 0,
+      "stdout": "\n> leetkob@0.1.0 format-check\n> prettier --check .\n\nChecking formatting...\nAll matched files use Prettier code style!\n",
+      "stderr": ""
+    },
+    {
+      "command": "npm run type-check",
+      "exitCode": 0,
+      "stdout": "\n> leetkob@0.1.0 type-check\n> tsc -p tsconfig.check.json\n\n",
+      "stderr": ""
+    },
+    {
+      "command": "npm test",
       "exitCode": 0,
       "summary": {
-        "tests": 76,
-        "pass": 76,
+        "tests": 82,
+        "pass": 82,
         "fail": 0,
         "suites": [
           { "name": "tests/auth/publish-auth-errors.test.mjs", "tests": 18, "pass": 18 },
-          { "name": "tests/contract/publish.test.mjs", "tests": 11, "pass": 11 },
+          { "name": "tests/contract/publish.test.mjs", "tests": 15, "pass": 15 },
           { "name": "tests/data/publish-store.test.mjs", "tests": 40, "pass": 40 },
-          { "name": "tests/smoke/app.test.mjs", "tests": 7, "pass": 7 }
+          { "name": "tests/smoke/app.test.mjs", "tests": 7, "pass": 7 },
+          { "name": "tests/smoke/config.test.mjs", "tests": 1, "pass": 1 },
+          { "name": "tests/smoke/bootstrap.test.mjs", "tests": 1, "pass": 1 }
         ]
       }
     },
@@ -44,7 +58,8 @@
     "In-memory store only; resets on server restart",
     "No external judge, queue, database, or LLM pipeline",
     "Single-process concurrency guarantees within Node.js event loop",
-    "Deferred endpoints (submissions, review-queue) remain unimplemented in PA02"
+    "Deferred endpoints (submissions, review-queue) remain unimplemented in PA02",
+    "Request payload bounded to 65,536 bytes (64 KB)"
   ],
   "invariantHandover": {
     "targetTask": "T10",

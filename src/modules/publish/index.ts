@@ -34,6 +34,7 @@ export function createPublishModule(
       Params: { labId?: string };
     }>(
       '/labs/:labId/publish',
+      { bodyLimit: 65536 },
       async (
         request: FastifyRequest<{ Params: { labId?: string } }>,
         reply: FastifyReply,
@@ -58,10 +59,7 @@ export function createPublishModule(
           body: request.body,
         });
         if (validationIssues.length > 0) {
-          return sendProblem(
-            reply,
-            createValidationProblem(validationIssues),
-          );
+          return sendProblem(reply, createValidationProblem(validationIssues));
         }
 
         // Precedence steps 3 & 4: Lab existence, Role, Class ownership
@@ -93,10 +91,7 @@ export function createPublishModule(
           publishResult.kind === 'pending_reviews' ||
           publishResult.kind === 'lab_not_found'
         ) {
-          return sendProblem(
-            reply,
-            mapPublishResultToProblem(publishResult),
-          );
+          return sendProblem(reply, mapPublishResultToProblem(publishResult));
         }
 
         if (publishResult.kind === 'published') {
@@ -115,10 +110,12 @@ export function createPublishModule(
   };
 }
 
-export const publishModule: FastifyPluginAsync<PublishModuleOptions> =
-  async (scope, options) => {
-    return createPublishModule(options)(scope, options);
-  };
+export const publishModule: FastifyPluginAsync<PublishModuleOptions> = async (
+  scope,
+  options,
+) => {
+  return createPublishModule(options)(scope, options);
+};
 
 export interface CreatePublishAppOptions extends PublishModuleOptions {
   readonly logger?: boolean;
