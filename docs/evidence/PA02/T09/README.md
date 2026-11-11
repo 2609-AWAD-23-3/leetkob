@@ -89,23 +89,19 @@ jobs:
 
 ---
 
-## 3. Chính sách bảo vệ nhánh (Branch Protection) và ghi nhận hạn chế GitHub Free
+## 3. Chính sách bảo vệ nhánh (Branch Protection) trên nhánh `main`
 
 ### Yêu cầu bảo vệ trên nhánh `main`:
-Theo rubric PA02 (R4 Blocking CI), nhánh `main` phải được bảo vệ bởi các quy tắc:
-1. Yêu cầu Pull Request trước khi merge (không direct push).
-2. Yêu cầu ít nhất 1 approval từ reviewer độc lập.
-3. Yêu cầu check `quality-gate` phải PASS (Required Status Check) trước khi merge.
-4. Áp dụng quy tắc cho cả Administrator (`enforce_admins: true` / không bypass).
+Theo rubric PA02 (R4 Blocking CI), nhánh `main` phải được bảo vệ bởi các quy tắc nghiêm ngặt:
+1. **Yêu cầu Pull Request:** Không cho phép direct push vào `main`.
+2. **Yêu cầu Approving Review:** Ít nhất 1 phê duyệt độc lập từ đồng đội (`required_approving_review_count: 1`, `dismiss_stale_reviews: true`).
+3. **Required Status Check:** Check `quality-gate` phải PASS trước khi merge (`strict: true`, yêu cầu branch phải up-to-date với base).
+4. **Không ngoại lệ:** Áp dụng cho toàn bộ thành viên bao gồm cả Administrator (`enforce_admins: true`).
 
-### Ghi nhận thực tế hạ tầng và điều kiện tiên quyết:
-- **Hiện trạng:** Repository `2609-AWAD-23-3/leetkob` là private repo thuộc tổ chức trên gói GitHub Free.
-- **Hạn chế kỹ thuật:** GitHub Free không cho phép bật Branch Protection hoặc Rulesets trên Private Repositories (API trả về HTTP 403: `"Upgrade to GitHub Pro or make this repository public to enable this feature."`).
-- **Giải pháp theo kế hoạch PA02:**
-  - Nhóm đã hoàn thành quét an toàn secrets và baseline sạch tại Task T05 (`docs/evidence/PA02/T05/security-scan.json`).
-  - Trước mốc nộp bài (PA02 submission), repository sẽ được chuyển sang chế độ `public` theo quy định đề bài.
-  - Ngay khi repo chuyển sang `public`, tính năng Branch Protection của GitHub Free sẽ được mở khóa hoàn toàn mà không phát sinh chi phí.
-  - Khi đó, lệnh thiết lập protection trên `main` sẽ được thực thi như sau:
+### Trạng thái kích hoạt thực tế (Live State):
+- **Trạng thái Repository:** Hiện repository `2609-AWAD-23-3/leetkob` đã được chuyển sang chế độ **`public`** (sau khi hoàn thành kiểm tra an toàn tại T05). Hạn chế kỹ thuật của GitHub Free trên repo private đã được giải phóng hoàn toàn.
+- **Kích hoạt thành công:** Quy tắc Branch Protection trên `main` đã được thiết lập trực tiếp qua GitHub REST API vào lúc 14:04 ngày 11/11/2026 (UTC+7) / 07:04 UTC.
+- **Lệnh API và Cấu hình đã áp dụng:**
 
 ```bash
 gh api --method PUT repos/2609-AWAD-23-3/leetkob/branches/main/protection \
@@ -126,6 +122,15 @@ gh api --method PUT repos/2609-AWAD-23-3/leetkob/branches/main/protection \
 EOF
 ```
 
+- **Kết quả xác minh API (`GET repos/2609-AWAD-23-3/leetkob/branches/main/protection`):**
+  - `required_status_checks.strict`: `true`
+  - `required_status_checks.contexts`: `["quality-gate"]`
+  - `enforce_admins.enabled`: `true`
+  - `required_pull_request_reviews.required_approving_review_count`: `1`
+  - `required_pull_request_reviews.dismiss_stale_reviews`: `true`
+  - `allow_force_pushes.enabled`: `false`
+  - `allow_deletions.enabled`: `false`
+
 ---
 
 ## 4. Kết quả kiểm chứng
@@ -135,17 +140,18 @@ EOF
 | Lệnh | Mô tả | Kết quả | Ghi chú |
 | :--- | :--- | :---: | :--- |
 | `npm run lint` | Oxlint phân tích cú pháp TS/JS | **Exit 0** | 0 warnings, 0 errors trên 22 files |
-| `npm run format-check` | Prettier kiểm tra định dạng | **Exit 0** | All matched files use Prettier code style (bao gồm file YAML mới) |
+| `npm run format-check` | Prettier kiểm tra định dạng | **Exit 0** | Kiểm tra toàn bộ mã nguồn theo cấu hình T04 (`.github/` được loại trừ trong `.prettierignore` để tránh ảnh hưởng metadata workflow; cú pháp YAML của workflow đã được kiểm tra tính toàn vẹn riêng) |
 | `npm run type-check` | TypeScript compiler strict check | **Exit 0** | `tsc -p tsconfig.check.json` hoàn tất không lỗi |
 | `npm test` | Build & chạy test runner | **Exit 0** | **83/83 tests pass 100%** (16 contract, 18 auth, 40 data, 7 smoke, 2 lifecycle) |
 | `git diff --check` | Kiểm tra khoảng trắng / trailing | **Exit 0** | Sạch hoàn toàn |
 
 ### Kiểm chứng thực tế trên GitHub Actions (PR #22):
 - **Pull Request:** [#22](https://github.com/2609-AWAD-23-3/leetkob/pull/22)
-- **CI Run ID:** [42965009498](https://github.com/2609-AWAD-23-3/leetkob/actions/runs/42965009498)
-- **Job Name:** `quality-gate` (Job ID: `130340073976`)
+- **CI Run ID (Commit candidate `d41f8c6`):** [42965136256](https://github.com/2609-AWAD-23-3/leetkob/actions/runs/42965136256)
+- **Job Name:** `quality-gate` (Job ID: `130340483220`)
 - **Status:** **COMPLETED**
-- **Conclusion:** **SUCCESS** (Toàn bộ các bước: checkout, setup-node 24.x, npm ci, lint, format-check, type-check, test đều đạt tick xanh trong 18 giây).
+- **Conclusion:** **SUCCESS** (Toàn bộ các bước: checkout, setup-node 24.x, npm ci, lint, format-check, type-check, test đều đạt tick xanh trong 12 giây).
+- **Run ID ban đầu:** [42965009498](https://github.com/2609-AWAD-23-3/leetkob/actions/runs/42965009498) (Job ID: `130340073976`, SUCCESS trong 18 giây).
 
 ---
 

@@ -32,3 +32,35 @@ Triển khai hoàn chỉnh Task T09 trên nhánh `feat/t09-ci` tách từ `devel
 - Xác minh phản hồi từ API branch protection và rulesets trên private repo.
 - Chạy kiểm chứng toàn bộ 4 quality commands trên môi trường cục bộ Node 24.22.1 / npm 11.19.1.
 - Mở PR hướng vào `develop` và yêu cầu reviewer Trần Quốc Vỹ (`@tranquocvy`) thẩm định độc lập.
+
+
+---
+
+## 11/11/2026 — Xử lý phản hồi Review độc lập từ Trần Quốc Vỹ (`@tranquocvy`)
+
+**Công cụ (Tool):** Antigravity assistant (Gemini).
+
+**Yêu cầu (Asked for):**
+Xử lý toàn bộ 3 điểm phản hồi của reviewer trên PR #22:
+1. Kích hoạt Branch Protection thực tế trên nhánh `main` khi repository đã là public (required check `quality-gate`, strict up-to-date, 1 approval, enforce admins).
+2. Cập nhật checklist T09 và lưu evidence settings kích hoạt live vào `verification.json` và `README.md`.
+3. Sửa mô tả phạm vi `format-check` trong tài liệu cho đúng với đặc tả T04 (`.github/` nằm trong `.prettierignore`).
+
+**Phần giữ lại (Kept):**
+- Giữ nguyên workflow `.github/workflows/ci.yml` và 4 lệnh kiểm tra chất lượng (reviewer đã xác nhận workflow chuẩn và không có lỗi).
+- Cấu hình Branch Protection qua GitHub API với payload chuẩn: `strict: true`, `contexts: ["quality-gate"]`, `enforce_admins: true`, `required_approving_review_count: 1`, `dismiss_stale_reviews: true`.
+- Ghi nhận trạng thái live settings trả về từ GitHub API vào `verification.json`.
+
+**Phần điều chỉnh (Changed):**
+- Sửa lại ghi chú mô tả của `npm run format-check` trong `README.md` và `verification.json`: làm rõ `.github/` được loại trừ theo `.prettierignore` của T04 và cú pháp YAML được kiểm tra tính hợp lệ riêng.
+- Cập nhật checklist và tiến độ T09 trong `docs/plans/PA02.md` với đầy đủ liên kết và bằng chứng kích hoạt thực tế.
+
+**Phần không chọn (Rejected):**
+- Không tự ý mở rộng cấu hình formatter `.prettierignore` làm ảnh hưởng đến baseline chung của T04.
+- Không đưa kịch bản deliberate break/fix vào PR #22 (đây là phạm vi độc lập của Task T10).
+
+**Phần làm tay (By hand):**
+- Người thực hiện trực tiếp gọi lệnh `gh api --method PUT repos/2609-AWAD-23-3/leetkob/branches/main/protection` để bật Branch Protection trên `main`.
+- Đọc lại cấu hình bằng `gh api repos/2609-AWAD-23-3/leetkob/branches/main/protection` để xác nhận trạng thái live.
+- Kiểm tra tính hợp lệ cú pháp YAML và chạy kiểm chứng toàn bộ quality commands trên Node 24.22.1 / npm 11.19.1.
+- Phản hồi chi tiết trên PR #22 để reviewer thẩm định lại.
