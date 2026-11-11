@@ -1,0 +1,138 @@
+{
+  "task": "T09",
+  "milestone": "PA02",
+  "executor": "BHVPhuc",
+  "reviewer": "tranquocvy",
+  "branch": "feat/t09-ci",
+  "workflow": {
+    "path": ".github/workflows/ci.yml",
+    "name": "CI",
+    "jobId": "quality-gate",
+    "checkName": "quality-gate",
+    "runsOn": "ubuntu-latest",
+    "nodeVersion": "24.x",
+    "triggers": [
+      "push:develop",
+      "push:main",
+      "push:tags:pa2",
+      "pull_request:develop",
+      "pull_request:main"
+    ]
+  },
+  "pullRequest": {
+    "number": 22,
+    "url": "https://github.com/2609-AWAD-23-3/leetkob/pull/22",
+    "ciRun": {
+      "runId": 42965136256,
+      "jobId": 130340483220,
+      "url": "https://github.com/2609-AWAD-23-3/leetkob/actions/runs/42965136256",
+      "conclusion": "SUCCESS",
+      "status": "COMPLETED",
+      "checkName": "quality-gate",
+      "duration": "12s"
+    }
+  },
+  "branchProtection": {
+    "targetBranch": "main",
+    "status": "ACTIVE",
+    "activatedAt": "2026-11-11T07:04:39.000Z",
+    "repositoryVisibility": "public",
+    "settings": {
+      "url": "https://api.github.com/repos/2609-AWAD-23-3/leetkob/branches/main/protection",
+      "requiredStatusChecks": {
+        "strict": true,
+        "contexts": ["quality-gate"],
+        "checks": [
+          {
+            "context": "quality-gate",
+            "appId": 15368
+          }
+        ]
+      },
+      "requiredPullRequestReviews": {
+        "dismissStaleReviews": true,
+        "requireCodeOwnerReviews": false,
+        "requireLastPushApproval": false,
+        "requiredApprovingReviewCount": 1
+      },
+      "enforceAdmins": true,
+      "allowForcePushes": false,
+      "allowDeletions": false
+    }
+  },
+  "environment": {
+    "os": "win32",
+    "arch": "x64",
+    "node": "v24.22.1",
+    "npm": "11.19.1"
+  },
+  "verifiedAt": "2026-11-11T07:05:00.000Z",
+  "records": [
+    {
+      "command": "npm run lint",
+      "exitCode": 0,
+      "stdout": "\n> leetkob@0.1.0 lint\n> oxlint --deny-warnings src tests scripts\n\nFound 0 warnings and 0 errors.\nFinished in 9ms on 22 files with 96 rules using 16 threads.\n",
+      "stderr": ""
+    },
+    {
+      "command": "npm run format-check",
+      "exitCode": 0,
+      "stdout": "\n> leetkob@0.1.0 format-check\n> prettier --check .\n\nChecking formatting...\nAll matched files use Prettier code style!\n",
+      "stderr": "",
+      "note": "Phạm vi kiểm tra theo đặc tả T04 (.prettierignore loại trừ .github/ để tránh can thiệp metadata workflow; cú pháp YAML của .github/workflows/ci.yml đã kiểm tra tính toàn vẹn riêng)."
+    },
+    {
+      "command": "npm run type-check",
+      "exitCode": 0,
+      "stdout": "\n> leetkob@0.1.0 type-check\n> tsc -p tsconfig.check.json\n\n",
+      "stderr": ""
+    },
+    {
+      "command": "npm test",
+      "exitCode": 0,
+      "summary": {
+        "tests": 83,
+        "pass": 83,
+        "fail": 0,
+        "suites": [
+          {
+            "name": "tests/auth/publish-auth-errors.test.mjs",
+            "tests": 18,
+            "pass": 18
+          },
+          {
+            "name": "tests/contract/publish.test.mjs",
+            "tests": 16,
+            "pass": 16
+          },
+          {
+            "name": "tests/data/publish-store.test.mjs",
+            "tests": 40,
+            "pass": 40
+          },
+          {
+            "name": "tests/smoke/app.test.mjs",
+            "tests": 7,
+            "pass": 7
+          },
+          {
+            "name": "tests/smoke/config.test.mjs",
+            "tests": 1,
+            "pass": 1
+          },
+          {
+            "name": "tests/smoke/bootstrap.test.mjs",
+            "tests": 1,
+            "pass": 1
+          }
+        ]
+      }
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ]
+}

@@ -11,3 +11,22 @@
 /LeeTKOB — class project brief_vn.md
 /PA#2 rubric — Harness and quality gate.pdf
 /PA#2 rubric — Harness and quality gate_vn.md
+
+# Runtime/build và environment hygiene (T01/T05)
+/node_modules/
+/dist/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+
+# Credential và private key local; file giả phục vụ test cần review trước khi track
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.credentials.json
+/.secrets/
+/secrets/
+/.npmrc
