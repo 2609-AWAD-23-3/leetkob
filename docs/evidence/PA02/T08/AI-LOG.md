@@ -33,7 +33,7 @@ Triển khai hoàn chỉnh Task T08 trên nhánh `feat/t08-publish` tách từ `
 
 ---
 
-## 11/11/2026 — Xử lý phản hồi Review độc lập từ Nguyễn Hà Triều Vượng (`@vinny2707`)
+## 11/11/2026 — Xử lý phản hồi Review độc lập từ Nguyễn Khắc Vượng (`@vinny2707`)
 
 **Công cụ (Tool):** Antigravity assistant (Gemini).
 
