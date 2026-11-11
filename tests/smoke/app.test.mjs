@@ -11,7 +11,10 @@ test('factory does not listen; health works through the real HTTP injection boun
   assert.equal(app.server.listening, false);
   const response = await app.inject({ method: 'GET', url: '/health' });
   assert.equal(response.statusCode, 200);
-  assert.equal(response.headers['content-type'].split(';')[0], 'application/json');
+  assert.equal(
+    response.headers['content-type'].split(';')[0],
+    'application/json',
+  );
   assert.deepEqual(response.json(), { status: 'ok' });
   assert.equal(app.server.listening, false);
 });
@@ -22,11 +25,13 @@ test('each module accepts its own real Fastify plugin in the same application', 
     seen.push(name);
     scope.get('/smoke/' + name, async () => ({ module: name }));
   };
-  const app = createApp({ modules: {
-    submissions: module('submissions'),
-    reviewQueue: module('review-queue'),
-    publish: module('publish'),
-  } });
+  const app = createApp({
+    modules: {
+      submissions: module('submissions'),
+      reviewQueue: module('review-queue'),
+      publish: module('publish'),
+    },
+  });
   t.after(() => app.close());
   await app.ready();
   assert.deepEqual(seen, ['submissions', 'review-queue', 'publish']);
@@ -51,10 +56,16 @@ test('business routes are absent rather than fake successful implementations', a
 
 test('application instances have isolated plugin state and lifecycle hooks', async () => {
   let closed = 0;
-  const first = createApp({ modules: { publish: async (scope) => {
-    scope.get('/instance-only', async () => ({ ok: true }));
-    scope.addHook('onClose', async () => { closed += 1; });
-  } } });
+  const first = createApp({
+    modules: {
+      publish: async (scope) => {
+        scope.get('/instance-only', async () => ({ ok: true }));
+        scope.addHook('onClose', async () => {
+          closed += 1;
+        });
+      },
+    },
+  });
   const second = createApp();
   try {
     assert.equal((await first.inject('/instance-only')).statusCode, 200);
@@ -80,7 +91,10 @@ test('listener can start on loopback and close without hard-coded test ports', a
 
 test('configuration has local defaults and validates explicit environment input', () => {
   assert.deepEqual(loadConfig({}), { host: '127.0.0.1', port: 3000 });
-  assert.deepEqual(loadConfig({ HOST: '127.0.0.1', PORT: '4321' }), { host: '127.0.0.1', port: 4321 });
+  assert.deepEqual(loadConfig({ HOST: '127.0.0.1', PORT: '4321' }), {
+    host: '127.0.0.1',
+    port: 4321,
+  });
   for (const port of ['', '0', '-1', '65536', '1.5', '3000oops', ' 3000']) {
     assert.throws(() => loadConfig({ PORT: port }), /PORT/);
   }

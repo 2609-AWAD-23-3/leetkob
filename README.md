@@ -12,52 +12,78 @@ No Docker, database service, model key or paid account is needed for this skelet
 
 ## Install, build and run
 
-~~~sh
+```sh
 npm ci --ignore-scripts
 npm run build
 npm start
-~~~
+```
 
 The server defaults to http://127.0.0.1:3000. In another terminal, request GET /health, for example:
 
-~~~sh
+```sh
 curl http://127.0.0.1:3000/health
-~~~
+```
 
 Expected response: HTTP 200, JSON {"status":"ok"}. Stop the server with Ctrl+C. This is a liveness probe only: it does not certify database readiness, auth, judging or model availability.
 
 For editing with automatic restart:
 
-~~~sh
+```sh
 npm run dev
-~~~
+```
 
 HOST and PORT are optional process environment variables; .env files are not loaded automatically. Defaults are 127.0.0.1 and 3000. PORT must be an integer between 1 and 65535. For a different local port:
 
-~~~powershell
+```powershell
 # PowerShell
 $env:PORT = '3001'
 npm start
 Remove-Item Env:PORT
-~~~
+```
 
-~~~sh
+```sh
 # POSIX shell
 PORT=3001 npm start
-~~~
+```
 
 Set HOST=0.0.0.0 only intentionally in a controlled container/deployment environment; this skeleton is not production-hardened. No model/provider variables are used. T05 owns the complete env example and security/cost records.
 
 ## T01 acceptance smoke checks
 
-~~~sh
+```sh
 npm run build
 node --test tests/smoke/app.test.mjs
-~~~
+```
 
 These narrow checks exercise factory/lifecycle isolation, health routing, all three plugin registration seams, absence of fake business endpoints, config validation, and a real loopback listener on an ephemeral port. They import built code, so build first. They require no real model calls, database or fixed free port.
 
-T04 will add the standard lint, format-check, typecheck and comprehensive test commands and shared harness. T09 will run those same commands in CI and configure required checks/protection. Neither task is complete merely because build or these smoke checks pass. No npm test command or required CI check is claimed yet.
+## Quality commands — T04 candidate
+
+Chạy từ root sau `npm ci --ignore-scripts`:
+
+```sh
+npm run lint
+npm run format-check
+npm run type-check
+npm test
+```
+
+Oxlint kiểm tra correctness TS/JS trong src/tests/scripts; Prettier chỉ kiểm tra,
+không tự sửa. Phạm vi format gồm source/tests/scripts, root config và README;
+docs, CONTRIBUTING và .github được loại để tránh format lại hồ sơ ngoài task.
+Type-check dùng TypeScript strict/noEmit cho source và tests TypeScript.
+`npm test` build trước rồi thu mọi `tests/**/*.test.{mjs,js,ts}` bằng Node test
+runner (tsx hỗ trợ test TS), kể cả support và contract suites khi được thêm.
+Không có file test trả exit 1; assertion lỗi/build lỗi đều trả nonzero.
+Chỉ command `npx prettier --write <file>` dùng khi người sửa muốn format rõ ràng.
+
+Helper `tests/support/app.mjs` tạo app thật, đăng ký close trước ready; mỗi test
+dùng app riêng. T02 sẽ cung cấp fixture/reset API; T08 giữ implementation và
+contract assertions, không mock handler publish. Hiện chưa có hai đầu vào này,
+không thêm global seed/clock hoặc gọi model thật. Xem [evidence T04](docs/evidence/PA02/T04/README.md).
+
+T09 phải dùng nguyên bốn commands trên trong CI. Candidate local không phải
+CI/protection evidence và chưa có review độc lập của Phúc.
 
 ## Module handoff
 
