@@ -47,16 +47,18 @@ Xử lý toàn bộ 4 điểm phản hồi từ reviewer trên PR #20:
 **Phần giữ lại (Kept):**
 - Loại bỏ import `createPublishModule` thừa tại dòng 5 file test.
 - Thêm `{ bodyLimit: 65536 }` cho route `/labs/:labId/publish`.
-- Thêm 4 bài kiểm thử mới trong `tests/contract/publish.test.mjs` (nâng tổng số test của suite contract lên 15 và toàn bộ dự án lên 82):
+- Thêm các bài kiểm thử mới trong `tests/contract/publish.test.mjs` (nâng tổng số test của suite contract lên 16 và toàn bộ dự án lên 83):
   - Kiểm thử 413 khi body vượt quá 64 KB.
-  - Kiểm thử 415 khi `Content-Type` là `application/xml`.
+  - Kiểm thử 415 khi `Content-Type` là `application/xml` và `text/plain` (với credentials).
+  - Kiểm thử precedence: `Content-Type: text/plain` không có credentials bị reject với `415 unsupported-media-type` trước authentication.
   - Kiểm thử precedence: body JSON lỗi trả `400 invalid-json` ngay cả khi không gửi Bearer token.
   - Kiểm thử precedence anti-enumeration: caller có role `student` hoặc `admin` gửi `labId` không tồn tại nhận về `403 forbidden` (không bị lộ `404 not-found`), trong khi TA hợp lệ nhận `404 not-found`.
+- Loại bỏ parser mặc định `text/plain` của Fastify trong `registerPublishErrorHandling` để đảm bảo mọi content-type khác `application/json` đều trả 415 ở tầng transport.
 - Bổ sung tài liệu thứ tự ưu tiên 10 bước chi tiết trong `docs/contract/publish.md`.
-- Bổ sung tài liệu demo execution và runtime handoff trong `docs/evidence/PA02/T08/README.md`.
+- Bổ sung tài liệu demo execution và runtime handoff hoàn chỉnh (truyền cả `{ store, identityResolver }`) trong `docs/evidence/PA02/T08/README.md`.
 
 **Phần điều chỉnh (Changed):**
-- Đồng bộ lại `verification.json` với 82 tests pass 100% trên 6 test suites và ghi nhận đầy đủ 4 lệnh chất lượng hoàn thành với Exit code 0.
+- Đồng bộ lại `verification.json` với 83 tests pass 100% trên 6 test suites và ghi nhận đầy đủ 4 lệnh chất lượng hoàn thành với Exit code 0.
 
 **Phần không chọn (Rejected):**
 - Không thay đổi thiết kế bảo mật: giữ nguyên việc kiểm tra role trước lab lookup để duy trì phòng thủ anti-enumeration theo đúng chuẩn REST security.

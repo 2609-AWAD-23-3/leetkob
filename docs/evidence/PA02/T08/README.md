@@ -18,7 +18,7 @@ Toàn bộ các lệnh kiểm chứng chất lượng theo chuẩn dự án đã
 | `npm run lint` (`oxlint --deny-warnings src tests scripts`) | **Exit 0** | 0 warnings, 0 errors trên 22 files với 96 rules |
 | `npm run format-check` (`prettier --check .`) | **Exit 0** | All matched files use Prettier code style |
 | `npm run type-check` (`tsc -p tsconfig.check.json`) | **Exit 0** | Kiểm tra toàn bộ codebase và test files sạch, không lỗi kiểu |
-| `npm test` (`npm run build && node scripts/test.mjs`) | **Exit 0** | **82/82 tests pass 100%** trên 6 suites (15 contract tests, 18 auth tests, 40 data tests, 7 smoke tests, 2 app lifecycle tests) |
+| `npm test` (`npm run build && node scripts/test.mjs`) | **Exit 0** | **83/83 tests pass 100%** trên 6 suites (16 contract tests, 18 auth tests, 40 data tests, 7 smoke tests, 2 app lifecycle tests) |
 | `git diff --check` | **Exit 0** | Không có trailing whitespace hoặc conflict markers |
 
 ---
@@ -30,7 +30,8 @@ Tất cả các điều khoản trong [`docs/contract/publish.md`](../../../cont
 | Mục Contract | Mã HTTP & Trạng thái | Điều kiện kích hoạt | Test Assertion tương ứng |
 | :--- | :---: | :--- | :--- |
 | **HTTP Framing: Size Limit** | `413 payload-too-large` | Request body vượt quá giới hạn 65,536 bytes (64 KB). Trả về RFC 9457 `Payload too large` | `POST /labs/{labId}/publish — 413 payload-too-large when body exceeds 64 KB limit` |
-| **HTTP Framing: Media Type** | `415 unsupported-media-type` | Request payload gửi định dạng không được hỗ trợ (ví dụ `application/xml`). Trả về RFC 9457 `Unsupported media type` | `POST /labs/{labId}/publish — 415 unsupported-media-type when content-type is unsupported` |
+| **HTTP Framing: Media Type** | `415 unsupported-media-type` | Request payload gửi định dạng không được hỗ trợ (ví dụ `application/xml`, `text/plain`, `text/plain; charset=utf-8`). Trả về RFC 9457 `Unsupported media type` | `POST /labs/{labId}/publish — 415 unsupported-media-type when content-type is unsupported (application/xml, text/plain)` |
+| **Transport Precedence: Media Type** | `415 unsupported-media-type` | Request gửi `Content-Type: text/plain` và không có header `Authorization`; parser Fastify chạy trước auth và trả về `415` (không trả `401`) | `POST /labs/{labId}/publish — precedence: unsupported content-type (text/plain) is rejected with 415 before authentication` |
 | **Transport Precedence** | `400 invalid-json` | Request gửi body lỗi cú pháp JSON và không có header `Authorization`; parser Fastify chạy trước auth và trả về `400` (không trả `401`) | `POST /labs/{labId}/publish — precedence: malformed JSON body is rejected with 400 invalid-json before authentication` |
 | **Authentication** | `401 unauthenticated` | Thiếu header `Authorization`, sai scheme (Basic), hoặc token không tồn tại. Tự động trả header `WWW-Authenticate: Bearer` | `POST /labs/{labId}/publish — 401 unauthenticated when credentials are missing, malformed, or invalid` |
 | **Input: JSON Syntax** | `400 invalid-json` | Body gửi lên không phải JSON hợp lệ, hoặc chứa prototype pollution payload (`{"__proto__": ...}`) | `POST /labs/{labId}/publish — 400 invalid-json for malformed JSON or prototype pollution payload` |
@@ -114,8 +115,16 @@ curl -X POST http://127.0.0.1:3000/labs/lab-1/publish \
 ### 3.2 Handoff cho Vỹ (`src/server.ts` & `src/app.ts`)
 - **Phân định quyền sở hữu file:** Vỹ phụ trách `src/app.ts` và `src/server.ts`. Phúc phụ trách `src/auth/` và `src/modules/publish/`.
 - **Handoff tích hợp:** Để đưa route `/labs/:labId/publish` vào server runtime production:
-  1. Trong `src/server.ts`, khởi tạo một instance `PublishStore` (ví dụ `createInMemoryPublishStore`).
-  2. Truyền plugin `createPublishModule({ store, identityResolver })` vào `createApp({ modules: { publish: createPublishModule({ store }) } })`.
+  1. Trong `src/server.ts`, khởi tạo instance `PublishStore` (ví dụ `createInMemoryPublishStore`) và `IdentityResolver` (ví dụ `createTokenIdentityResolver({ tokens })`).
+  2. Truyền cả `{ store, identityResolver }` vào `createPublishModule({ store, identityResolver })` khi cấu hình `createApp`:
+     ```typescript
+     const app = createApp({
+       modules: {
+         publish: createPublishModule({ store, identityResolver }),
+       },
+     });
+     ```
+     *Lưu ý:* Nếu không truyền `identityResolver`, resolver mặc định sẽ có danh bạ token rỗng (chưa nạp fixture tokens), khiến mọi Bearer token đều bị từ chối với `401 unauthenticated`. Do đó cần truyền đồng thời cả `{ store, identityResolver }`.
   3. Module publish tự động mount route `/labs/:labId/publish`, thiết lập `bodyLimit: 65536`, và đăng ký RFC 9457 error handler.
   4. Nếu `store` không được truyền (giữ nguyên mặc định), `publishModule` sẽ không mount route để đảm bảo invariant "business routes are absent rather than fake successful implementations" cho skeleton.
 

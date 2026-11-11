@@ -481,11 +481,12 @@ test('POST /labs/{labId}/publish — 413 payload-too-large when body exceeds 64 
   });
 });
 
-test('POST /labs/{labId}/publish — 415 unsupported-media-type when content-type is unsupported', async (t) => {
+test('POST /labs/{labId}/publish — 415 unsupported-media-type when content-type is unsupported (application/xml, text/plain)', async (t) => {
   const { app } = createHarness({ scenario: 'resolved' });
   t.after(() => app.close());
 
-  const res = await app.inject({
+  // 1. application/xml with credentials -> 415
+  const xmlRes = await app.inject({
     method: 'POST',
     url: '/labs/lab-1/publish',
     headers: {
@@ -495,8 +496,72 @@ test('POST /labs/{labId}/publish — 415 unsupported-media-type when content-typ
     payload: '<publish />',
   });
 
+  assert.equal(xmlRes.statusCode, 415);
+  assert.equal(xmlRes.headers['content-type'], PROBLEM_CONTENT_TYPE);
+  assert.deepEqual(xmlRes.json(), {
+    type: 'https://leetkob.example/problems/unsupported-media-type',
+    title: 'Unsupported media type',
+    status: 415,
+    detail: 'The request payload content-type is unsupported.',
+  });
+
+  // 2. text/plain with credentials -> 415 (not 400 validation)
+  const plainRes = await app.inject({
+    method: 'POST',
+    url: '/labs/lab-1/publish',
+    headers: {
+      authorization: 'Bearer token-ta-one',
+      'content-type': 'text/plain',
+    },
+    payload: '{}',
+  });
+
+  assert.equal(plainRes.statusCode, 415);
+  assert.equal(plainRes.headers['content-type'], PROBLEM_CONTENT_TYPE);
+  assert.deepEqual(plainRes.json(), {
+    type: 'https://leetkob.example/problems/unsupported-media-type',
+    title: 'Unsupported media type',
+    status: 415,
+    detail: 'The request payload content-type is unsupported.',
+  });
+
+  // 3. text/plain; charset=utf-8 with credentials -> 415
+  const plainCharsetRes = await app.inject({
+    method: 'POST',
+    url: '/labs/lab-1/publish',
+    headers: {
+      authorization: 'Bearer token-ta-one',
+      'content-type': 'text/plain; charset=utf-8',
+    },
+    payload: 'plain payload',
+  });
+
+  assert.equal(plainCharsetRes.statusCode, 415);
+  assert.equal(plainCharsetRes.headers['content-type'], PROBLEM_CONTENT_TYPE);
+  assert.equal(
+    plainCharsetRes.json().type,
+    'https://leetkob.example/problems/unsupported-media-type',
+  );
+});
+
+test('POST /labs/{labId}/publish — precedence: unsupported content-type (text/plain) is rejected with 415 before authentication', async (t) => {
+  const { app } = createHarness({ scenario: 'resolved' });
+  t.after(() => app.close());
+
+  // Request with NO Authorization header and text/plain content-type
+  const res = await app.inject({
+    method: 'POST',
+    url: '/labs/lab-1/publish',
+    headers: {
+      'content-type': 'text/plain',
+    },
+    payload: '{}',
+  });
+
+  // Transport parser runs before route auth handler -> 415 unsupported-media-type (NOT 401)
   assert.equal(res.statusCode, 415);
   assert.equal(res.headers['content-type'], PROBLEM_CONTENT_TYPE);
+  assert.equal(res.headers['www-authenticate'], undefined);
   assert.deepEqual(res.json(), {
     type: 'https://leetkob.example/problems/unsupported-media-type',
     title: 'Unsupported media type',

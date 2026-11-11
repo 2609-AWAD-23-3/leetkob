@@ -62,7 +62,7 @@ Content-Type: application/problem+json; charset=utf-8
 | --- | ---: | --- | --- |
 | `unauthenticated` | 401 | Authentication required | Request is missing the `Authorization` header, uses an unsupported scheme, or provides an unrecognized token. Response includes `WWW-Authenticate: Bearer` challenge header per RFC 9110 section 11.6.1. |
 | `payload-too-large` | 413 | Payload too large | Request body size exceeds the configured maximum limit of 65,536 bytes (64 KB). |
-| `unsupported-media-type` | 415 | Unsupported media type | Request payload uses an unsupported media type (content-type other than `application/json`). |
+| `unsupported-media-type` | 415 | Unsupported media type | Request payload uses an unsupported media type (content-type other than `application/json`, such as `text/plain` or `application/xml`). |
 | `invalid-json` | 400 | Malformed JSON | Request includes a body that cannot be parsed as valid JSON, or contains forbidden prototype pollution keys (`__proto__`, `constructor.prototype`). |
 | `validation` | 400 | Invalid request | Path parameter `labId` violates `^[a-zA-Z0-9_-]{1,64}$`, or request body is valid JSON but not an object (e.g. an array or primitive). Member `errors` describes each issue. |
 | `not-found` | 404 | Not found | No lab exists with identifier `labId` in the store. |
@@ -127,7 +127,7 @@ Publishes grades and deductions for `{labId}`. Per Section 3 of the LeeTKOB cour
 | Header | Required | Rule |
 | --- | --- | --- |
 | `Authorization` | Yes | `Bearer <token>` scheme. Missing or invalid credentials return `401 unauthenticated`. |
-| `Content-Type` | Conditional | Required as `application/json` when a non-empty request body is sent. |
+| `Content-Type` | Conditional | Required as `application/json` when a non-empty request body is sent. Unsupported media types (such as `text/plain` or `application/xml`) return `415 unsupported-media-type`. |
 
 #### Request body
 
@@ -139,7 +139,7 @@ The server processes the request following this exact sequence and halts at the 
 
 1. **HTTP framing and payload syntax (Transport / Parser layer):**
    - If the request body size exceeds 65,536 bytes (64 KB), return `413 payload-too-large`.
-   - If the request body is sent with an unsupported `Content-Type` (e.g. `application/xml`), return `415 unsupported-media-type`.
+   - If the request body is sent with an unsupported `Content-Type` (e.g. `text/plain`, `application/xml`), return `415 unsupported-media-type`.
    - If the request payload is not valid JSON or contains forbidden prototype pollution keys (`__proto__`, `constructor.prototype`), return `400 invalid-json`.
    *Note: As an HTTP transport-level concern, Fastify's body framing and content-type parsing run before route-level handlers. A malformed or oversized payload is rejected with `400`, `413`, or `415` even if the `Authorization` header is absent.*
 2. **Authentication:** The `Authorization` header is validated via trusted Bearer tokens. Missing, malformed, or unrecognized credentials yield `401 unauthenticated` with `WWW-Authenticate: Bearer`.
