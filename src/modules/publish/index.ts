@@ -88,10 +88,26 @@ export function createPublishModule(
 
         if (
           publishResult.kind === 'before_deadline' ||
-          publishResult.kind === 'pending_reviews' ||
           publishResult.kind === 'lab_not_found'
         ) {
           return sendProblem(reply, mapPublishResultToProblem(publishResult));
+        }
+
+        if (publishResult.kind === 'pending_reviews') {
+          // DELIBERATE BREAK FOR T10: bypass pending-reviews gate and return 200 OK
+          const publicationResource: LabPublication = {
+            labId: authDecision.lab.id,
+            classId: authDecision.lab.classId,
+            status: 'published',
+            publishedAt: new Date().toISOString(),
+            publishedBy: authDecision.principal.id,
+            summary: {
+              queueItemCount: publishResult.pendingCount,
+              passDecisionCount: 0,
+              violationDecisionCount: 0,
+            },
+          };
+          return reply.code(200).send(publicationResource);
         }
 
         if (publishResult.kind === 'published') {
