@@ -213,3 +213,13 @@ Changed: đổi summary T05 thành chưa hoàn tất do thiếu evidence cap; kh
 Rejected: thay câu tiêu chí để đánh dấu đạt, dùng Issue Closed thay acceptance hoặc mô tả trạng thái tag-run tạm thời trong bản freeze.
 By hand: Vượng cung cấp nhận xét kỹ thuật tại PR #26; assistant chỉnh tài liệu và chạy kiểm tra. Không thay source/tests.
 Nguồn: [review comment](https://github.com/2609-AWAD-23-3/leetkob/pull/26#issuecomment-6795965312), [plan](docs/plans/PA02.md), [PA2.md](PA2.md).
+
+## 2026-11-11 — T12: audit trước release
+
+Tool: Codex trong OpenClaw, GitHub CLI, Git, Node/npm và Gitleaks 8.30.1.
+Asked for: kiểm chứng baseline đã tích hợp trước khi freeze, tag và đóng gói bản nộp PA02.
+Kept: hồ sơ T11 đã review, self-assessment 95/100, commands/contract/tests và break/fix history.
+Changed: clone mới baseline 8d79ba1, cài/chạy bốn quality commands; kiểm tra lại public/main protection và security tree/history/refs/config. Phân loại riêng 7 public fixture headers và 26 file digests sau khi helper T05 từ chối findings mới hoặc source hash đã format. Đồng bộ hoàn tất T11 theo approval đúng head và merge PR #26; giữ các mục tag/ZIP/submission T12 chưa đạt.
+Rejected: ép scanner exit 0, suppress findings, coi model cost estimate là cap, lấy PR run thay tag CI hoặc đóng ZIP từ workspace có dependencies/private configuration.
+By hand: Vượng review độc lập T11 trên PR #26. Assistant thực hiện audit và soạn records; chưa ghi nhận thao tác tag/đóng gói/nộp đã hoàn thành.
+Nguồn: [evidence T12](docs/evidence/PA02/T12/README.md), [verification](docs/evidence/PA02/T12/verification.json).
