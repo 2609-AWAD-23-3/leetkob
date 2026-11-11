@@ -57,11 +57,9 @@ function createPublishProbeApp({
       publish: async (scope) => {
         registerPublishErrorHandling(scope);
 
-        scope.post(
-          '/probe/limited',
-          { bodyLimit: 32 },
-          async () => ({ ok: true }),
-        );
+        scope.post('/probe/limited', { bodyLimit: 32 }, async () => ({
+          ok: true,
+        }));
         scope.post(
           '/probe/schema',
           {
@@ -172,23 +170,47 @@ test('token identity resolver authenticates valid bearer tokens and returns defe
 
 for (const [label, headers, expectedReason] of [
   ['missing header', {}, 'missing_credentials'],
-  ['undefined authorization', { authorization: undefined }, 'missing_credentials'],
+  [
+    'undefined authorization',
+    { authorization: undefined },
+    'missing_credentials',
+  ],
   ['empty authorization', { authorization: '' }, 'malformed_credentials'],
-  ['whitespace authorization', { authorization: '   ' }, 'malformed_credentials'],
+  [
+    'whitespace authorization',
+    { authorization: '   ' },
+    'malformed_credentials',
+  ],
   [
     'leading whitespace authorization',
     { authorization: ' Bearer token-ta-one' },
     'malformed_credentials',
   ],
-  ['wrong auth scheme', { authorization: 'Basic dGEtb25l' }, 'malformed_credentials'],
-  ['bearer without token', { authorization: 'Bearer' }, 'malformed_credentials'],
-  ['bearer with extra segments', { authorization: 'Bearer a b' }, 'malformed_credentials'],
+  [
+    'wrong auth scheme',
+    { authorization: 'Basic dGEtb25l' },
+    'malformed_credentials',
+  ],
+  [
+    'bearer without token',
+    { authorization: 'Bearer' },
+    'malformed_credentials',
+  ],
+  [
+    'bearer with extra segments',
+    { authorization: 'Bearer a b' },
+    'malformed_credentials',
+  ],
   [
     'array authorization header',
     { authorization: ['Bearer token-ta-one'] },
     'malformed_credentials',
   ],
-  ['unknown bearer token', { authorization: 'Bearer unknown-token' }, 'invalid_credentials'],
+  [
+    'unknown bearer token',
+    { authorization: 'Bearer unknown-token' },
+    'invalid_credentials',
+  ],
 ]) {
   test(`token identity resolver rejects ${label} with ${expectedReason}`, () => {
     const resolver = createTokenIdentityResolver({
@@ -203,10 +225,10 @@ for (const [label, headers, expectedReason] of [
 
 test('default token resolver has no implicit credentials and rejects all requests', () => {
   const resolver = createTokenIdentityResolver();
-  assert.deepEqual(
-    resolver.resolve({ authorization: 'Bearer token-ta-one' }),
-    { kind: 'unauthenticated', reason: 'invalid_credentials' },
-  );
+  assert.deepEqual(resolver.resolve({ authorization: 'Bearer token-ta-one' }), {
+    kind: 'unauthenticated',
+    reason: 'invalid_credentials',
+  });
 });
 
 test('test-header identity injection is disabled by default and cannot become a public bypass', () => {
@@ -257,16 +279,19 @@ test('explicit programmatic test-header resolver validates headers when enabled 
     resolver.resolve({ 'x-test-user-id': 'ta-one', 'x-test-role': 'TA' }),
     { kind: 'authenticated', principal: { id: 'ta-one', role: 'TA' } },
   );
-  assert.deepEqual(
-    resolver.resolve({ 'x-test-user-id': 'ta-one' }),
-    { kind: 'unauthenticated', reason: 'malformed_credentials' },
-  );
+  assert.deepEqual(resolver.resolve({ 'x-test-user-id': 'ta-one' }), {
+    kind: 'unauthenticated',
+    reason: 'malformed_credentials',
+  });
   assert.deepEqual(
     resolver.resolve({ 'x-test-user-id': ' ta-one', 'x-test-role': 'TA' }),
     { kind: 'unauthenticated', reason: 'malformed_credentials' },
   );
   assert.deepEqual(
-    resolver.resolve({ 'x-test-user-id': 'ta-one', 'x-test-role': 'superuser' }),
+    resolver.resolve({
+      'x-test-user-id': 'ta-one',
+      'x-test-role': 'superuser',
+    }),
     { kind: 'unauthenticated', reason: 'malformed_credentials' },
   );
   assert.deepEqual(
@@ -440,9 +465,10 @@ test('HTTP boundary rejects missing/invalid identity, wrong role and cross-class
     type: 'https://leetkob.example/problems/forbidden',
     title: 'Forbidden',
     status: 403,
-    detail: 'The authenticated TA is not assigned to the class that owns this lab.',
+    detail:
+      'The authenticated TA is not assigned to the class that owns this lab.',
   });
-  assert.equal( crossClass.body.includes('class-1'), false);
+  assert.equal(crossClass.body.includes('class-1'), false);
 
   // Unknown lab -> 404
   const notFound = await app.inject({
@@ -584,11 +610,18 @@ test('HTTP boundary maps parser errors, validation errors, deadline/pending conf
 
   // Explicit 4xx fallback errors preserve their status codes and challenges without collapsing to 400
   const statusCases = [
-    { status: 401, type: 'https://leetkob.example/problems/unauthenticated', challenge: true },
+    {
+      status: 401,
+      type: 'https://leetkob.example/problems/unauthenticated',
+      challenge: true,
+    },
     { status: 403, type: 'https://leetkob.example/problems/forbidden' },
     { status: 404, type: 'https://leetkob.example/problems/not-found' },
     { status: 409, type: 'https://leetkob.example/problems/conflict' },
-    { status: 422, type: 'https://leetkob.example/problems/unprocessable-content' },
+    {
+      status: 422,
+      type: 'https://leetkob.example/problems/unprocessable-content',
+    },
     { status: 429, type: 'https://leetkob.example/problems/rate-limited' },
     { status: 405, type: 'https://leetkob.example/problems/client-error' },
   ];
@@ -712,7 +745,10 @@ test('problem factories validate inputs and return defensive copies', () => {
   assert.throws(() => validatePrincipal({ id: ' ', role: 'TA' }), /id/);
   assert.throws(() => validatePrincipal({ id: 'ta-1', role: 'guest' }), /role/);
   assert.throws(
-    () => createTokenIdentityResolver({ tokens: { 'bad token': { id: 'ta-1', role: 'TA' } } }),
+    () =>
+      createTokenIdentityResolver({
+        tokens: { 'bad token': { id: 'ta-1', role: 'TA' } },
+      }),
     /Bearer token key/,
   );
   assert.throws(() => createValidationProblem([]), /at least one/);

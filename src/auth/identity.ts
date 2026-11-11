@@ -23,18 +23,21 @@ function isNonEmptyTrimmedString(value: unknown): value is string {
 }
 
 function isPrincipalRole(value: unknown): value is PrincipalRole {
-  return (
-    typeof value === 'string' && VALID_ROLES.has(value as PrincipalRole)
-  );
+  return typeof value === 'string' && VALID_ROLES.has(value as PrincipalRole);
 }
 
-export function validatePrincipal(value: unknown, label = 'principal'): Principal {
+export function validatePrincipal(
+  value: unknown,
+  label = 'principal',
+): Principal {
   if (!value || typeof value !== 'object') {
     throw new TypeError(`${label} must be an object`);
   }
   const candidate = value as Record<string, unknown>;
   if (!isNonEmptyTrimmedString(candidate.id)) {
-    throw new TypeError(`${label}.id must be a non-empty string without surrounding whitespace`);
+    throw new TypeError(
+      `${label}.id must be a non-empty string without surrounding whitespace`,
+    );
   }
   if (!isPrincipalRole(candidate.role)) {
     throw new TypeError(`${label}.role must be admin, TA or student`);

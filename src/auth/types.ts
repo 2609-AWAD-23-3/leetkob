@@ -8,13 +8,14 @@ export interface Principal {
 }
 
 export type UnauthenticatedReason =
-  | 'missing_credentials'
-  | 'malformed_credentials'
-  | 'invalid_credentials';
+  'missing_credentials' | 'malformed_credentials' | 'invalid_credentials';
 
 export type IdentityResolution =
   | { readonly kind: 'authenticated'; readonly principal: Principal }
-  | { readonly kind: 'unauthenticated'; readonly reason: UnauthenticatedReason };
+  | {
+      readonly kind: 'unauthenticated';
+      readonly reason: UnauthenticatedReason;
+    };
 
 export type IncomingHeaders = Readonly<
   Record<string, string | readonly string[] | undefined>
@@ -26,8 +27,7 @@ export interface IdentityResolver {
 
 export interface TokenIdentityResolverOptions {
   readonly tokens?:
-    | ReadonlyMap<string, Principal>
-    | Readonly<Record<string, Principal>>;
+    ReadonlyMap<string, Principal> | Readonly<Record<string, Principal>>;
 }
 
 export interface TestHeaderIdentityResolverOptions {
@@ -81,7 +81,8 @@ export type ValidationIssue =
 export interface ProblemDetails {
   readonly type: `https://leetkob.example/problems/${ProblemSlug}`;
   readonly title: string;
-  readonly status: 400 | 401 | 403 | 404 | 405 | 409 | 413 | 415 | 422 | 429 | 500;
+  readonly status:
+    400 | 401 | 403 | 404 | 405 | 409 | 413 | 415 | 422 | 429 | 500;
   readonly detail: string;
   readonly errors?: readonly ValidationIssue[];
   readonly deadline?: string;

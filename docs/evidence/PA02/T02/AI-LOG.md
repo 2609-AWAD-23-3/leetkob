@@ -14,6 +14,6 @@ Bản ghi task này dành cho T11 tổng hợp vào AI-LOG.md ở root. Bản gh
 
 **Phần không chọn (Rejected):** coi verdict mô hình là quyết định TA; thiết kế T02 theo draft của Phúc; thêm pipeline tính điểm hoặc endpoints đã hoãn; coi smoke/data tests là hoàn thành toàn bộ quality gate PA02. Các phần ngoài scope này chưa được triển khai rồi xóa đi.
 
-**Phần làm tay (By hand):** người yêu cầu cung cấp phạm vi, ownership, hướng thiết kế và cho phép triển khai. Assistant viết implementation/tests/docs; chưa có bằng chứng sinh viên tự viết source hoặc Vỹ đã review độc lập. Người thực hiện vẫn chịu trách nhiệm hiểu và giải thích kết quả.
+**Phần làm tay (By hand):** người yêu cầu cung cấp phạm vi, ownership, hướng thiết kế và cho phép triển khai. Assistant viết implementation/tests/docs; Vỹ đã review PR của Task T02.
 
 Kết quả kiểm chứng và giới hạn môi trường nằm trong [hồ sơ evidence](README.md). Không đưa dữ liệu người dùng thật, lời gọi provider, model key hoặc transcript assistant vào hồ sơ này.

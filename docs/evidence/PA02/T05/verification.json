@@ -1,0 +1,329 @@
+{
+  "qualityCommands": [
+    {
+      "command": "npm run lint",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run format-check",
+      "exitCode": 0
+    },
+    {
+      "command": "npm run type-check",
+      "exitCode": 0
+    },
+    {
+      "command": "npm test",
+      "exitCode": 0,
+      "tests": 67,
+      "pass": 67,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0
+    }
+  ],
+  "runtime": {
+    "node": "24.22.1",
+    "npm": "11.19.1",
+    "temporaryRuntime": true,
+    "systemRuntimeChanged": false
+  },
+  "install": {
+    "command": "npm ci --ignore-scripts --no-audit --no-fund --fetch-retries=0 --fetch-timeout=30000",
+    "exitCode": 0,
+    "packagesAdded": 58
+  },
+  "startedAtUtc": "2026-11-10T18:34:32.755Z",
+  "completedAtUtc": "2026-11-10T18:46:34.290Z",
+  "sourceHead": "09245d7391f229b7d8b6e40d2ff124e14fa552d4",
+  "branch": "feat/t05-rules-permissions-secrets",
+  "snapshotKind": "working-tree-at-recorded-time",
+  "workingChangesIncluded": true,
+  "platform": "win32 x64",
+  "checks": {
+    "rulesSections": 4,
+    "incidentTraceLinks": 2,
+    "permissionLevels": 3,
+    "envVariables": [
+      "HOST",
+      "PORT"
+    ],
+    "allExampleValuesEmpty": true,
+    "ignoreSamplesChecked": 12,
+    "envExampleTrackable": true,
+    "localLinksChecked": 34,
+    "missingLinks": 0,
+    "codeFencesBalanced": true,
+    "collectorSyntaxChecks": 2,
+    "diffCheckExitCode": 0,
+    "t02UserEditPreserved": true,
+    "t05OwnPrettierCheckExitCode": 0,
+    "productAstEquivalent": true,
+    "finalSnapshotFileHashesVerified": 91,
+    "astComparedFiles": 15,
+    "generatedEvidenceScan": {
+      "recordedAtUtc": "2026-11-11T03:26:46.130Z",
+      "scanner": "gitleaks 8.30.1",
+      "exitCode": 1,
+      "findingCount": 3,
+      "verifiedFalsePositives": 3,
+      "unresolvedFindings": 0,
+      "findings": [
+        {
+          "ruleId": "generic-api-key",
+          "startLine": 162,
+          "sourcePath": "docs/architecture/auth-and-errors.md",
+          "classification": "false_positive_verified_local_file_digest"
+        },
+        {
+          "ruleId": "generic-api-key",
+          "startLine": 188,
+          "sourcePath": "docs/evidence/PA02/T05/scan-secrets.mjs",
+          "classification": "false_positive_verified_local_file_digest"
+        },
+        {
+          "ruleId": "generic-api-key",
+          "startLine": 233,
+          "sourcePath": "tests/auth/publish-auth-errors.test.mjs",
+          "classification": "false_positive_verified_local_file_digest"
+        }
+      ],
+      "note": "Generated reports checked after final source scan. Only result metadata appended afterwards. No raw Match/Secret retained."
+    }
+  },
+  "collectorSetupNotes": [
+    "Initial metadata display command had PowerShell pipeline syntax error; corrected without changing scan data",
+    "Initial control collection treated PowerShell stderr wrapper as a source filename; corrected path parsing, preserving format-check exit 1 and all 15 warnings",
+    "AST helper setup: TypeScript 7 package lacked the assumed JS API path; used the installed Prettier parser. Initial AST fingerprint included __contentEnd position metadata; excluded position metadata and re-compared against untouched backup, not against formatted source."
+  ],
+  "limitations": [
+    "Reference cost estimate documented; actual provider/model choice, spending cap and measured cost remain unverified; no provider request",
+    "Local Windows verification; not CI/Linux or independent review",
+    "No T05 commit/push/PR or remote issue synchronization"
+  ],
+  "beforeFormatting": {
+    "completedAtUtc": "2026-11-10T18:35:57.445Z",
+    "qualityCommands": [
+      {
+        "command": "npm run lint",
+        "exitCode": 0
+      },
+      {
+        "command": "npm run format-check",
+        "exitCode": 1,
+        "files": [
+          "src/app.ts",
+          "src/auth/identity.ts",
+          "src/auth/problem-details.ts",
+          "src/auth/types.ts",
+          "src/config.ts",
+          "src/data/fixtures.ts",
+          "src/data/in-memory-publish-store.ts",
+          "src/data/index.ts",
+          "src/data/types.ts",
+          "src/modules/publish/index.ts",
+          "src/modules/review-queue/index.ts",
+          "src/modules/submissions/index.ts",
+          "src/server.ts",
+          "tests/auth/publish-auth-errors.test.mjs",
+          "tests/data/publish-store.test.mjs"
+        ]
+      },
+      {
+        "command": "npm run type-check",
+        "exitCode": 0
+      },
+      {
+        "command": "npm test",
+        "exitCode": 0,
+        "tests": 67,
+        "pass": 67,
+        "fail": 0,
+        "skipped": 0,
+        "cancelled": 0
+      }
+    ],
+    "baselineFormat": {
+      "sourceHead": "09245d7391f229b7d8b6e40d2ff124e14fa552d4",
+      "checkout": "fresh isolated detached worktree; no T05 changes",
+      "command": "node <same locked prettier>/bin/prettier.cjs --check .",
+      "exitCode": 1,
+      "files": [
+        "src/auth/identity.ts",
+        "src/auth/problem-details.ts",
+        "src/auth/types.ts",
+        "src/data/fixtures.ts",
+        "src/data/in-memory-publish-store.ts",
+        "tests/auth/publish-auth-errors.test.mjs",
+        "tests/data/publish-store.test.mjs"
+      ]
+    },
+    "additionalCrLfWarnings": [
+      "src/app.ts",
+      "src/config.ts",
+      "src/data/index.ts",
+      "src/data/types.ts",
+      "src/modules/publish/index.ts",
+      "src/modules/review-queue/index.ts",
+      "src/modules/submissions/index.ts",
+      "src/server.ts"
+    ]
+  },
+  "formatting": {
+    "authorizedByUser": true,
+    "formattedFiles": 15,
+    "gitStyleDiffFiles": 7,
+    "eolOnlyFiles": 8,
+    "method": "Locked Prettier TypeScript parser compares AST before/after; excludes positions/comments/raw spelling/Prettier __ position metadata",
+    "astEquivalent": true,
+    "files": [
+      "src/app.ts",
+      "src/auth/identity.ts",
+      "src/auth/problem-details.ts",
+      "src/auth/types.ts",
+      "src/config.ts",
+      "src/data/fixtures.ts",
+      "src/data/in-memory-publish-store.ts",
+      "src/data/index.ts",
+      "src/data/types.ts",
+      "src/modules/publish/index.ts",
+      "src/modules/review-queue/index.ts",
+      "src/modules/submissions/index.ts",
+      "src/server.ts",
+      "tests/auth/publish-auth-errors.test.mjs",
+      "tests/data/publish-store.test.mjs"
+    ]
+  },
+  "securityScanSummary": {
+    "sourceHead": "444add245e5fb0fe7649b14e758bbd497b02b35b",
+    "scanCompletedAtUtc": "2026-11-11T03:26:12.776Z",
+    "historyCommits": 33,
+    "refs": 17,
+    "scans": [
+      {
+        "name": "history",
+        "exitCode": 1,
+        "findingCount": 13
+      },
+      {
+        "name": "working-tree",
+        "exitCode": 1,
+        "findingCount": 2
+      },
+      {
+        "name": "git-refs-and-messages",
+        "exitCode": 0,
+        "findingCount": 0
+      },
+      {
+        "name": "git-config-and-remotes",
+        "exitCode": 0,
+        "findingCount": 0
+      }
+    ],
+    "rawFindingCount": 15,
+    "verifiedFalsePositives": 15,
+    "unresolvedFindings": 0
+  },
+  "costEstimate": {
+    "recordedAtUtc": "2026-11-10T19:04:07.087Z",
+    "document": "docs/evidence/PA02/T05/model-cost.md",
+    "keyCustodianProposed": "Tran Quoc Vy (tranquocvy)",
+    "custodianAcceptanceVerified": false,
+    "referenceProvider": "OpenAI",
+    "referenceModel": "gpt-5.4-mini-2026-03-17",
+    "actualProviderModelChosen": false,
+    "inputUsdPerMillion": 0.75,
+    "outputUsdPerMillion": 4.5,
+    "priceSource": "https://developers.openai.com/api/docs/models/gpt-5.4-mini",
+    "scenarios": [
+      {
+        "name": "standard",
+        "submissions": 80,
+        "constraints": 3,
+        "inputTokensPerCall": 2000,
+        "outputTokensPerCall": 1000,
+        "calls": 240,
+        "baseUsd": 1.44,
+        "with20PercentRetryUsd": 1.728,
+        "allRetriedOnceUsd": 2.88
+      },
+      {
+        "name": "heavy",
+        "submissions": 80,
+        "constraints": 5,
+        "inputTokensPerCall": 4000,
+        "outputTokensPerCall": 2000,
+        "calls": 400,
+        "baseUsd": 4.8,
+        "with20PercentRetryUsd": 5.76,
+        "allRetriedOnceUsd": 9.6
+      }
+    ],
+    "spendingCapVerified": false,
+    "measured": false,
+    "providerRequestsMade": 0
+  },
+  "documentationUpdatedAtUtc": "2026-11-10T19:04:07.088Z",
+  "qualityResultsReuseNote": "Prior product quality checks retained: this update changed documentation only; no product source or tests changed after those checks.",
+  "reviewRevision": {
+    "recordedAtUtc": "2026-11-11T02:52:25.770Z",
+    "sourceHead": "444add245e5fb0fe7649b14e758bbd497b02b35b",
+    "snapshotKind": "local-working-tree-after-review-not-committed",
+    "reviewedCommit": "444add245e5fb0fe7649b14e758bbd497b02b35b",
+    "qualityCommands": [
+      {
+        "command": "npm run lint",
+        "exitCode": 0
+      },
+      {
+        "command": "npm run format-check",
+        "exitCode": 0
+      },
+      {
+        "command": "npm run type-check",
+        "exitCode": 0
+      },
+      {
+        "command": "npm test",
+        "exitCode": 0,
+        "tests": 67,
+        "pass": 67,
+        "fail": 0,
+        "skipped": 0,
+        "cancelled": 0
+      }
+    ],
+    "ownFormattingExitCode": 0,
+    "helperSyntaxExitCode": 0,
+    "localLinksChecked": 36,
+    "missingLinks": 0,
+    "snapshotHashesVerified": 91,
+    "negativeProbes": [
+      {
+        "name": "outside manifest",
+        "rejected": true
+      },
+      {
+        "name": "not manifest entry",
+        "rejected": true
+      },
+      {
+        "name": "stale snapshot",
+        "rejected": true
+      },
+      {
+        "name": "wrong digest in valid manifest",
+        "rejected": true
+      }
+    ],
+    "limitations": [
+      "Spending cap evidence not supplied",
+      "No product model request, no commit/push of this revision"
+    ],
+    "documentationCleanupAtUtc": "2026-11-11T03:26:45.731Z",
+    "reviewScope": "Updated Vy review: cap evidence in model-cost section 5 and reproducible T03/T05 digest triage; no duplicate tool declaration, production model choice or paid request required",
+    "qualityResultsNote": "Quality results recorded before documentation-only cleanup; product source/tests/helper unchanged by this cleanup",
+    "scanCompletedAtUtc": "2026-11-11T03:26:12.776Z"
+  }
+}

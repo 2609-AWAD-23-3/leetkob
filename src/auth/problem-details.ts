@@ -297,7 +297,10 @@ export function sendProblem(
   if (sanitized.status === 401) {
     reply.header('WWW-Authenticate', 'Bearer');
   }
-  return reply.code(sanitized.status).type(PROBLEM_CONTENT_TYPE).send(sanitized);
+  return reply
+    .code(sanitized.status)
+    .type(PROBLEM_CONTENT_TYPE)
+    .send(sanitized);
 }
 
 function isMalformedJsonError(error: unknown): boolean {
@@ -377,12 +380,14 @@ export function registerPublishErrorHandling(scope: FastifyInstance): void {
               typeof v?.instancePath === 'string' && v.instancePath.length > 0
                 ? v.instancePath
                 : v?.params && typeof v.params.missingProperty === 'string'
-                ? `/${v.params.missingProperty}`
-                : '';
+                  ? `/${v.params.missingProperty}`
+                  : '';
             return {
               pointer,
               detail:
-                typeof v?.message === 'string' ? v.message : 'validation failed',
+                typeof v?.message === 'string'
+                  ? v.message
+                  : 'validation failed',
             };
           })
         : [
