@@ -3,9 +3,9 @@
 **Thực hiện:** Nguyễn Khắc Vượng (vinny2707). **Reviewer độc lập:** Vỹ (tranquocvy).
 Nguồn acceptance: [T05 trong plan PA02](../../../plans/PA02.md#t05--rules-permissions-v%C3%A0-secrets), [Issue #5](https://github.com/2609-AWAD-23-3/leetkob/issues/5).
 
-**Trạng thái:** người dùng đã đồng ý nội dung permissions, hai sự cố và khai báo AI; đang kiểm chứng bản T05 trước review độc lập. Đã có estimate tham chiếu và Vỹ là người dự kiến giữ key; chưa chốt model triển khai hoặc xác minh spending cap/measured nên chưa đủ điều kiện nghiệm thu. Nhánh feat/t05-rules-permissions-secrets được tạo từ 2dfff8f11cc6c28a8f5d8795bf915735b117902c và đã đồng bộ develop bằng fast-forward tới baseline 09245d7391f229b7d8b6e40d2ff124e14fa552d4. Checklist nghiệm thu chính vẫn ở plan/issue; bảng dưới chỉ đối chiếu artifact, không tạo định nghĩa hoàn thành mới.
+**Trạng thái:** đã công bố [Draft PR #21](https://github.com/2609-AWAD-23-3/leetkob/pull/21), commit 444add2. Review đã sửa của Vỹ yêu cầu hai mục: hồ sơ spending cap tại mục 5 của model-cost.md và khả năng chạy lại scan/triage sau commit. Bản sửa tiếp theo giữ local để Vượng review, chưa commit/push. Helper đã kiểm chứng các digest T03/T05; bằng chứng cap thực tế vẫn chưa được cung cấp. Đã có estimate tham chiếu và Vỹ là người dự kiến giữ key. Nhánh bắt đầu từ 2dfff8f và tích hợp develop tại 09245d7 trước commit T05. Không yêu cầu khai báo lại công cụ đã ghi đúng trong AI-log, gọi model thật hoặc chốt production model để tạo evidence. Checklist nghiệm thu chính vẫn ở plan/issue; không tự tick review items thay Vỹ.
 
-**Kiểm chứng lại ngày 11/11/2026:** dùng baseline 09245d7 có T03/T04 và bản T05 local đã chỉnh. JSON hiện tại là kết quả chạy lại; HEAD chỉ định baseline, còn manifest file/hash xác định đúng snapshot có thay đổi chưa commit. Sau khi người dùng yêu cầu sửa formatting, cả bốn quality commands đã đạt. Đây là kiểm chứng local, chưa phải CI hoặc review độc lập.
+**Kiểm chứng lại ngày 11/11/2026:** lần trước commit dùng baseline 09245d7; bản sửa theo review dùng HEAD 444add2 cùng thay đổi local. Manifest file/hash trong scan xác định snapshot mới, reviewRevision trong verification.json ghi kiểm chứng bản sửa; các trường cũ vẫn giữ kết quả tại thời điểm thu trước commit. Cả bốn quality commands đã đạt; lượt dọn tài liệu tiếp theo không đổi source/tests. Đây là kiểm chứng local của assistant; review độc lập của Vỹ áp dụng commit 444add2, chưa áp dụng bản sửa local này.
 
 ## 1. Những gì đã chuẩn bị
 
@@ -24,11 +24,11 @@ Nguồn acceptance: [T05 trong plan PA02](../../../plans/PA02.md#t05--rules-perm
 Scan dùng Gitleaks 8.30.1 portable tải từ release chính thức, checksum archive đã đối chiếu; cấu hình mặc định được pin theo tag và SHA-256. Không cài global, thay runtime hoặc sửa dependency/manifest/lockfile. Collector chỉ phục vụ evidence T05, không thay runner chung T04.
 
 - **Working tree:** scan snapshot gồm file tracked, untracked, hidden và ignored của repo; loại root .git, node_modules, dist cùng các report tự sinh để tránh tự tham chiếu. Symlink nếu có phải được liệt kê và giữ là phần chưa kiểm tra. Danh sách file/hash nằm trong security-scan.json.
-- **History:** repo không shallow, đã fetch origin/tags. Scan tất cả local refs và reflogs với full history, root commits và merge diffs. Phạm vi lượt chạy lại ghi 32 commits duy nhất, 16 refs; xem SHA chính xác trong report.
+- **History:** repo không shallow, đã fetch origin/tags. Scan tất cả local refs và reflogs với full history, root commits và merge diffs. Số commits/refs và SHA của lượt chạy hiện tại ghi trong report; không suy ra lượt scan trước commit bao gồm chính commit T05.
 - **Metadata:** scan thêm commit messages, tên/nội dung refs và tag; không chỉ scan diff source.
 - **Git config/remote:** scan config áp dụng từ system/global/repository và remote URLs; kiểm tra bổ sung URL có userinfo, Authorization extraheader và key config nhạy cảm. Chỉ ghi số đếm, không lưu config thô hoặc chạy credential helper.
 
-Scan lịch sử có **10 findings**, working tree có **2 findings**; hai lượt này trả exit 1 đúng với phát hiện. Cả 12 nằm ở SHA-256 manifest trong evidence T03. Helper đối chiếu từng digest với source tại đúng commit, hoặc file local có hash trùng snapshot; xét dạng LF/CRLF. Khi source đã format khác bytes, chỉ đối chiếu source lịch sử tại HEAD sau khi chứng minh toàn bộ evidence T03 vẫn trùng tài liệu ở HEAD; verifiedAgainst chỉ rõ nơi đã xác minh, không nhận hash lịch sử khớp source sau format. Cả 12 là digest hợp lệ, phân loại false positive. Các merge diffs có thể ghi lại cùng loại finding ở nhiều commit nên giữ nguyên số đếm gốc. Metadata và config/remotes không báo finding. Không thay rules/ignore/baseline hoặc xóa history để che findings.
+Snapshot trước commit có 10 findings lịch sử và 2 working tree thuộc manifest T03. Lượt chạy từ HEAD 444add2 có 13 findings history và 2 working tree, gồm thêm 3 digest T05; 15/15 được kiểm chứng riêng, không có finding chưa phân loại. Helper đối chiếu từng entry thuộc sha256WorkingFiles của T03 hoặc workingTree.fileSha256 của T05 với source tại đúng commit, hoặc file local có hash trùng snapshot; xét dạng git blob/LF/CRLF. Nếu source local đã format, chỉ xét HEAD/ancestor khi toàn bộ evidence giống hệt bản ở HEAD và ở revision được chọn. Các trường manifestName, sourcePath, verifiedFormats và verifiedAgainst ghi rõ nguồn chứng minh. Finding mới, entry ngoài manifest hoặc digest không khớp làm helper dừng để review riêng. Không thay rules/ignore/baseline hoặc xóa history để che findings.
 
 Ba JSON report tự sinh được loại khỏi snapshot để tránh tự tham chiếu, rồi được scan riêng qua stdin. Findings nếu là SHA-256 trong manifest chỉ được phân loại sau khi đối chiếu với file local. Exit code/số findings và bằng chứng phân loại của lượt kiểm tra report được giữ tại verification.json, không đổi exit code gốc thành 0.
 
@@ -59,9 +59,9 @@ Không viết thêm unit tests hình thức cho tài liệu/chính sách. Lượ
 
 ## 4. Việc còn thiếu trước khi chốt T05
 
-- Người dùng đã đồng ý permissions, tường trình hai incidents và khai báo công việc; Vỹ vẫn cần review độc lập.
+- Vỹ đã review độc lập commit 444add2: rules/permissions/env/ignore phù hợp, không phát hiện regression; cần review lại bản bổ sung evidence.
 - Các thay đổi style ở source T02/T03 đã được người dùng cho phép, chỉ format và được kiểm chứng tương đương AST. Reviewer cần xem phần diff này cùng kết quả bốn quality commands, không suy ra đã có thay đổi nghiệp vụ hoặc đã được owner khác approve.
-- Vỹ là người dự kiến quản lý key, cần xác nhận tiếp nhận và cung cấp provider/model, cap cùng cost/lab với bằng chứng đã che. Ước tính và số đo phải tách riêng; thiếu thì giữ blocker, không tự chấm rubric cao nhất.
-- Vỹ review độc lập bốn phần rules, ba mức quyền, env/ignore, trace sự cố, phạm vi scan và evidence chi phí.
-- Khi người dùng cho phép công bố mới đồng bộ checklist/evidence của plan và Issue #5, commit/push và mở PR vào develop với Refs #5. Không tick các review items thay Vỹ; không merge/đóng task khi thiếu acceptance.
+- Vỹ là người dự kiến quản lý key; cần bổ sung mức cap, kỳ áp dụng, phạm vi account/project và hành vi khi chạm giới hạn cùng bằng chứng đã che tại mục 5 của model-cost.md. Ước tính và số đo giữ riêng; measured chưa có ghi đúng là chưa đo. Không yêu cầu gọi model thật hoặc chốt production model để tạo evidence cho PR này; không tự chấm rubric cao nhất khi thiếu bằng chứng.
+- Giữ khai báo công cụ thực tế của T05 trong [AI-log](AI-LOG.md), không thêm danh sách công cụ chưa sử dụng. T11 tổng hợp AI-log từng task; PR T05 không sửa các báo cáo root.
+- PR #21 đã mở với Refs #5. Bản sửa theo review chưa được công bố; không tick các review items thay Vỹ, không merge/đóng task khi thiếu acceptance.
 - Bàn giao T11 nội dung README/AI-log/security/cost; không tự sửa README setup/manifest/tooling thuộc Vỹ trong T05. Việc cài key/cap thực tế do người có quyền, không do assistant tự thao tác.

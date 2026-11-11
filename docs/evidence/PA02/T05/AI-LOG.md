@@ -96,3 +96,17 @@ Các entry này là tường trình bổ sung sau sự kiện, cần người d�
 **Không chọn:** không dùng estimate làm bằng chứng spending cap, không nhận giá của model tham chiếu là giá model đã chốt, không bịa usage/billing hoặc gọi model để lấy số đo. Chưa đánh dấu hoàn thành mục cap/model thực tế.
 
 **Phần làm tay:** người dùng chỉ định Vỹ ở mức dự kiến và yêu cầu bản tính; assistant tra nguồn, tính toán và viết tài liệu. Không có xác nhận tài khoản/key từ Vỹ trong phiên này; chưa commit/push.
+
+## 11/11/2026 — Sửa theo review đã cập nhật của Vỹ trên PR #21
+
+**Công cụ (Tool):** Codex assistant; Gitleaks 8.30.1 và formatter local theo lockfile. Khai báo này chỉ phản ánh phần T05; AI-log các task khác do T11 tổng hợp, không khai báo lại công cụ cả nhóm ở đây.
+
+**Yêu cầu (Asked for):** người dùng yêu cầu sửa và dọn bản local theo review Vỹ đã cập nhật, để tự review trước khi commit/push.
+
+**Phần giữ lại (Kept):** hai yêu cầu evidence: spending cap tại mục 5 của model-cost.md và khả năng chạy lại scan/triage sau commit 444add2. Giữ nguyên nội dung cũ của AI-log và kết quả review độc lập; không sửa logic sản phẩm hoặc assertions.
+
+**Phần điều chỉnh (Changed):** helper kiểm chứng từng entry SHA-256 của manifest T03/T05, ghi source/revision và giữ exit code scanner. Nếu source local đã format, chỉ xét HEAD/ancestor có toàn bộ evidence giống hệt trước khi đối chiếu digest. Lượt chạy sau commit có 13 findings history và 2 working tree; 15/15 được xác minh là file digests. Bốn probe trong bộ nhớ (ngoài manifest, dòng không phải entry, snapshot sai, digest sai) đều bị từ chối. Đưa phiếu cap vào mục 5.1, bỏ yêu cầu khai báo lại AI khỏi README/verification; AGENTS.md làm rõ formatter local và format-check, không thêm hook bắt buộc.
+
+**Phần không chọn (Rejected):** không thêm ChatGPT/Claude khi không có nguồn sử dụng, không ép scanner exit 0, không ignore toàn bộ report/rule, không bịa cap hoặc usage. Không gọi model thật/chốt production model/sửa báo cáo root chỉ để đáp ứng review này.
+
+**Phần làm tay (By hand):** Vỹ cung cấp và sửa nhận xét độc lập, người dùng chỉ rõ công cụ thực tế là Codex và yêu cầu dọn hồ sơ; assistant chỉnh sửa và chạy kiểm chứng.

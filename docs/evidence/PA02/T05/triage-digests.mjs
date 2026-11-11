@@ -1,4 +1,4 @@
-// Verify only SHA-256 manifests in T03 evidence, against the exact history/snapshot source.
+// Verify exact T03/T05 SHA-256 manifest entries against history/snapshot source.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -27,17 +27,20 @@ for (const scan of report.scans)
   for (const finding of scan.findings) {
     if (
       !['history', 'working-tree'].includes(scan.name) ||
-      finding.file !== 'docs/evidence/PA02/T03/verification.json'
+      ![
+        'docs/evidence/PA02/T03/verification.json',
+        'docs/evidence/PA02/T05/security-scan.json',
+      ].includes(finding.file)
     ) {
       throw new Error(
         'New finding requires private review; do not suppress it',
       );
     }
     function sourceText(file) {
-      if (scan.name === 'history') return show(`${finding.commit}:${file}`);
       const resolved = path.resolve(repo, file);
       if (!resolved.startsWith(repo + path.sep))
         throw new Error('Manifest path escapes repo');
+      if (scan.name === 'history') return show(`${finding.commit}:${file}`);
       const bytes = fs.readFileSync(resolved);
       const expectedSnapshotHash = report.workingTree.fileSha256[file];
       if (
@@ -55,7 +58,15 @@ for (const scan of report.scans)
     const line = text.split(/\r?\n/)[finding.startLine - 1];
     const match = /^\s*"([^"]+)":\s*"([a-f0-9]{64})",?$/.exec(line);
     const record = JSON.parse(text.replace(/^\uFEFF/, ''));
-    if (!match || record.sha256WorkingFiles[match[1]] !== match[2]) {
+    const manifestName =
+      finding.file === 'docs/evidence/PA02/T03/verification.json'
+        ? 'sha256WorkingFiles'
+        : 'workingTree.fileSha256';
+    const manifest =
+      manifestName === 'sha256WorkingFiles'
+        ? record.sha256WorkingFiles
+        : record.workingTree?.fileSha256;
+    if (!match || !manifest || manifest[match[1]] !== match[2]) {
       throw new Error('Finding is not a SHA-256 manifest entry');
     }
     function matchingFormats(source) {
@@ -82,8 +93,31 @@ for (const scan of report.scans)
       ) {
         throw new Error('Changed historical evidence requires separate review');
       }
-      formats = matchingFormats(show(`${report.sourceHead}:${match[1]}`));
-      verifiedAgainst = report.sourceHead;
+      const revisions = spawnSync(
+        'git',
+        ['log', '--format=%H', report.sourceHead, '--', finding.file],
+        { cwd: repo, encoding: 'utf8' },
+      );
+      if (revisions.status !== 0)
+        throw new Error('Cannot inspect manifest history');
+      // HEAD may now contain formatting changes. Only an ancestor with the
+      // identical entire evidence document can establish the recorded digest.
+      const candidates = [
+        report.sourceHead,
+        ...revisions.stdout.trim().split(/\r?\n/).filter(Boolean),
+      ];
+      for (const revision of new Set(candidates)) {
+        if (
+          show(`${revision}:${finding.file}`).replace(/\r\n/g, '\n') !==
+          text.replace(/\r\n/g, '\n')
+        )
+          continue;
+        formats = matchingFormats(show(`${revision}:${match[1]}`));
+        if (formats.length) {
+          verifiedAgainst = revision;
+          break;
+        }
+      }
     }
     if (!formats.length)
       throw new Error('Unverified digest; retain finding for review');
@@ -92,10 +126,10 @@ for (const scan of report.scans)
       ...finding,
       classification: 'false_positive_verified_file_digest',
       sourcePath: match[1],
+      manifestName,
       verifiedFormats: formats,
       verifiedAgainst,
-      reason:
-        'SHA-256 in sha256WorkingFiles matches the referenced source content, not a provider credential. No validity request was sent.',
+      reason: `SHA-256 in ${manifestName} matches the referenced source content, not a provider credential. No validity request was sent.`,
     });
   }
 const result = {

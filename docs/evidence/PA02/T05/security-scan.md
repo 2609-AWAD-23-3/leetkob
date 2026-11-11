@@ -22,14 +22,16 @@ git fetch origin --tags
 node docs/evidence/PA02/T05/scan-secrets.mjs "$t05Tools\gitleaks.exe" "$t05Tools\default-gitleaks.toml"
 ```
 
-Scanner có findings thì collector trả exit 1 và vẫn lưu report đã loại dữ liệu nhạy cảm. Lỗi công cụ/config/history shallow thì dừng, không ghi nhận scan thành công. **Không ghép điều kiện chỉ chạy triage khi scan exit 0**, vì lịch sử hiện có bốn findings cần triage:
+Scanner có findings thì collector trả exit 1 và vẫn lưu report đã loại dữ liệu nhạy cảm. Lỗi công cụ/config/history shallow thì dừng, không ghi nhận scan thành công. **Không ghép điều kiện chỉ chạy triage khi scan exit 0**. Số findings có thể tăng khi report chứa digest được commit; đọc số đếm của lượt scan hiện tại thay vì cố định số findings:
 
 ```powershell
 node docs/evidence/PA02/T05/triage-digests.mjs
 git diff --check
 ```
 
-triage-digests chỉ chấp nhận finding trong sha256WorkingFiles của evidence T03 khi digest khớp source tại commit tương ứng hoặc file local có hash trùng snapshot. Nếu source local đã format, helper chỉ xét digest của source lịch sử ở HEAD khi toàn bộ tài liệu evidence T03 vẫn trùng bản ở HEAD (xét LF/CRLF); report ghi verifiedAgainst để không nhầm hash lịch sử với bytes mới. Đây là kiểm chứng giá trị cụ thể, không phải allowlist bỏ qua path/rule. Gặp finding ở vị trí khác, tài liệu lịch sử bị đổi hoặc hash không khớp thì dừng để kiểm tra riêng.
+triage-digests chỉ chấp nhận từng finding thuộc một trong hai manifest: sha256WorkingFiles của T03/verification.json hoặc workingTree.fileSha256 của T05/security-scan.json. Helper đọc đúng dòng tại commit mà scanner chỉ ra, kiểm tra đó là entry của manifest tương ứng rồi tính SHA-256 từ nội dung file được entry tham chiếu tại cùng commit (xét git blob/LF/CRLF). Finding working tree phải khớp snapshot trước khi đối chiếu. Không coi một chuỗi là false positive chỉ vì nó đủ 64 ký tự hoặc nằm trong report.
+
+Nếu source local đã format, helper yêu cầu toàn bộ evidence vẫn trùng bản ở HEAD (xét LF/CRLF), rồi tìm HEAD hoặc ancestor có toàn bộ tài liệu evidence giống hệt và digest khớp source tại chính revision đó. Không tùy ý lấy một file cũ khác để nhận hash khớp. Report ghi manifestName, sourcePath, verifiedFormats và verifiedAgainst để không nhầm hash lịch sử với bytes mới. Gặp finding ngoài hai manifest, dòng không thuộc manifest, path thoát repo hoặc digest không khớp thì dừng để kiểm tra riêng. Không ignore cả file/rule và không sửa dữ liệu cũ để ép digest khớp. Sau mỗi commit/push/fetch làm đổi history/refs, chạy lại collector rồi triage trên snapshot mới; evidence trước commit không bao gồm chính commit đó.
 
 Report có timestamp, HEAD, refs/SHA, số commits, danh sách snapshot/hash, scanner/config version, các exit codes và giới hạn. Nếu source/refs thay đổi sau scan, chạy lại và phân loại mới; không tái sử dụng kết luận của snapshot cũ.
 

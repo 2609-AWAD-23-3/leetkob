@@ -85,4 +85,22 @@ Ví dụ kịch bản chuẩn:
 
 1,73 USD/lab hoặc 5,76 USD/lab không phải spending cap. Budget alert chỉ cảnh báo chưa chắc chặn chi tiêu; giới hạn số lượt gọi/concurrency cũng không tự chứng minh cap tiền của provider đã hoạt động. Tài liệu này không cấu hình một giới hạn nào trong app hoặc tài khoản.
 
-Không ghi API key, cookie, thông tin thanh toán hoặc credential vào evidence/prompt. Vỹ cần cung cấp bằng chứng cấu hình đã che khi nhóm có key; không gọi provider trong unit tests để tạo số đo. T11 dùng đúng nhãn estimate/measured và giữ blocker cap/model thực tế đến khi có nguồn xác nhận.
+Không ghi API key, cookie, thông tin thanh toán hoặc credential vào evidence/prompt. Vỹ cần cung cấp bằng chứng cấu hình đã che khi nhóm có key; không gọi provider trong unit tests để tạo số đo. T11 dùng đúng nhãn estimate/measured. Theo review đã sửa của PR #21, T05 chuẩn bị hồ sơ cap bên dưới để T11 tổng hợp; không yêu cầu gọi model thật, chốt production model hoặc sửa báo cáo root chỉ để tạo evidence cho PR này. Bằng chứng cap chưa có vẫn được ghi rõ là chưa cung cấp.
+
+### 5.1. Phiếu bổ sung bằng chứng spending cap theo review PR #21
+
+**Người dự kiến cung cấp:** Vỹ. **Trạng thái hiện tại:** chưa nhận bằng chứng cấu hình; không nhận đã hoàn tất mục spending cap. Không cần gửi key để điền phiếu này.
+
+| Thông tin cần xác nhận                            | Giá trị hiện có                                              |
+| ------------------------------------------------- | ------------------------------------------------------------ |
+| Provider và phạm vi account/project áp dụng       | Chưa xác nhận                                                |
+| Mức giới hạn và đơn vị tiền                       | Chưa xác nhận; không lấy estimate làm cap                    |
+| Kỳ giới hạn và thời điểm reset                    | Chưa xác nhận                                                |
+| Loại giới hạn: chặn chi tiêu hay chỉ cảnh báo     | Chưa xác nhận                                                |
+| Hành vi khi chạm giới hạn, độ trễ/ngoại lệ nếu có | Chưa xác nhận; cần đối chiếu tài liệu của provider được chọn |
+| Người cấu hình và ngày kiểm tra                   | Chưa xác nhận                                                |
+| Đường dẫn ảnh/cấu hình/tài liệu chứng minh đã che | Chưa cung cấp                                                |
+
+Vỹ bổ sung ảnh hoặc bản xuất cấu hình đã che, giữ các trường mức tiền, kỳ, phạm vi và loại giới hạn cần review. Che API key, định danh tài khoản riêng tư, thông tin thanh toán và credential. Nếu chỉ có budget alert, ghi đúng là cảnh báo và giữ mục cap chưa đạt; không dùng ảnh cảnh báo để nhận đã có chặn chi tiêu. Không tạo usage tính phí chỉ để chứng minh cap, không tự cấp quyền hoặc thay cấu hình tài khoản trong T05.
+
+Phiếu này giúp thu đủ evidence, **chưa phải evidence cap đã được thiết lập**. Sau khi người có quyền cung cấp thông tin, cập nhật cùng nguồn và ngày xác minh; đến lúc đó mới đánh giá acceptance.

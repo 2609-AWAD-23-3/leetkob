@@ -8,6 +8,7 @@
 
 - Cài: `npm ci --ignore-scripts`; build: `npm run build`; kiểm tra diff: `git diff --check`. PowerShell có thể cần `npm.cmd`.
 - Quality checks: `npm run lint`, `npm run format-check`, `npm run type-check`, `npm test`. Đối chiếu package.json của checkout; thiếu script phải báo rõ, không nhận đã chạy.
+- Dùng Prettier local theo lockfile và cấu hình repo (`endOfLine: lf`); chạy `npm run format-check` trước khi công bố thay đổi. Lệnh chỉ kiểm tra, không tự sửa; lint/test không thay thế format-check. CI/branch protection phối hợp T04/T09.
 
 ## conventions
 

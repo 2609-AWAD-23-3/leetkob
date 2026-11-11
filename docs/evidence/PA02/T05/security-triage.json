@@ -1,7 +1,7 @@
 {
-  "recordedAtUtc": "2026-11-10T19:03:28.274Z",
-  "sourceHead": "09245d7391f229b7d8b6e40d2ff124e14fa552d4",
-  "scanCompletedAtUtc": "2026-11-10T19:03:27.241Z",
+  "recordedAtUtc": "2026-11-11T03:26:14.160Z",
+  "sourceHead": "444add245e5fb0fe7649b14e758bbd497b02b35b",
+  "scanCompletedAtUtc": "2026-11-11T03:26:12.776Z",
   "scanner": "gitleaks 8.30.1 official default rules",
   "findings": [
     {
@@ -13,6 +13,7 @@
       "commit": "13aa5c6318c4f5ed1e237ff65788254db1f80b61",
       "classification": "false_positive_verified_file_digest",
       "sourcePath": "tests/auth/publish-auth-errors.test.mjs",
+      "manifestName": "sha256WorkingFiles",
       "verifiedFormats": [
         "gitBlob",
         "lf"
@@ -29,6 +30,7 @@
       "commit": "13aa5c6318c4f5ed1e237ff65788254db1f80b61",
       "classification": "false_positive_verified_file_digest",
       "sourcePath": "docs/architecture/auth-and-errors.md",
+      "manifestName": "sha256WorkingFiles",
       "verifiedFormats": [
         "gitBlob",
         "lf"
@@ -42,41 +44,10 @@
       "file": "docs/evidence/PA02/T03/verification.json",
       "startLine": 46,
       "endLine": 46,
-      "commit": "09245d7391f229b7d8b6e40d2ff124e14fa552d4",
-      "classification": "false_positive_verified_file_digest",
-      "sourcePath": "tests/auth/publish-auth-errors.test.mjs",
-      "verifiedFormats": [
-        "gitBlob",
-        "lf"
-      ],
-      "verifiedAgainst": "09245d7391f229b7d8b6e40d2ff124e14fa552d4",
-      "reason": "SHA-256 in sha256WorkingFiles matches the referenced source content, not a provider credential. No validity request was sent."
-    },
-    {
-      "scan": "history",
-      "ruleId": "generic-api-key",
-      "file": "docs/evidence/PA02/T03/verification.json",
-      "startLine": 47,
-      "endLine": 47,
-      "commit": "09245d7391f229b7d8b6e40d2ff124e14fa552d4",
-      "classification": "false_positive_verified_file_digest",
-      "sourcePath": "docs/architecture/auth-and-errors.md",
-      "verifiedFormats": [
-        "gitBlob",
-        "lf"
-      ],
-      "verifiedAgainst": "09245d7391f229b7d8b6e40d2ff124e14fa552d4",
-      "reason": "SHA-256 in sha256WorkingFiles matches the referenced source content, not a provider credential. No validity request was sent."
-    },
-    {
-      "scan": "history",
-      "ruleId": "generic-api-key",
-      "file": "docs/evidence/PA02/T03/verification.json",
-      "startLine": 46,
-      "endLine": 46,
       "commit": "ad8402f76ce4b85d4a90bd2d9c785b23fa066f01",
       "classification": "false_positive_verified_file_digest",
       "sourcePath": "tests/auth/publish-auth-errors.test.mjs",
+      "manifestName": "sha256WorkingFiles",
       "verifiedFormats": [
         "gitBlob",
         "lf"
@@ -93,6 +64,7 @@
       "commit": "ad8402f76ce4b85d4a90bd2d9c785b23fa066f01",
       "classification": "false_positive_verified_file_digest",
       "sourcePath": "docs/architecture/auth-and-errors.md",
+      "manifestName": "sha256WorkingFiles",
       "verifiedFormats": [
         "gitBlob",
         "lf"
@@ -106,73 +78,10 @@
       "file": "docs/evidence/PA02/T03/verification.json",
       "startLine": 46,
       "endLine": 46,
-      "commit": "35f361c65af6a4346d580344892de561a413f9f2",
+      "commit": "09245d7391f229b7d8b6e40d2ff124e14fa552d4",
       "classification": "false_positive_verified_file_digest",
       "sourcePath": "tests/auth/publish-auth-errors.test.mjs",
-      "verifiedFormats": [
-        "gitBlob",
-        "lf"
-      ],
-      "verifiedAgainst": "35f361c65af6a4346d580344892de561a413f9f2",
-      "reason": "SHA-256 in sha256WorkingFiles matches the referenced source content, not a provider credential. No validity request was sent."
-    },
-    {
-      "scan": "history",
-      "ruleId": "generic-api-key",
-      "file": "docs/evidence/PA02/T03/verification.json",
-      "startLine": 47,
-      "endLine": 47,
-      "commit": "35f361c65af6a4346d580344892de561a413f9f2",
-      "classification": "false_positive_verified_file_digest",
-      "sourcePath": "docs/architecture/auth-and-errors.md",
-      "verifiedFormats": [
-        "gitBlob",
-        "lf"
-      ],
-      "verifiedAgainst": "35f361c65af6a4346d580344892de561a413f9f2",
-      "reason": "SHA-256 in sha256WorkingFiles matches the referenced source content, not a provider credential. No validity request was sent."
-    },
-    {
-      "scan": "history",
-      "ruleId": "generic-api-key",
-      "file": "docs/evidence/PA02/T03/verification.json",
-      "startLine": 46,
-      "endLine": 46,
-      "commit": "ecd9be95e40434eeb4a159b2e5d46a8192e861ef",
-      "classification": "false_positive_verified_file_digest",
-      "sourcePath": "tests/auth/publish-auth-errors.test.mjs",
-      "verifiedFormats": [
-        "gitBlob",
-        "lf"
-      ],
-      "verifiedAgainst": "ecd9be95e40434eeb4a159b2e5d46a8192e861ef",
-      "reason": "SHA-256 in sha256WorkingFiles matches the referenced source content, not a provider credential. No validity request was sent."
-    },
-    {
-      "scan": "history",
-      "ruleId": "generic-api-key",
-      "file": "docs/evidence/PA02/T03/verification.json",
-      "startLine": 47,
-      "endLine": 47,
-      "commit": "ecd9be95e40434eeb4a159b2e5d46a8192e861ef",
-      "classification": "false_positive_verified_file_digest",
-      "sourcePath": "docs/architecture/auth-and-errors.md",
-      "verifiedFormats": [
-        "gitBlob",
-        "lf"
-      ],
-      "verifiedAgainst": "ecd9be95e40434eeb4a159b2e5d46a8192e861ef",
-      "reason": "SHA-256 in sha256WorkingFiles matches the referenced source content, not a provider credential. No validity request was sent."
-    },
-    {
-      "scan": "working-tree",
-      "ruleId": "generic-api-key",
-      "file": "docs/evidence/PA02/T03/verification.json",
-      "startLine": 46,
-      "endLine": 46,
-      "commit": "",
-      "classification": "false_positive_verified_file_digest",
-      "sourcePath": "tests/auth/publish-auth-errors.test.mjs",
+      "manifestName": "sha256WorkingFiles",
       "verifiedFormats": [
         "gitBlob",
         "lf"
@@ -181,6 +90,159 @@
       "reason": "SHA-256 in sha256WorkingFiles matches the referenced source content, not a provider credential. No validity request was sent."
     },
     {
+      "scan": "history",
+      "ruleId": "generic-api-key",
+      "file": "docs/evidence/PA02/T03/verification.json",
+      "startLine": 47,
+      "endLine": 47,
+      "commit": "09245d7391f229b7d8b6e40d2ff124e14fa552d4",
+      "classification": "false_positive_verified_file_digest",
+      "sourcePath": "docs/architecture/auth-and-errors.md",
+      "manifestName": "sha256WorkingFiles",
+      "verifiedFormats": [
+        "gitBlob",
+        "lf"
+      ],
+      "verifiedAgainst": "09245d7391f229b7d8b6e40d2ff124e14fa552d4",
+      "reason": "SHA-256 in sha256WorkingFiles matches the referenced source content, not a provider credential. No validity request was sent."
+    },
+    {
+      "scan": "history",
+      "ruleId": "generic-api-key",
+      "file": "docs/evidence/PA02/T03/verification.json",
+      "startLine": 46,
+      "endLine": 46,
+      "commit": "ecd9be95e40434eeb4a159b2e5d46a8192e861ef",
+      "classification": "false_positive_verified_file_digest",
+      "sourcePath": "tests/auth/publish-auth-errors.test.mjs",
+      "manifestName": "sha256WorkingFiles",
+      "verifiedFormats": [
+        "gitBlob",
+        "lf"
+      ],
+      "verifiedAgainst": "ecd9be95e40434eeb4a159b2e5d46a8192e861ef",
+      "reason": "SHA-256 in sha256WorkingFiles matches the referenced source content, not a provider credential. No validity request was sent."
+    },
+    {
+      "scan": "history",
+      "ruleId": "generic-api-key",
+      "file": "docs/evidence/PA02/T03/verification.json",
+      "startLine": 47,
+      "endLine": 47,
+      "commit": "ecd9be95e40434eeb4a159b2e5d46a8192e861ef",
+      "classification": "false_positive_verified_file_digest",
+      "sourcePath": "docs/architecture/auth-and-errors.md",
+      "manifestName": "sha256WorkingFiles",
+      "verifiedFormats": [
+        "gitBlob",
+        "lf"
+      ],
+      "verifiedAgainst": "ecd9be95e40434eeb4a159b2e5d46a8192e861ef",
+      "reason": "SHA-256 in sha256WorkingFiles matches the referenced source content, not a provider credential. No validity request was sent."
+    },
+    {
+      "scan": "history",
+      "ruleId": "generic-api-key",
+      "file": "docs/evidence/PA02/T03/verification.json",
+      "startLine": 46,
+      "endLine": 46,
+      "commit": "35f361c65af6a4346d580344892de561a413f9f2",
+      "classification": "false_positive_verified_file_digest",
+      "sourcePath": "tests/auth/publish-auth-errors.test.mjs",
+      "manifestName": "sha256WorkingFiles",
+      "verifiedFormats": [
+        "gitBlob",
+        "lf"
+      ],
+      "verifiedAgainst": "35f361c65af6a4346d580344892de561a413f9f2",
+      "reason": "SHA-256 in sha256WorkingFiles matches the referenced source content, not a provider credential. No validity request was sent."
+    },
+    {
+      "scan": "history",
+      "ruleId": "generic-api-key",
+      "file": "docs/evidence/PA02/T03/verification.json",
+      "startLine": 47,
+      "endLine": 47,
+      "commit": "35f361c65af6a4346d580344892de561a413f9f2",
+      "classification": "false_positive_verified_file_digest",
+      "sourcePath": "docs/architecture/auth-and-errors.md",
+      "manifestName": "sha256WorkingFiles",
+      "verifiedFormats": [
+        "gitBlob",
+        "lf"
+      ],
+      "verifiedAgainst": "35f361c65af6a4346d580344892de561a413f9f2",
+      "reason": "SHA-256 in sha256WorkingFiles matches the referenced source content, not a provider credential. No validity request was sent."
+    },
+    {
+      "scan": "history",
+      "ruleId": "generic-api-key",
+      "file": "docs/evidence/PA02/T05/security-scan.json",
+      "startLine": 161,
+      "endLine": 161,
+      "commit": "444add245e5fb0fe7649b14e758bbd497b02b35b",
+      "classification": "false_positive_verified_file_digest",
+      "sourcePath": "docs/architecture/auth-and-errors.md",
+      "manifestName": "workingTree.fileSha256",
+      "verifiedFormats": [
+        "gitBlob",
+        "lf"
+      ],
+      "verifiedAgainst": "444add245e5fb0fe7649b14e758bbd497b02b35b",
+      "reason": "SHA-256 in workingTree.fileSha256 matches the referenced source content, not a provider credential. No validity request was sent."
+    },
+    {
+      "scan": "history",
+      "ruleId": "generic-api-key",
+      "file": "docs/evidence/PA02/T05/security-scan.json",
+      "startLine": 187,
+      "endLine": 187,
+      "commit": "444add245e5fb0fe7649b14e758bbd497b02b35b",
+      "classification": "false_positive_verified_file_digest",
+      "sourcePath": "docs/evidence/PA02/T05/scan-secrets.mjs",
+      "manifestName": "workingTree.fileSha256",
+      "verifiedFormats": [
+        "gitBlob",
+        "lf"
+      ],
+      "verifiedAgainst": "444add245e5fb0fe7649b14e758bbd497b02b35b",
+      "reason": "SHA-256 in workingTree.fileSha256 matches the referenced source content, not a provider credential. No validity request was sent."
+    },
+    {
+      "scan": "history",
+      "ruleId": "generic-api-key",
+      "file": "docs/evidence/PA02/T05/security-scan.json",
+      "startLine": 232,
+      "endLine": 232,
+      "commit": "444add245e5fb0fe7649b14e758bbd497b02b35b",
+      "classification": "false_positive_verified_file_digest",
+      "sourcePath": "tests/auth/publish-auth-errors.test.mjs",
+      "manifestName": "workingTree.fileSha256",
+      "verifiedFormats": [
+        "gitBlob",
+        "lf"
+      ],
+      "verifiedAgainst": "444add245e5fb0fe7649b14e758bbd497b02b35b",
+      "reason": "SHA-256 in workingTree.fileSha256 matches the referenced source content, not a provider credential. No validity request was sent."
+    },
+    {
+      "scan": "working-tree",
+      "ruleId": "generic-api-key",
+      "file": "docs/evidence/PA02/T03/verification.json",
+      "startLine": 46,
+      "endLine": 46,
+      "commit": "",
+      "classification": "false_positive_verified_file_digest",
+      "sourcePath": "tests/auth/publish-auth-errors.test.mjs",
+      "manifestName": "sha256WorkingFiles",
+      "verifiedFormats": [
+        "gitBlob",
+        "lf"
+      ],
+      "verifiedAgainst": "13aa5c6318c4f5ed1e237ff65788254db1f80b61",
+      "reason": "SHA-256 in sha256WorkingFiles matches the referenced source content, not a provider credential. No validity request was sent."
+    },
+    {
       "scan": "working-tree",
       "ruleId": "generic-api-key",
       "file": "docs/evidence/PA02/T03/verification.json",
@@ -189,6 +251,7 @@
       "commit": "",
       "classification": "false_positive_verified_file_digest",
       "sourcePath": "docs/architecture/auth-and-errors.md",
+      "manifestName": "sha256WorkingFiles",
       "verifiedFormats": [
         "gitBlob",
         "lf"
@@ -197,7 +260,7 @@
       "reason": "SHA-256 in sha256WorkingFiles matches the referenced source content, not a provider credential. No validity request was sent."
     }
   ],
-  "rawFindingCount": 12,
+  "rawFindingCount": 15,
   "confirmedSecrets": 0,
   "unresolvedFindings": 0,
   "limitations": "Classification is limited to these exact findings. No scanner rules, baseline, ignore file or history were changed to hide them."
