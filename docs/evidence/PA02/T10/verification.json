@@ -1,0 +1,85 @@
+{
+  "task": "T10",
+  "milestone": "PA02",
+  "executor": "BHVPhuc",
+  "reviewer": "vinny2707",
+  "experiment": {
+    "targetBranch": "main",
+    "experimentBranch": "test/t10-contract-break-fix",
+    "pullRequest": {
+      "number": 24,
+      "url": "https://github.com/2609-AWAD-23-3/leetkob/pull/24"
+    },
+    "invariant": {
+      "name": "Pending-Review Gate",
+      "slug": "pending-reviews",
+      "expectedStatus": 409,
+      "contractPath": "docs/contract/publish.md",
+      "testPath": "tests/contract/publish.test.mjs",
+      "testLine": 304,
+      "testDescription": "POST /labs/{labId}/publish — 409 pending-reviews with pendingCount member when reviews remain pending"
+    },
+    "baseline": {
+      "branch": "main",
+      "commit": "91a738b5e967a3dcd1717ce406429a764e4cfae3",
+      "sourcePR": 23,
+      "qualityGateStatus": "SUCCESS",
+      "tests": 83,
+      "pass": 83
+    },
+    "break": {
+      "commit": "934af8684bbdb324b1ff3e4c84db8b8cbcf981ea",
+      "modifiedFiles": ["src/modules/publish/index.ts"],
+      "contractOrTestsModified": false,
+      "ciRun": {
+        "runId": 42994215858,
+        "jobId": 130434141775,
+        "url": "https://github.com/2609-AWAD-23-3/leetkob/actions/runs/42994215858",
+        "conclusion": "FAILURE",
+        "status": "COMPLETED",
+        "failedStep": "Test suite (unit, contract, smoke)",
+        "assertionError": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal: 200 !== 409",
+        "tests": 83,
+        "pass": 82,
+        "fail": 1
+      },
+      "branchProtection": {
+        "mergeStateStatus": "BLOCKED",
+        "mergeCommandOutput": "X Pull request 2609-AWAD-23-3/leetkob#24 is not mergeable: the base branch policy prohibits the merge.",
+        "bypassed": false
+      }
+    },
+    "fix": {
+      "commit": "65097bae2129a071f0224d0eb30dae5fb39e8020",
+      "modifiedFiles": ["src/modules/publish/index.ts"],
+      "contractOrTestsModified": false,
+      "ciRun": {
+        "runId": 42994580687,
+        "jobId": 130435353601,
+        "url": "https://github.com/2609-AWAD-23-3/leetkob/actions/runs/42994580687",
+        "conclusion": "SUCCESS",
+        "status": "COMPLETED",
+        "duration": "14s",
+        "tests": 83,
+        "pass": 83,
+        "fail": 0
+      },
+      "localVerification": {
+        "lint": 0,
+        "formatCheck": 0,
+        "typeCheck": 0,
+        "test": 0,
+        "tests": 83,
+        "pass": 83,
+        "fail": 0
+      }
+    }
+  },
+  "environment": {
+    "os": "win32",
+    "arch": "x64",
+    "node": "v24.22.1",
+    "npm": "11.19.1"
+  },
+  "verifiedAt": "2026-11-11T09:21:00.000Z"
+}
