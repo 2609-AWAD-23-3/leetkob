@@ -203,3 +203,13 @@ By hand: Vỹ cung cấp ba họ tên và StudentID, kiểm tra nội dung hồ 
 
 Kiểm chứng: clone local sạch trên baseline b9fcd4c, cài từ lockfile, bốn quality commands exit 0 và 83/83 tests pass; demo README xác minh initial/repeat publish, body không đổi và replay header. Sau các chỉnh sửa báo cáo, format-check và diff-check đều đạt; không đổi source/tests.
 Nguồn: [evidence T11](docs/evidence/PA02/T11/README.md), [README](README.md), [PA2.md](PA2.md), [self-assessment](SELF_ASSESSMENT_REPORT.md).
+
+## 2026-11-11 — T11: sửa tính nhất quán hồ sơ theo review PR #26
+
+Tool: Codex (GPT-6) trong OpenClaw, GitHub CLI và Prettier theo lockfile.
+Asked for: xử lý các phát hiện về trạng thái task, tiêu chí checklist và các liên kết evidence.
+Kept: R2 tự chấm 8/10, tổng 95/100 và khai báo spending cap chưa xác minh.
+Changed: đổi summary T05 thành chưa hoàn tất do thiếu evidence cap; khôi phục câu gốc của checklist PA2/tag-run và bỏ tick; chuyển phương án tag-run sang phần evidence của plan; dùng snapshot protection công khai làm nguồn chính; diễn đạt liên kết tag CI trung tính để phù hợp commit freeze.
+Rejected: thay câu tiêu chí để đánh dấu đạt, dùng Issue Closed thay acceptance hoặc mô tả trạng thái tag-run tạm thời trong bản freeze.
+By hand: Vượng cung cấp nhận xét kỹ thuật tại PR #26; assistant chỉnh tài liệu và chạy kiểm tra. Không thay source/tests.
+Nguồn: [review comment](https://github.com/2609-AWAD-23-3/leetkob/pull/26#issuecomment-6795965312), [plan](docs/plans/PA02.md), [PA2.md](PA2.md).

@@ -29,7 +29,7 @@ Môi trường Windows x64, Node v24.22.1, npm 11.19.1. Clone local sạch bằn
 | Break/fix ancestry | `git merge-base --is-ancestor 934af86e HEAD` và `65097bab HEAD`: đều exit 0 |
 | Break/fix diffs | `git diff 934af86e^ 934af86e --name-only` và `git diff 934af86e 65097bab --name-only`: chỉ src/modules/publish/index.ts, không đổi contract/tests |
 
-Local commands/README demo do assistant thực hiện. Sau cập nhật metadata, format-check chạy lại exit 0. Các local Markdown targets trong bốn báo cáo, evidence T11 và plan đều trỏ tới file trong repo. Bảy dòng rubric đúng trọng số/tổng 95; 20 AI entries có đủ sáu trường. git diff --check exit 0. Hai link contract/tests sai relative path có sẵn trong plan đã được sửa, không đổi source hoặc tests.
+Local commands/README demo do assistant thực hiện. Sau cập nhật metadata, format-check chạy lại exit 0. Các local Markdown targets trong bốn báo cáo, evidence T11 và plan đều trỏ tới file trong repo. Bảy dòng rubric đúng trọng số/tổng 95; 21 AI entries có đủ sáu trường. git diff --check exit 0. Hai link contract/tests sai relative path có sẵn trong plan đã được sửa, không đổi source hoặc tests.
 
 ## Đối chiếu GitHub ngày 11/11/2026
 
@@ -40,3 +40,7 @@ Local commands/README demo do assistant thực hiện. Sau cập nhật metadata
 - PR #24 MERGED tại 7881e6caf1d8ad9a10636af262e97372eef769e9. Approval cuối: tranquocvy/head 8808f92; vinny2707/head 70d65c6 đã dismissed.
 - PR #20 được vinny2707 APPROVED tại afb30ada. PR #15 CLOSED; contract/implementation hiện hành được tích hợp qua PR #20.
 - Không có tag pa2 local sau fetch; `git ls-remote --tags origin refs/tags/pa2` exit 0, không trả ref. Chưa có evidence tag run/ZIP/submission tại thời điểm kiểm tra.
+
+## Đối chiếu tài liệu sau review PR #26
+
+Summary T05 giữ trạng thái chưa đủ acceptance do thiếu cap. Checklist tag-run được khôi phục nguyên câu và chưa đánh dấu; phương án liên kết được ghi riêng trong plan. PA2.md dùng snapshot protection trong repo và mô tả trung tính cho CI tag pa2. R2 giữ 8/10, tổng 95/100; không đổi source/tests hoặc kết quả kiểm thử lịch sử.
