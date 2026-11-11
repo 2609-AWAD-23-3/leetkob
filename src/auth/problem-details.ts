@@ -322,6 +322,9 @@ export function registerPublishErrorHandling(scope: FastifyInstance): void {
   const defaultParser = scope.getDefaultJsonParser('error', 'error');
 
   scope.removeContentTypeParser('application/json');
+  if (scope.hasContentTypeParser('text/plain')) {
+    scope.removeContentTypeParser('text/plain');
+  }
   scope.addContentTypeParser(
     'application/json',
     { parseAs: 'string' },
