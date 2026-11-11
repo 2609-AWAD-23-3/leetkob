@@ -3,7 +3,7 @@
 - **Task ID:** T08
 - **Milestone:** PA02 (Harness và Quality Gate)
 - **Executor:** Bửu Huỳnh Vĩnh Phúc (`@BHVPhuc` — Role C)
-- **Reviewer độc lập:** Nguyễn Hà Triều Vượng (`@vinny2707` — Role A)
+- **Reviewer độc lập:** Nguyễn Khắc Vượng (`@vinny2707` — Role A)
 - **Nhánh triển khai:** `feat/t08-publish`
 - **Môi trường:** Node `24.22.1` / npm `11.19.1` trên Windows x64
 
