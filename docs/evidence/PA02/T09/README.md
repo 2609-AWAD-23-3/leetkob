@@ -128,9 +128,9 @@ EOF
 
 ---
 
-## 4. Kết quả kiểm chứng cục bộ trước khi mở PR
+## 4. Kết quả kiểm chứng
 
-Chạy trên môi trường Node `24.22.1` / npm `11.19.1` trên Windows x64:
+### Kiểm chứng cục bộ (Local Node `24.22.1` / npm `11.19.1` trên Windows x64):
 
 | Lệnh | Mô tả | Kết quả | Ghi chú |
 | :--- | :--- | :---: | :--- |
@@ -139,6 +139,13 @@ Chạy trên môi trường Node `24.22.1` / npm `11.19.1` trên Windows x64:
 | `npm run type-check` | TypeScript compiler strict check | **Exit 0** | `tsc -p tsconfig.check.json` hoàn tất không lỗi |
 | `npm test` | Build & chạy test runner | **Exit 0** | **83/83 tests pass 100%** (16 contract, 18 auth, 40 data, 7 smoke, 2 lifecycle) |
 | `git diff --check` | Kiểm tra khoảng trắng / trailing | **Exit 0** | Sạch hoàn toàn |
+
+### Kiểm chứng thực tế trên GitHub Actions (PR #22):
+- **Pull Request:** [#22](https://github.com/2609-AWAD-23-3/leetkob/pull/22)
+- **CI Run ID:** [42965009498](https://github.com/2609-AWAD-23-3/leetkob/actions/runs/42965009498)
+- **Job Name:** `quality-gate` (Job ID: `130340073976`)
+- **Status:** **COMPLETED**
+- **Conclusion:** **SUCCESS** (Toàn bộ các bước: checkout, setup-node 24.x, npm ci, lint, format-check, type-check, test đều đạt tick xanh trong 18 giây).
 
 ---
 

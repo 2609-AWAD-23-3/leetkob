@@ -13,6 +13,19 @@
     "nodeVersion": "24.x",
     "triggers": ["push:develop", "push:main", "push:tags:pa2", "pull_request:develop", "pull_request:main"]
   },
+  "pullRequest": {
+    "number": 22,
+    "url": "https://github.com/2609-AWAD-23-3/leetkob/pull/22",
+    "ciRun": {
+      "runId": 42965009498,
+      "jobId": 130340073976,
+      "url": "https://github.com/2609-AWAD-23-3/leetkob/actions/runs/42965009498",
+      "conclusion": "SUCCESS",
+      "status": "COMPLETED",
+      "checkName": "quality-gate",
+      "duration": "18s"
+    }
+  },
   "branchProtection": {
     "targetBranch": "main",
     "requiredStatusCheck": "quality-gate",
