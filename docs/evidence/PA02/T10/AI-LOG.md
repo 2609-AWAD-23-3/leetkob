@@ -17,7 +17,7 @@ Thực hiện thí nghiệm Task T10 theo đúng chuẩn rubric PA02:
 **Phần giữ lại (Kept):**
 - Invariant Pending-Review Gate được quy định tại `docs/contract/publish.md` và kiểm thử tại `tests/contract/publish.test.mjs:304`.
 - Giữ nguyên vẹn 100% nội dung của contract và toàn bộ test suites trong suốt quá trình thí nghiệm.
-- Ghi nhận đầy đủ chuỗi bằng chứng: Baseline commit SHA `91a738b`, Break commit SHA `934af86` (CI Run 42994215858 fail), trạng thái `BLOCKED` của PR #24 khi check còn đỏ.
+- Ghi nhận đầy đủ chuỗi bằng chứng: Baseline commit SHA `91a738b5e967a3dcd1717ce406429a764e4cfae3`, Break commit SHA `934af86e190384eacfb7ce7c6de06e0c6362db59` (CI Run 42994215858 fail), Fix commit SHA `65097bab5deb18fc4aac7706ab139b5f12195a55` (CI Run 42994580687 pass), trạng thái `BLOCKED` của PR #24 khi check còn đỏ.
 - Bộ hồ sơ bằng chứng tại `docs/evidence/PA02/T10/` (`README.md`, `verification.json`, `AI-LOG.md`).
 
 **Phần điều chỉnh (Changed):**

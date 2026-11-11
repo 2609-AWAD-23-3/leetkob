@@ -28,7 +28,7 @@
       "pass": 83
     },
     "break": {
-      "commit": "934af8684bbdb324b1ff3e4c84db8b8cbcf981ea",
+      "commit": "934af86e190384eacfb7ce7c6de06e0c6362db59",
       "modifiedFiles": ["src/modules/publish/index.ts"],
       "contractOrTestsModified": false,
       "ciRun": {
@@ -45,12 +45,21 @@
       },
       "branchProtection": {
         "mergeStateStatus": "BLOCKED",
+        "timestamp": "2026-11-11T09:20:22Z",
+        "headSha": "934af86e190384eacfb7ce7c6de06e0c6362db59",
+        "requiredCheckStatus": {
+          "name": "quality-gate",
+          "conclusion": "FAILURE",
+          "jobId": 130434141775
+        },
+        "mergeCommand": "gh pr merge 24 --merge",
         "mergeCommandOutput": "X Pull request 2609-AWAD-23-3/leetkob#24 is not mergeable: the base branch policy prohibits the merge.",
-        "bypassed": false
+        "bypassed": false,
+        "policyEnforcementContext": "Dual protection policy on main branch enforces both quality-gate SUCCESS and 1 approving review. Both conditions were active and unbypassed at probe time."
       }
     },
     "fix": {
-      "commit": "65097bae2129a071f0224d0eb30dae5fb39e8020",
+      "commit": "65097bab5deb18fc4aac7706ab139b5f12195a55",
       "modifiedFiles": ["src/modules/publish/index.ts"],
       "contractOrTestsModified": false,
       "ciRun": {
