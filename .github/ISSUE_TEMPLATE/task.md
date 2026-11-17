@@ -1,7 +1,7 @@
 ---
 name: Work package
 about: Một task review độc lập được, có một người thực hiện và đủ tiêu chí nghiệm thu.
-title: "[PAxx][Txx] Tên task kỹ thuật"
+title: "[PAxx][Txx] Technical task title in English"
 labels: "type:task"
 assignees: ""
 ---
@@ -14,7 +14,7 @@ assignees: ""
 - Mục plan chuẩn:
 - Phụ thuộc: task ID và link Issue, hoặc Không
 
-Viết tiếng Việt, giữ nguyên thuật ngữ kỹ thuật, identifier và lệnh; không dùng icon trang trí. Mỗi task một Issue, không tách theo từng checkbox. Reviewer không phải người thực hiện thứ hai.
+Tiêu đề viết tiếng Anh; phần mô tả viết tiếng Việt, giữ nguyên thuật ngữ kỹ thuật, identifier và lệnh; không dùng icon trang trí. Mỗi task một Issue, không tách theo từng checkbox. Reviewer không phải người thực hiện thứ hai.
 
 ## Mô tả
 

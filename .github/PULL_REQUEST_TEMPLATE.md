@@ -1,6 +1,6 @@
 ## Tóm tắt
 
-Mô tả vấn đề, cách làm kỹ thuật và kết quả quan sát được. Viết tiếng Việt, giữ nguyên thuật ngữ kỹ thuật, identifier và lệnh; không dùng icon trang trí.
+Mô tả vấn đề, cách làm kỹ thuật và kết quả quan sát được. Tiêu đề PR viết tiếng Anh; phần mô tả viết tiếng Việt, giữ nguyên thuật ngữ kỹ thuật, identifier và lệnh; không dùng icon trang trí.
 
 ## Task và Issue
 
