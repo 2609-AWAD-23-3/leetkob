@@ -4,6 +4,12 @@
 
 - Backend Node.js 24.x (tối thiểu 24.22.1), npm 11.x, TypeScript strict/ESM, Fastify 5; dùng phiên bản trong package.json và lockfile.
 
+## Layout PA03-T00
+
+- Xem [cấu trúc project](docs/architecture/project-structure.md) trước khi mở task code PA03. API chọn route/module ở `src/api/`, store ở `src/db/`, cấu hình ở `src/shared/`. Entry point: `src/api/server.ts`, `src/worker/index.ts`, `src/cli/checker.ts`.
+- Các suite nằm trong `tests/unit/`, `tests/contract/`, `tests/integration/` và `tests/e2e/` khi có luồng đầy đủ; helper dùng chung ở `tests/support/`. Giữ discovery đệ quy và chạy cùng quality commands local/CI.
+- Phối hợp với Vượng khi đổi router/app hoặc checker/eval; phối hợp với Phúc khi đổi workflow. Tạo thư mục dự kiến khi có nội dung thật.
+
 ## commands
 
 - Cài: `npm ci --ignore-scripts`; build: `npm run build`; kiểm tra diff: `git diff --check`. PowerShell có thể cần `npm.cmd`.
@@ -23,9 +29,3 @@
 - Không gọi model thật trong unit tests; dùng fake/stub.
 - Không sửa test, eval data hoặc label chỉ để check pass; sửa nguyên nhân lỗi và chỉ đổi kỳ vọng khi yêu cầu/contract thay đổi rõ ràng.
 - Không bypass checks, bịa evidence/approval, tự approve PR của mình hoặc ghi đè thay đổi chưa bảo toàn.
-
-## Layout PA03-T00
-
-- Xem [cấu trúc project](docs/architecture/project-structure.md) trước khi mở task code PA03. API chọn route/module ở `src/api/`, store ở `src/db/`, cấu hình ở `src/shared/`. Entry point: `src/api/server.ts`, `src/worker/index.ts`, `src/cli/checker.ts`.
-- Các suite nằm trong `tests/unit/`, `tests/contract/`, `tests/integration/` và `tests/e2e/` khi có luồng đầy đủ; helper dùng chung ở `tests/support/`. Giữ discovery đệ quy và chạy cùng quality commands local/CI.
-- Phối hợp với Vượng khi đổi router/app hoặc checker/eval; phối hợp với Phúc khi đổi workflow. Tạo thư mục dự kiến khi có nội dung thật.
