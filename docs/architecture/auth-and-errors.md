@@ -12,11 +12,11 @@
 - **Tách biệt thông tin xác thực client và cơ chế inject chỉ dùng trong test:**
   - Giao thức client chuẩn sử dụng header `Authorization: Bearer <token>` được tra cứu qua bảng ánh xạ token tin cậy phía server (`createTokenIdentityResolver`).
   - Khi khởi tạo mặc định (`createTokenIdentityResolver()` không truyền bảng token), không có token ngầm định nào tồn tại và mọi request đều bị từ chối với `401 unauthenticated`.
-  - Helper phục vụ test `createTestHeaderIdentityResolver` mặc định tắt (`allowTestHeader: false`). Server khởi chạy mặc định (`src/server.ts`) không bao giờ bật cờ này, đảm bảo header test (`x-test-user-id`, `x-test-role`) không thể trở thành đường bypass phân quyền công khai.
+  - Helper phục vụ test `createTestHeaderIdentityResolver` mặc định tắt (`allowTestHeader: false`). Server khởi chạy mặc định (`src/api/server.ts`) không bao giờ bật cờ này, đảm bảo header test (`x-test-user-id`, `x-test-role`) không thể trở thành đường bypass phân quyền công khai.
 
 ## 2. Hợp đồng thông tin xác thực (Client Credential Contract) và Test Injection
 
-Các thành phần được export qua [src/auth/index.ts](../../src/auth/index.ts):
+Các thành phần được export qua [src/api/auth/index.ts](../../src/api/auth/index.ts):
 
 ```ts
 export type PrincipalRole = 'admin' | 'TA' | 'student';
@@ -78,7 +78,7 @@ Hàm `authorizePublishAccess({ headers, labId, store, identityResolver })` kết
 
 ## 4. Mô hình lỗi RFC 9457 (`application/problem+json; charset=utf-8`)
 
-Mọi phản hồi 4xx/5xx đều được chuẩn hóa qua `src/auth/problem-details.ts` với `Content-Type: application/problem+json; charset=utf-8` và cấu trúc `ProblemDetails`:
+Mọi phản hồi 4xx/5xx đều được chuẩn hóa qua `src/api/auth/problem-details.ts` với `Content-Type: application/problem+json; charset=utf-8` và cấu trúc `ProblemDetails`:
 
 | Slug (`https://leetkob.example/problems/<slug>`) | Status | Title | Trigger và trường mở rộng |
 | --- | ---: | --- | --- |

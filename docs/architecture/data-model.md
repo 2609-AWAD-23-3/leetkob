@@ -21,7 +21,7 @@ T02 do Vượng đề xuất để Phúc dùng cho T03/T08; draft của Phúc kh
 
 ## 2. Mô hình dữ liệu
 
-Các thành phần được export qua [data/index.ts](../../src/data/index.ts). Types và store độc lập với Fastify, không thêm package.
+Các thành phần được export qua [src/db/index.ts](../../src/db/index.ts). Types và store độc lập với Fastify, không thêm package.
 
 | Type | Trường và ý nghĩa |
 | --- | --- |
@@ -152,8 +152,8 @@ Tại thư mục gốc repo, dùng Node 24.22.1 và npm 11.19.1:
 
 ~~~powershell
 npm.cmd run build
-node --test tests/data/publish-store.test.mjs
-node --test tests/smoke/app.test.mjs
+node --test tests/unit/publish-store.test.mjs
+node --test tests/integration/app.test.mjs
 git diff --check
 ~~~
 
@@ -163,7 +163,7 @@ Nếu chưa cài dependencies, chạy npm.cmd ci --ignore-scripts trước. Test
 
 ~~~js
 const { createInMemoryPublishStore, createPublishSeed, createFixedClock } =
-  await import('./dist/data/index.js');
+  await import('./dist/db/index.js');
 const f = createInMemoryPublishStore({
   initialState: createPublishSeed('pending'),
   clock: createFixedClock()
@@ -178,4 +178,4 @@ f.store.publishLab({ labId: 'lab-1', publishedBy: 'ta-multi' });
 // already_published; vẫn giữ publishedBy là ta-one
 ~~~
 
-Xem [data tests](../../tests/data/publish-store.test.mjs) và [evidence](../evidence/PA02/T02/README.md). Kết quả data tests không chứng minh HTTP authorization, toàn bộ harness T04, CI hoặc persistence production.
+Xem [data tests](../../tests/unit/publish-store.test.mjs) và [evidence](../evidence/PA02/T02/README.md). Kết quả data tests không chứng minh HTTP authorization, toàn bộ harness T04, CI hoặc persistence production.
