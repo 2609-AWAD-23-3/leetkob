@@ -43,6 +43,14 @@ docs/
 
 Giữ lỗi RFC 9457 cùng `src/api/auth/` trong T00 vì file hiện gắn với HTTP Fastify và Publish; chuyển nguyên cụm để tránh tách interface hoặc sửa hành vi. `src/db/` là chỗ cho lớp lưu trữ: store PA02 vẫn in-memory, Postgres do T03 bổ sung. Các test Fastify, loopback listener, auth/error HTTP và vòng đời fixture thuộc integration; test store không cần HTTP thuộc unit. Contract suite giữ chỗ riêng. `dist/` phản chiếu cây `src/`.
 
+## Quy tắc phụ thuộc giữa các thư mục
+
+- `src/pipeline/` (hard rules, model) dùng chung worker và checker; checker chạy với `MODEL_OFF=1` và không mở network, nên `src/pipeline/` **không import** từ `src/api/` hay `src/db/`. Worker truyền dữ liệu và interface (ví dụ model client, đọc/ghi verdict) vào pipeline qua tham số.
+- `src/api/`, `src/worker/` và `src/cli/` được import từ `src/pipeline/`, `src/db/` và `src/shared/`; không import chéo giữa ba entry point này.
+- `src/shared/` chỉ chứa cấu hình, kiểu và lỗi dùng chung, không import từ thư mục khác trong `src/`.
+- `src/sandbox/` không import `src/db/` và không nhận secret; input/output là bài nộp và kết quả chạy.
+- Chưa có công cụ kiểm tra tự động các quy tắc này; reviewer kiểm tra bằng mắt cho đến khi nhóm quyết định thêm lint rule.
+
 ## Chỗ cho từng task PA03
 
 | Task | Người thực hiện | Vị trí và bàn giao |
