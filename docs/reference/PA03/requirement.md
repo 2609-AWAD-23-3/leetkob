@@ -1,0 +1,7 @@
+Team checkpoint · 100 points · 7% of the course. The product is LeeTKOB — the class brief is attached. The rubric is attached — read it before you start.
+
+What you build: a TA creates a lab with constraints; a student submits; the code goes onto a queue and a separate worker judges it in a sandbox that meets the nine minimums of the brief, each with an attack submission that runs in CI. The Accepted submission goes through the hard rules first, then the model, with its output checked against a schema and a timeout. The verdicts, with evidence, land in the TA's review queue and never reach the student without the TA. Also: one checker command with a Dockerfile and the model-off switch MODEL_OFF=1, and a first eval on the dev set.
+
+From this milestone on, LeeTKOB runs on a public deployment: keep it running until the PA#4 marks are out, because another team attacks it in PA#4. Put the URL, the test accounts, the CI run and your committed dev-set run in PA3.md at the root. Tag the commit you submit `pa3` and push the tag; the repository must be public.
+
+Turn in by Wednesday, November 25, 2026, 22:00 — one member, from their <StudentID>@student.hcmus.edu.vn account: one zip of the repository including .git, named <StudentID1>-<StudentID2>-<StudentID3>_<self-assessed total>.zip in ascending order (e.g. 23120001-23120002-23120003_84.zip), containing PA3.md, AI-LOG.md and SELF_ASSESSMENT_REPORT.md. Late: under 2 hours −20%, 2–24 hours −50%, after 24 hours not accepted.

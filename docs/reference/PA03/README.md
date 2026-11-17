@@ -1,9 +1,12 @@
 # PA03 — Nguồn checkpoint
 
-**Trạng thái:** chưa nhận requirement/rubric riêng PA03 trong bộ tài liệu hiện tại.
+**Trạng thái:** đã nhận rubric chính thức PA#3.
 
-Đặt nguồn chính thức và bản dịch hỗ trợ vào thư mục này khi có; ghi rõ bản gốc/bản dịch và cập nhật mục lục. Chưa tạo requirement/rubric giả hoặc link tới file chưa tồn tại. Không dùng rubric PA02 thay cho PA03.
+- [Rubric gốc (PDF)](PA%233%20rubric%20%E2%80%94%20Prototype%20with%20the%20LLM%20feature%20running.pdf)
+- [Bản dịch tiếng Việt, giữ thuật ngữ IT](PA%233%20rubric%20%E2%80%94%20Prototype%20with%20the%20LLM%20feature%20running_vn.md)
+- [Requirement gốc](requirement.md)
+- [Requirement tiếng Việt](requirement_vn.md)
 
-Hiện chỉ có [brief LeeTKOB dùng chung](../leetkob/README.md) và [khung roadmap PA03](../../plans/PA03.md), chưa phải plan thực thi được nghiệm thu theo rubric riêng.
+Xem [tổng quan final project](../final-project/README.md) và [brief LeeTKOB](../leetkob/README.md). Bản gốc được ưu tiên khi khác bản dịch; rubric riêng được ưu tiên khi khác tài liệu tổng hợp. Việc nhận nguồn không đồng nghĩa đã hoàn thành implementation hoặc cập nhật plan.
 
 [Mục lục reference](../README.md).
