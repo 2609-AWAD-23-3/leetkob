@@ -4,7 +4,7 @@
 
 **PA02 hiện hành:** [PA02.md](PA02.md).
 
-**Theo dõi thực hiện:** [PA02 milestone và task Issues](https://github.com/2609-AWAD-23-3/leetkob/milestone/1); [workflow](../workflow.md) quy định PR/review và điều kiện đóng issue. Các Issue chứa đầy đủ task/checklist: PA02 viết tiếng Anh, từ PA03 viết tiếng Việt theo đúng thứ tự section của template; đồng bộ với plan khi thay đổi scope/trạng thái, không tự nhận hoàn thành từ việc tạo Issue.
+**Theo dõi thực hiện:** [PA02 milestone và task Issues](https://github.com/2609-AWAD-23-3/leetkob/milestone/1); [workflow](../workflow.md) quy định PR/review và điều kiện đóng issue. Các Issue chứa đầy đủ task/checklist: PA02 viết tiếng Anh; từ PA03, Issue và PR viết tiếng Việt theo template, task ID luôn kèm milestone (PA03-T01); đồng bộ với plan khi thay đổi scope/trạng thái, không tự nhận hoàn thành từ việc tạo Issue.
 
 Baseline cấu trúc/phân công/checklist của PA02 được ghi nhận ngày 02/11/2026 theo phiên bản đã thống nhất. [Snapshot baseline](archive/PA02-baseline-2026-11-02.md) chỉ dùng đối chiếu; các nguồn tham chiếu được chỉnh đường dẫn theo vị trí lưu mới. Việc ghi nhận baseline không xác nhận các task dự án đã được thực hiện.
 

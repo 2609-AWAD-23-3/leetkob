@@ -1,6 +1,6 @@
 # Contributing
 
-This repository uses one accepted PA02 work package per issue and independently reviewed pull requests. From PA03 on, task issues are written in Vietnamese and mirror the Vietnamese plan, keeping the section order of the issue template; PA02 issues keep their original English text. Pull requests, templates and workflow documentation remain in English without decorative icons. The accepted Vietnamese plan and original course references retain their source language.
+This repository uses one accepted PA02 work package per issue and independently reviewed pull requests. From PA03 on, task issues and pull requests are written in Vietnamese (technical terms, identifiers and commands stay as they are) and follow the Vietnamese issue/PR templates; PA02 issues and PRs keep their original English text. Workflow documentation stays in English. No decorative icons anywhere. The accepted Vietnamese plan and original course references retain their source language.
 
 ## Start here
 
@@ -22,7 +22,7 @@ Each task has exactly one hands-on executor and a different reviewer, as recorde
 
 ## Pull requests
 
-1. Create a short-lived task branch from an up-to-date develop branch. Use names such as feat/t01-project-skeleton, test/t04-quality-harness or docs/t11-submission-records.
+1. Create a short-lived task branch from an up-to-date develop branch. Use names such as feat/t01-project-skeleton, test/t04-quality-harness or docs/t11-submission-records for PA02, and include the milestone from PA03 on, such as feat/pa03-t05-sandbox.
 2. Keep commits focused and use a technical title such as feat: add TA review queue. Never commit secrets, assistant memory, cleanup backups or unrelated coursework.
 3. Open a draft PR early if useful. Ordinary task PRs target develop; milestone promotions target main. The controlled T10 experiment is the documented main-target exception.
 4. Include the task ID, an explicit Refs #N issue reference, scope, actual verification commands/results, limitations and the requested independent reviewer. Complete the PR template honestly.

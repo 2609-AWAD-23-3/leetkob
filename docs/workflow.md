@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | main | Stable milestone/release history and the default branch | Reviewed promotion PRs, plus the documented T10 controlled experiment |
 | develop | Integration of accepted task changes | Reviewed task PRs |
-| feat/tXX-short-description, fix/tXX-short-description, test/tXX-short-description, docs/tXX-short-description | One focused work package or correction | Commits from the responsible executor |
+| feat/tXX-short-description, fix/tXX-short-description, test/tXX-short-description, docs/tXX-short-description (PA02); feat/paNN-tXX-short-description and the same prefixes from PA03 on | One focused work package or correction | Commits from the responsible executor |
 
 Do not direct-push or force-push main/develop. These are team rules; enforcement is configured and proven in T09. Do not claim that a proposed rule is already enforced. Keep the default branch as main unless the team explicitly changes this decision.
 
@@ -16,7 +16,7 @@ Before starting a task, fetch origin and branch from its current develop commit.
 
 PA02 retains the twelve stable task IDs T01-T12. Following the approved 2026-11-07 scope revision, ten tasks remain active under the PA02 milestone; T06/T07 are deferred outside PA02 acceptance, kept open and not completed. POST /labs/{labId}/publish is the only required endpoint. No required task depends on deferred endpoints; no future milestone is assigned to them. Every issue contains the full English description, all execution and review checklist items, expected deliverables, dependencies, boundaries and evidence/blocker sections from the accepted plan. The reviewer is recorded separately from the single assignee.
 
-The plan is the canonical scope/acceptance record; the issue is its operational mirror and discussion record, written in English for PA02 and in Vietnamese from PA03 on. Preserve task IDs and checklist-item ordering. When scope, ownership, dependencies or completion states change, update the plan and issue together, reference the PR and leave unverified items unchecked. Do not maintain two independently evolving definitions of done. A reviewer confirms their own review items; the executor must not manufacture reviewer acceptance.
+The plan is the canonical scope/acceptance record; the issue is its operational mirror and discussion record, written in English for PA02 and in Vietnamese from PA03 on. Task numbers restart in each milestone, so a task ID is always qualified by its milestone (PA03-T01, shown as [PA03][T01] in issue titles); a bare T01 refers to PA02 only in PA02 documents. Preserve task IDs and checklist-item ordering. When scope, ownership, dependencies or completion states change, update the plan and issue together, reference the PR and leave unverified items unchecked. Do not maintain two independently evolving definitions of done. A reviewer confirms their own review items; the executor must not manufacture reviewer acceptance.
 
 Use these observable states without inventing completed work:
 
@@ -32,7 +32,7 @@ The issue remains open until its own definition of done is satisfied. T05 and T1
 ## Pull request lifecycle
 
 1. Start a focused task branch from develop and retain the stable task ID in its name.
-2. Open a PR into develop with an English technical title, Refs #N, task scope, evidence and an independent reviewer from the issue.
+2. Open a PR into develop with a technical title (English for PA02, Vietnamese from PA03 on), Refs #N, task scope, evidence and an independent reviewer from the issue.
 3. Keep contract review ahead of final endpoint implementation. Reuse PR #14 for the foundation and PR #15 for the publish contract/source/tests; a PR title is not proof of implemented files. A focused PR may reference multiple small tasks only when their executor/reviewer and scope align; do not split ownership implicitly.
 4. Run the actual documented local checks and include commands/results. CI must use the same commands once T09 is implemented. Do not weaken tests, skip suites, call a real model in unit tests or hide failed exits.
 5. Apply feedback as the executor. The reviewer verifies, records a GitHub review and updates their review checklist; they do not become a second implementer.
