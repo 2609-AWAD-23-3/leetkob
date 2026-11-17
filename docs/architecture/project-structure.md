@@ -45,8 +45,8 @@ Giữ lỗi RFC 9457 cùng `src/api/auth/` trong T00 vì file hiện gắn với
 
 ## Quy tắc phụ thuộc giữa các thư mục
 
-- `src/pipeline/` (hard rules, model) dùng chung worker và checker; checker chạy với `MODEL_OFF=1` và không mở network, nên `src/pipeline/` **không import** từ `src/api/` hay `src/db/`. Worker truyền dữ liệu và interface (ví dụ model client, đọc/ghi verdict) vào pipeline qua tham số.
-- `src/api/`, `src/worker/` và `src/cli/` được import từ `src/pipeline/`, `src/db/` và `src/shared/`; không import chéo giữa ba entry point này.
+- `src/pipeline/` chứa hard rules và logic model dùng chung cho worker và checker. Pipeline nhận dữ liệu và dependency như model client qua tham số, trả verdict cho bên gọi và không import từ `src/api/` hay `src/db/`.
+- `src/api/` dùng `src/db/` và `src/shared/` để xử lý HTTP và đưa bài nộp vào queue. `src/worker/` dùng `src/db/`, `src/sandbox/`, `src/pipeline/` và `src/shared/` để xử lý job và lưu verdict. `src/cli/` dùng `src/pipeline/` và `src/shared/` để đọc dataset và ghi prediction. Khi `MODEL_OFF=1`, checker chỉ chạy hard rules, ghi `unsure` cho constraint semantic và không mở network. Ba entry point không import chéo.
 - `src/shared/` chỉ chứa cấu hình, kiểu và lỗi dùng chung, không import từ thư mục khác trong `src/`.
 - `src/sandbox/` không import `src/db/` và không nhận secret; input/output là bài nộp và kết quả chạy.
 - Chưa có công cụ kiểm tra tự động các quy tắc này; reviewer kiểm tra bằng mắt cho đến khi nhóm quyết định thêm lint rule.
@@ -88,3 +88,9 @@ Router/app dùng chung (`src/api/app.ts`) qua Vượng. Workflow trong `.github/
 | F11 — Logs, metrics và traces | `src/observability/` dùng từ API/worker/pipeline; `deploy/` cho dashboard và alert. | PA05: quan sát luồng theo submission, SLO và alert. |
 
 PA04 lưu hồ sơ held-out, guardrails, human gate và red-team dưới `docs/evidence/PA04/`, tóm tắt ở `PA4.md`. PA05 bổ sung `load/` cho tải 80 bài, `docs/evidence/PA05/` cho post-mortem và `PA5.md` cho liên kết nghiệm thu. PA06 chạy lại final build trên deployment `pa5`; `OWNERS.md` trỏ vào code, tests, run và người phụ trách để chuẩn bị demo/oral. Các đường dẫn tương lai là chỗ dự kiến, không phân công thêm người hay chốt framework frontend.
+
+## Việc chưa chốt
+
+- Frontend (`web/`) chưa chọn framework. Cần chốt trước PA05 để triển khai màn hình theo role (F1) và cập nhật trạng thái không reload (F3).
+- Lỗi RFC 9457 hiện ở `src/api/auth/`. Nếu worker cần dùng chung, T04/T06 chuyển phần lỗi dùng chung sang `src/shared/`.
+- Postgres, queue và sandbox mới được ghi trong `docs/plans/PA03.md`. Vượng ghi ADR trong `docs/architecture/decisions/` khi chốt ở T02/T03.
