@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createTestApp } from './app.mjs';
+import { createTestApp } from '../support/app.mjs';
 
 test('support bootstrap owns cleanup and isolates plugin state between apps', async (t) => {
   let closes = 0;
