@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { spawnSync } from 'node:child_process';
 import { createApp } from '../../dist/app.js';
-import { loadConfig } from '../../dist/config.js';
+import { loadConfig } from '../../dist/shared/config.js';
 
 // T01 acceptance checks only; the comprehensive runner/fixtures/commands belong to T04.
 test('factory does not listen; health works through the real HTTP injection boundary', async (t) => {
