@@ -1,4 +1,4 @@
-import type { Lab, PublishResult, PublishStore } from '../../data/types.js';
+import type { Lab, PublishResult, PublishStore } from '../../db/types.js';
 
 export type PrincipalRole = 'admin' | 'TA' | 'student';
 

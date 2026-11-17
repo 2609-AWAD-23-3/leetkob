@@ -12,7 +12,7 @@ import {
   createPublishSeed,
   FIXTURE_AFTER_DEADLINE,
   FIXTURE_DEADLINE,
-} from '../../dist/data/index.js';
+} from '../../dist/db/index.js';
 
 function createHarness({
   scenario = 'resolved',
