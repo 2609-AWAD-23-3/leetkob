@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createApp } from '../../dist/app.js';
+import { createApp } from '../../dist/api/app.js';
 import {
   authorizePublishAccess,
   cloneProblemDetails,

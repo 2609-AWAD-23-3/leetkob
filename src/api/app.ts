@@ -1,8 +1,8 @@
 import Fastify from 'fastify';
 import type { FastifyPluginAsync } from 'fastify';
-import { submissionsModule } from './api/modules/submissions/index.js';
-import { reviewQueueModule } from './api/modules/review-queue/index.js';
-import { publishModule } from './api/modules/publish/index.js';
+import { submissionsModule } from './modules/submissions/index.js';
+import { reviewQueueModule } from './modules/review-queue/index.js';
+import { publishModule } from './modules/publish/index.js';
 
 export interface AppModules {
   submissions: FastifyPluginAsync;

@@ -1,5 +1,5 @@
 import { createApp } from './app.js';
-import { loadConfig } from './shared/config.js';
+import { loadConfig } from '../shared/config.js';
 
 // Deliberately separate executable entry point from the app factory used by tests.
 async function main(): Promise<void> {
