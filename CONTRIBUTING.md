@@ -1,6 +1,6 @@
 # Contributing
 
-This repository uses one accepted PA02 work package per issue and independently reviewed pull requests. Technical issue descriptions, pull requests, templates and workflow documentation are written in English without decorative icons. The accepted Vietnamese plan and original course references retain their source language.
+This repository uses one accepted PA02 work package per issue and independently reviewed pull requests. From PA03 on, task issues are written in Vietnamese and mirror the Vietnamese plan, keeping the section order of the issue template; PA02 issues keep their original English text. Pull requests, templates and workflow documentation remain in English without decorative icons. The accepted Vietnamese plan and original course references retain their source language.
 
 ## Start here
 

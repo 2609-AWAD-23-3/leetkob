@@ -14,7 +14,7 @@ assignees: ""
 - Canonical plan section:
 - Dependencies: task IDs and issue links, or None
 
-Use English, technical wording and no decorative icons. Create one issue per work package, not per checkbox. The reviewer is not a second executor.
+Write PA02 issues in English and issues from PA03 on in Vietnamese, matching the plan. Keep this section order, technical wording and no decorative icons. Create one issue per work package, not per checkbox. The reviewer is not a second executor.
 
 ## Description
 

@@ -4,7 +4,7 @@
 
 **PA02 hiện hành:** [PA02.md](PA02.md).
 
-**Theo dõi thực hiện:** [PA02 milestone và task Issues](https://github.com/2609-AWAD-23-3/leetkob/milestone/1); [workflow](../workflow.md) quy định PR/review và điều kiện đóng issue. Các Issue chứa đầy đủ bản tiếng Anh của task/checklist; đồng bộ với plan khi thay đổi scope/trạng thái, không tự nhận hoàn thành từ việc tạo Issue.
+**Theo dõi thực hiện:** [PA02 milestone và task Issues](https://github.com/2609-AWAD-23-3/leetkob/milestone/1); [workflow](../workflow.md) quy định PR/review và điều kiện đóng issue. Các Issue chứa đầy đủ task/checklist: PA02 viết tiếng Anh, từ PA03 viết tiếng Việt theo đúng thứ tự section của template; đồng bộ với plan khi thay đổi scope/trạng thái, không tự nhận hoàn thành từ việc tạo Issue.
 
 Baseline cấu trúc/phân công/checklist của PA02 được ghi nhận ngày 02/11/2026 theo phiên bản đã thống nhất. [Snapshot baseline](archive/PA02-baseline-2026-11-02.md) chỉ dùng đối chiếu; các nguồn tham chiếu được chỉnh đường dẫn theo vị trí lưu mới. Việc ghi nhận baseline không xác nhận các task dự án đã được thực hiện.
 
@@ -12,7 +12,7 @@ Baseline cấu trúc/phân công/checklist của PA02 được ghi nhận ngày 
 | --- | --- | --- |
 | [PROJECT.md](PROJECT.md) | Roadmap toàn project và ranh giới checkpoint | Theo brief; chưa phải kế hoạch chi tiết tất cả PA |
 | [PA02.md](PA02.md) | Harness, quality gate, endpoint contract/tests | Plan hiện hành, 12 task và checkbox theo dõi |
-| [PA03.md](PA03.md) | Prototype có LLM chạy được | Khung roadmap; cần rubric/requirement riêng |
+| [PA03.md](PA03.md) | Prototype có LLM chạy được | Plan nháp 13 task (T01), chờ review; chưa có Issues |
 | [PA04.md](PA04.md) | Eval, guardrails, human gate, red-team | Khung roadmap; cần rubric/requirement riêng |
 | [PA05.md](PA05.md) | Final build, deployment, load, observability | Khung roadmap; cần rubric/requirement riêng |
 
