@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
-import { createApp, type AppOptions } from '../../app.js';
+import { createApp, type AppOptions } from '../../../app.js';
 import {
   authorizePublishAccess,
   createTokenIdentityResolver,
@@ -9,7 +9,7 @@ import {
   registerPublishErrorHandling,
   sendProblem,
   validatePublishRequestInput,
-} from '../../api/auth/index.js';
+} from '../../auth/index.js';
 import type { LabPublication, PublishModuleOptions } from './types.js';
 
 export type { LabPublication, PublishModuleOptions } from './types.js';

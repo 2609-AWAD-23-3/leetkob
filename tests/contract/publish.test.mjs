@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createPublishApp } from '../../dist/modules/publish/index.js';
+import { createPublishApp } from '../../dist/api/modules/publish/index.js';
 import {
   createPublishFixtureTokens,
   createTokenIdentityResolver,
