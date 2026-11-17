@@ -5,7 +5,7 @@ import {
   createPublishFixtureTokens,
   createTokenIdentityResolver,
   PROBLEM_CONTENT_TYPE,
-} from '../../dist/auth/index.js';
+} from '../../dist/api/auth/index.js';
 import {
   createFixedClock,
   createInMemoryPublishStore,

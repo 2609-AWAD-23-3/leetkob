@@ -1,5 +1,5 @@
 import type { PublishStore, PublicationSummary } from '../../data/types.js';
-import type { IdentityResolver } from '../../auth/types.js';
+import type { IdentityResolver } from '../../api/auth/types.js';
 
 export interface LabPublication {
   readonly labId: string;

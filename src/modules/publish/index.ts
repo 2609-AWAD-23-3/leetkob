@@ -9,7 +9,7 @@ import {
   registerPublishErrorHandling,
   sendProblem,
   validatePublishRequestInput,
-} from '../../auth/index.js';
+} from '../../api/auth/index.js';
 import type { LabPublication, PublishModuleOptions } from './types.js';
 
 export type { LabPublication, PublishModuleOptions } from './types.js';
