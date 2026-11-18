@@ -26,3 +26,9 @@
 - Không gọi model thật trong unit tests; dùng fake/stub.
 - Không sửa test, eval data hoặc label chỉ để check pass; sửa nguyên nhân lỗi và chỉ đổi kỳ vọng khi yêu cầu/contract thay đổi rõ ràng.
 - Không bypass checks, bịa evidence/approval, tự approve PR của mình hoặc ghi đè thay đổi chưa bảo toàn.
+- Không sửa `leetkob-eval/` (dev set, `eval.mjs`, `labels.jsonl`, file `.cpp`); chỉ thêm case riêng ở `eval-cases/`. Nguồn: rubric PA03, "Catching the assistant".
+- Không nêu id lời giải dev set (ví dụ `sort-merge/s05`) hay trích code dev set trong prompt hoặc hard rule.
+- Không nới test, eval case hay label trong commit làm chúng xanh.
+- Test memory của sandbox phải đọc lại vùng nhớ đã cấp phát để compiler không bỏ được việc cấp phát.
+- Không dùng `-v /var/run/docker.sock`, `--privileged`, `--env-file` hay `-e MODEL_API_KEY` trên lệnh chạy sandbox.
+- Không gọi một lần chạy là model thật nếu call log không có request id của provider.

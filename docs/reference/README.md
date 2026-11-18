@@ -6,9 +6,11 @@
 | --- | --- | --- |
 | [leetkob/](leetkob/README.md) | Class project brief và bản dịch, dùng chung toàn project | Đã có nguồn |
 | [PA02/](PA02/README.md) | Requirement và rubric riêng PA02, kèm bản dịch | Đã có nguồn |
-| [PA03/](PA03/README.md) | Requirement/rubric riêng PA03 | Chưa nhận; không thay bằng rubric PA02 |
-| [PA04/](PA04/README.md) | Requirement/rubric riêng PA04 | Chưa nhận; không thay bằng rubric PA02 |
-| [PA05/](PA05/README.md) | Requirement/rubric riêng PA05 | Chưa nhận; không thay bằng rubric PA02 |
+| [PA03/](PA03/README.md) | Requirement, rubric PA03 và bản dịch tiếng Việt | Đã có nguồn |
+| [PA04/](PA04/README.md) | Rubric PA04 và bản dịch tiếng Việt | Đã có rubric; chưa có requirement riêng |
+| [PA05/](PA05/README.md) | Rubric PA05 và bản dịch tiếng Việt | Đã có rubric; chưa có requirement riêng |
+| [PA06/](PA06/README.md) | Rubric final demo/individual oral và bản dịch tiếng Việt | Đã có rubric |
+| [final-project/](final-project/README.md) | Thông báo, milestones, features F1–F11 và tổng quan rubrics | Đã có nguồn và bản dịch |
 
 Brief LeeTKOB là nguồn chung xuyên checkpoint; không sao chép lại vào mỗi PA. Khi có nguồn mới, đặt trong thư mục PA tương ứng, cập nhật mục lục và links trong plan đó. Nguồn gốc có ưu tiên khi bản dịch/plan diễn giải khác; cập nhật thay đổi chính thức từ giảng viên cùng nguồn. Bản dịch là tài liệu hỗ trợ, không phải rubric mới.
 
