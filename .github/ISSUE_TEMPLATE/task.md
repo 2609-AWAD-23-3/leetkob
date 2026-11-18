@@ -1,49 +1,49 @@
 ---
 name: Work package
-about: Track one independently reviewable task with a single executor and full acceptance criteria.
-title: "[PAxx][Txx] Technical task title"
+about: Một task review độc lập được, có một người thực hiện và đủ tiêu chí nghiệm thu.
+title: "[PAxx][Txx] Technical task title in English"
 labels: "type:task"
 assignees: ""
 ---
 
-## Task metadata
+## Thông tin task
 
-- Milestone and task ID:
-- Executor: @<account>
-- Independent reviewer: @<different-account>
-- Canonical plan section:
-- Dependencies: task IDs and issue links, or None
+- Milestone và task ID: PAxx-Txx
+- Người thực hiện: @<account>
+- Reviewer độc lập: @<account-khác>
+- Mục plan chuẩn:
+- Phụ thuộc: task ID và link Issue, hoặc Không
 
-Use English, technical wording and no decorative icons. Create one issue per work package, not per checkbox. The reviewer is not a second executor.
+Tiêu đề viết tiếng Anh; phần mô tả viết tiếng Việt, giữ nguyên thuật ngữ kỹ thuật, identifier và lệnh; không dùng icon trang trí. Mỗi task một Issue, không tách theo từng checkbox. Reviewer không phải người thực hiện thứ hai.
 
-## Description
+## Mô tả
 
-Describe the complete work package and observable behavior. Do not expand accepted scope silently.
+Mô tả trọn task và hành vi quan sát được. Không tự mở rộng scope đã duyệt.
 
-## Execution checklist
+## Checklist thực hiện
 
-- [ ] Replace with every execution checklist item from the accepted plan, in order.
+- [ ] Thay bằng toàn bộ checklist thực hiện trong plan đã duyệt, đúng thứ tự.
 
-## Review checklist
+## Checklist review
 
-- [ ] Replace with every independent review checklist item from the accepted plan, in order.
+- [ ] Thay bằng toàn bộ checklist review trong plan đã duyệt, đúng thứ tự.
 
-## Expected deliverables and acceptance result
+## Kết quả cần đạt và nghiệm thu
 
-List the artifacts, required behavior and observable acceptance outcome.
+Liệt kê artifact, hành vi bắt buộc và kết quả nghiệm thu quan sát được.
 
-## Boundaries and handoffs
+## Ranh giới và bàn giao
 
-Specify file ownership, teammate inputs, shared-file handoffs, account/permission boundaries and excluded work.
+Ghi quyền sở hữu file, đầu vào từ đồng đội, file dùng chung, ranh giới tài khoản/quyền và phần không làm.
 
-## Evidence and actual results
+## Evidence và kết quả thực tế
 
-Not updated. Add PR/commit/run links and reproducible results as they become available. Do not invent evidence or mark unobserved work complete.
+Chưa cập nhật. Thêm link PR/commit/run và kết quả tái lập được khi có. Không bịa evidence hay đánh dấu xong việc chưa quan sát được.
 
-## Progress and blockers
+## Tiến độ và blocker
 
-Not updated. Name missing dependencies, permissions, inputs or capabilities and the responsible resolver.
+Chưa cập nhật. Ghi rõ dependency, quyền, đầu vào hoặc năng lực còn thiếu và ai giải quyết.
 
-## Integration and closure
+## Tích hợp và đóng Issue
 
-Ordinary task PRs target develop and reference this issue with Refs #N. main remains the default branch, so a develop merge does not automatically close this issue. Close manually only after all task acceptance criteria, independent review and the intended merge are verified. Release tasks retain their tag/ZIP/submission gates. Synchronize checklist state and evidence with the canonical plan; do not maintain conflicting definitions of done.
+PR task thường target develop và ghi Refs #N. main vẫn là default branch nên merge vào develop không tự đóng Issue. Chỉ đóng thủ công khi đủ mọi tiêu chí nghiệm thu, review độc lập và merge dự kiến. Task release giữ thêm gate tag/ZIP/nộp bài. Đồng bộ trạng thái checklist và evidence với plan chuẩn; không duy trì hai định nghĩa hoàn thành mâu thuẫn.

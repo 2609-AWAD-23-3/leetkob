@@ -1,50 +1,50 @@
-## Summary
+## Tóm tắt
 
-Describe the problem, technical approach and observable result. Use English and no decorative icons.
+Mô tả vấn đề, cách làm kỹ thuật và kết quả quan sát được. Tiêu đề PR viết tiếng Anh; phần mô tả viết tiếng Việt, giữ nguyên thuật ngữ kỹ thuật, identifier và lệnh; không dùng icon trang trí.
 
-## Task and issue references
+## Task và Issue
 
-- Task ID:
-- Related issue: Refs #<number>
-- Canonical plan section:
-- Independent reviewer: @<account>
-- Target branch and rationale:
+- Task ID: PAxx-Txx
+- Issue liên quan: Refs #<số>
+- Mục plan chuẩn:
+- Reviewer độc lập: @<account>
+- Nhánh đích và lý do:
 
-For develop-target PRs, use Refs and close the issue manually only after accepted merge and all task gates. Use closing keywords on main-target PRs only when that merge truly completes the issue. Do not close release/submission issues before delivery evidence exists.
+PR target develop dùng Refs và chỉ đóng Issue thủ công sau khi merge được chấp nhận và đủ gate của task. Chỉ dùng closing keyword trên PR target main khi merge đó thật sự hoàn thành Issue. Không đóng Issue release/nộp bài trước khi có evidence bàn giao.
 
-## Scope and ownership
+## Scope và ownership
 
-- Changed components and artifacts:
-- Shared-file handoffs or approved interface changes:
-- Out of scope:
+- Thành phần và artifact thay đổi:
+- File dùng chung hoặc interface đã thống nhất thay đổi:
+- Ngoài scope:
 
-## Verification
+## Kiểm chứng
 
-| Command or observable check | Result | Evidence |
+| Lệnh hoặc kiểm tra quan sát được | Kết quả | Evidence |
 | --- | --- | --- |
-| Replace with an actual command/check | Not run / passed / failed, with reason | Run URL or reproducible output |
+| Thay bằng lệnh/kiểm tra thực tế | Chưa chạy / đạt / lỗi, kèm lý do | Link run hoặc output tái lập được |
 
-Do not report missing CI as a passing check. Explain tests not run and remaining blockers. Preserve failure evidence required by the task.
+Không báo thiếu CI là đạt. Giải thích test chưa chạy và blocker còn lại. Giữ evidence lỗi mà task yêu cầu.
 
-## Contract, data and security impact
+## Ảnh hưởng contract, dữ liệu và bảo mật
 
-Describe contract/version changes, state/fixture changes, authorization/ownership behavior, secrets/cost impact and any migration or compatibility considerations. State not applicable with a reason where appropriate. Never include credentials or sensitive logs.
+Mô tả thay đổi contract/version, state/fixture, phân quyền/ownership, secrets/chi phí và migration hoặc tương thích. Ghi không áp dụng kèm lý do khi phù hợp. Không đưa credential hay log nhạy cảm.
 
 ## Checklist
 
-- [ ] The PR targets the intended branch and identifies its task, issue and independent reviewer.
-- [ ] Changes stay within the executor's agreed scope; shared-file changes follow the documented handoff.
-- [ ] Task-specific execution checks and evidence are complete, or the PR remains draft with explicit blockers.
-- [ ] Actual verification commands/results and any checks not run are documented.
-- [ ] Contract/tests remain aligned; assertions or eval labels were not weakened merely to pass.
-- [ ] No credentials, assistant memory, cleanup backups or unrelated artifacts are included.
-- [ ] The plan and issue mirror agree on scope, checklist state, dependencies and evidence.
-- [ ] Review items remain unconfirmed until the independent reviewer actually verifies them.
+- [ ] PR target đúng nhánh, ghi rõ task, Issue và reviewer độc lập.
+- [ ] Thay đổi nằm trong scope đã thống nhất của người thực hiện; file dùng chung theo bàn giao đã ghi.
+- [ ] Kiểm tra và evidence của task đã đủ, hoặc PR để draft kèm blocker rõ ràng.
+- [ ] Lệnh kiểm chứng thực tế, kết quả và các kiểm tra chưa chạy đã ghi lại.
+- [ ] Contract/tests vẫn khớp; không nới assertion hay eval label chỉ để pass.
+- [ ] Không có credential, memory của assistant, bản backup dọn dẹp hay artifact không liên quan.
+- [ ] Plan và Issue khớp nhau về scope, trạng thái checklist, dependency và evidence.
+- [ ] Mục review để trống cho tới khi reviewer độc lập thật sự kiểm tra.
 
-## Reviewer record
+## Ghi nhận review
 
-The requested reviewer records an actual GitHub review from their own account, verifies the task's review checklist and cites defects or acceptance evidence. The author must not approve their own PR. Reviewer approval is not implied by this template.
+Reviewer được yêu cầu ghi một GitHub review thật từ tài khoản của mình, kiểm checklist review của task và nêu lỗi hoặc evidence nghiệm thu. Tác giả không tự approve PR. Template này không ngầm định reviewer đã approve.
 
-## Remaining work and issue closure
+## Việc còn lại và đóng Issue
 
-List any acceptance criteria that remain open after this PR. Identify who may close the issue, and only after which evidence/merge/delivery gates. A merged PR does not automatically complete every task.
+Liệt kê tiêu chí nghiệm thu còn mở sau PR này. Ghi rõ ai được đóng Issue và chỉ sau gate evidence/merge/bàn giao nào. Merge PR không tự hoàn thành mọi task.
