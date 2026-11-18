@@ -1,6 +1,6 @@
-# LeeTKOB — PA02
+# LeeTKOB
 
-Backend cho checkpoint harness và quality gate: **POST /labs/{labId}/publish** có contract, implementation và tests. T06/T07 (submissions/review-queue) deferred, không phải Done. Chưa có LLM pipeline, judge sandbox, UI hoặc public deployment.
+Nền backend từ PA02: **POST /labs/{labId}/publish** có contract, implementation và tests. T06/T07 (submissions/review-queue) deferred, không phải Done. PA03-T00 sắp xếp lại mã và test để chuẩn bị cho các task tiếp theo. Xem [cấu trúc project](docs/architecture/project-structure.md) cho entry point, ranh giới và phần dự kiến theo từng mốc.
 
 ## Cài đặt và checks
 
@@ -23,7 +23,7 @@ Local và [CI](.github/workflows/ci.yml) dùng cùng bốn commands; `quality-ga
 - Lint: Oxlint trên src/tests/scripts.
 - Format: Prettier chỉ kiểm tra; [.prettierignore](.prettierignore) loại docs, .github, CONTRIBUTING, dependencies và build output. Báo cáo root mới vẫn được kiểm tra.
 - Type-check: TypeScript strict/noEmit cho source và tests TypeScript.
-- Tests: build rồi discovery `tests/**/*.test.{mjs,js,ts}`; build/assertion lỗi hoặc không có test đều trả nonzero. Baseline có 83 tests: 40 data, 18 auth, 16 contract, 7 smoke, 2 lifecycle.
+- Tests: build rồi discovery `tests/**/*.test.{mjs,js,ts}`; build/assertion lỗi hoặc không có test đều trả nonzero. Baseline có 83 tests: 40 store (unit), 16 contract và 27 integration (18 auth/error, 7 app, 2 lifecycle).
 
 ## Chạy ứng dụng
 
@@ -34,20 +34,22 @@ npm start
 
 Mặc định `http://127.0.0.1:3000/health` trả `{"status":"ok"}`. `npm run dev` dùng watch; Ctrl+C để dừng. Runtime chỉ đọc HOST/PORT, không tự load .env. [.env.example](.env.example) cố ý để trống; không export giá trị rỗng. Defaults là 127.0.0.1 và 3000.
 
+`npm start` chạy `dist/api/server.js`. Sau build, `npm run worker` và `npm run checker` chạy entry point riêng và thoát ngay; chức năng chấm và checker sẽ được bổ sung ở PA03-T06/T10.
+
 **npm start chỉ chạy skeleton, chưa mount publish nếu không có store.** Để kiểm chứng endpoint, chạy `npm test`. Để thử HTTP với fixtures, sau build lưu block sau thành file `.mjs` tạm ở root, chạy `node <file>.mjs` (dừng server skeleton trước):
 
 ```js
-import { createPublishApp } from './dist/modules/publish/index.js';
+import { createPublishApp } from './dist/api/modules/publish/index.js';
 import {
   createInMemoryPublishStore,
   createPublishSeed,
   createFixedClock,
   FIXTURE_AFTER_DEADLINE,
-} from './dist/data/index.js';
+} from './dist/db/index.js';
 import {
   createTokenIdentityResolver,
   createPublishFixtureTokens,
-} from './dist/auth/index.js';
+} from './dist/api/auth/index.js';
 
 const { store } = createInMemoryPublishStore({
   initialState: createPublishSeed('resolved'),

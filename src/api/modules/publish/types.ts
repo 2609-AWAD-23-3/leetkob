@@ -1,4 +1,4 @@
-import type { PublishStore, PublicationSummary } from '../../data/types.js';
+import type { PublishStore, PublicationSummary } from '../../../db/types.js';
 import type { IdentityResolver } from '../../auth/types.js';
 
 export interface LabPublication {

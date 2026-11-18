@@ -8,7 +8,7 @@
 - [PA02 — plan thực thi](plans/PA02.md): bản chính để cập nhật task/checklist/evidence.
 - [PA02 — evidence và AI-log inputs](evidence/PA02/README.md): hồ sơ theo task để review và bàn giao T11.
 - [Roadmap toàn project](plans/PROJECT.md): mục tiêu cuối môn, checkpoint boundaries và quyết định còn mở.
-- [Architecture overview](architecture/overview.md), [data model](architecture/data-model.md), [architecture decisions](architecture/decisions/README.md).
+- [Cấu trúc project PA03-T00](architecture/project-structure.md), [architecture baseline PA02](architecture/overview.md), [data model](architecture/data-model.md), [architecture decisions](architecture/decisions/README.md).
 
 ## Phân loại tài liệu
 
@@ -27,7 +27,7 @@
 - Mỗi checkpoint có một plan chính trong docs/plans/. README tại root là điểm vào; các bản nháp/backup ở root không dùng theo dõi tiến độ.
 - Một task có một người trực tiếp thực hiện và một reviewer độc lập. Description/checklist/kết quả/note/evidence ở cùng task; cột Checklist trong chỉ mục chỉ tóm tắt tiến độ đã xác minh.
 - PA03–PA05 hiện là khung roadmap theo brief, chưa phải plan thực thi theo rubric riêng. Chỉ bổ sung task/điểm/phân công khi có nguồn và quyết định phù hợp.
-- The architecture overview records the implemented T01 proposal pending review; the data model remains a T02 scaffold. Neither documentation nor a runnable skeleton establishes task acceptance. Update task checkboxes only when supported by actual results and independent review.
+- Bản đồ cấu trúc PA03-T00 chỉ vị trí hiện hành và chỗ dự kiến cho các task tiếp theo. Architecture overview ghi bối cảnh PA02; kết quả nghiệm thu từng task cần evidence và review độc lập.
 - Quy trình lập/review plan dùng skill academic-rubric-plan-review; cải tiến phương pháp được cập nhật vào skill, quyết định riêng của LeeTKOB được lưu ở docs của project.
 
 ## Phạm vi lưu trữ hiện tại

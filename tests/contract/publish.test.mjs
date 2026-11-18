@@ -1,18 +1,18 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createPublishApp } from '../../dist/modules/publish/index.js';
+import { createPublishApp } from '../../dist/api/modules/publish/index.js';
 import {
   createPublishFixtureTokens,
   createTokenIdentityResolver,
   PROBLEM_CONTENT_TYPE,
-} from '../../dist/auth/index.js';
+} from '../../dist/api/auth/index.js';
 import {
   createFixedClock,
   createInMemoryPublishStore,
   createPublishSeed,
   FIXTURE_AFTER_DEADLINE,
   FIXTURE_DEADLINE,
-} from '../../dist/data/index.js';
+} from '../../dist/db/index.js';
 
 function createHarness({
   scenario = 'resolved',

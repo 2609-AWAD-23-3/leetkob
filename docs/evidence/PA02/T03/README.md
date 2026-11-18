@@ -44,7 +44,7 @@ Kết quả quan sát thực tế:
 ## 4. Bàn giao và giới hạn
 
 - **Bàn giao cho T08 (Phúc) và Reviewer T03 (Vượng):**
-  - Exports tại [src/auth/index.ts](../../../../src/auth/index.ts), tài liệu tại [docs/architecture/auth-and-errors.md](../../../architecture/auth-and-errors.md), bộ test tại [tests/auth/publish-auth-errors.test.mjs](../../../../tests/auth/publish-auth-errors.test.mjs).
+  - Exports tại [src/api/auth/index.ts](../../../../src/api/auth/index.ts), tài liệu tại [docs/architecture/auth-and-errors.md](../../../architecture/auth-and-errors.md), bộ test tại [tests/integration/publish-auth-errors.test.mjs](../../../../tests/integration/publish-auth-errors.test.mjs).
   - T03 không sửa `package.json`, `package-lock.json`, `src/app.ts`, `src/server.ts` hoặc `src/data/*`.
 - **Điều kiện còn chờ:**
   - Chờ review độc lập từ Vượng (`@vinny2707`) và tích hợp vào `develop`.

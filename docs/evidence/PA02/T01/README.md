@@ -23,7 +23,7 @@ Hồ sơ bổ sung ở local, chưa commit/push. SHA trên là code được ki�
 
 ## Rule → test/file
 
-Các tên test nằm trong [smoke suite](../../../../tests/smoke/app.test.mjs); app source tại [app.ts](../../../../src/app.ts), [config.ts](../../../../src/config.ts) và [server.ts](../../../../src/server.ts).
+Các tên test nằm trong [smoke suite](../../../../tests/integration/app.test.mjs); app source tại [app.ts](../../../../src/api/app.ts), [config.ts](../../../../src/shared/config.ts) và [server.ts](../../../../src/api/server.ts).
 
 - Factory không tự listen và health đi qua HTTP injection thật: factory does not listen; health works through the real HTTP injection boundary.
 - Ba plugins gắn vào cùng app: each module accepts its own real Fastify plugin in the same application.

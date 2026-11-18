@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { spawnSync } from 'node:child_process';
-import { createApp } from '../../dist/app.js';
-import { loadConfig } from '../../dist/config.js';
+import { createApp } from '../../dist/api/app.js';
+import { loadConfig } from '../../dist/shared/config.js';
 
 // T01 acceptance checks only; the comprehensive runner/fixtures/commands belong to T04.
 test('factory does not listen; health works through the real HTTP injection boundary', async (t) => {
@@ -102,7 +102,7 @@ test('configuration has local defaults and validates explicit environment input'
 });
 
 test('executable rejects invalid configuration with a nonzero exit', () => {
-  const child = spawnSync(process.execPath, ['dist/server.js'], {
+  const child = spawnSync(process.execPath, ['dist/api/server.js'], {
     cwd: new URL('../../', import.meta.url),
     env: { ...process.env, HOST: '127.0.0.1', PORT: 'not-a-port' },
     encoding: 'utf8',
