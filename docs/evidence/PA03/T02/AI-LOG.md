@@ -15,8 +15,9 @@
 - East Asia và Southeast Asia bị policy của subscription chặn (`RequestDisallowedByAzure`); tra assignment "Allowed resource deployment regions" rồi chọn Indonesia Central.
 - Lệnh `ssh-keygen -f ~/.ssh/...` do assistant đưa thất bại trên PowerShell 5.1 vì `~` không được mở rộng cho chương trình ngoài; đổi sang `$HOME`.
 - Assistant đề xuất hạ limit organization từ $500 xuống thấp hơn và thêm cảnh báo; Vượng đặt $10 và cảnh báo $4.
-- Ảnh billing được cắt bỏ địa chỉ và thông tin thẻ; ảnh spend limits được assistant cắt bỏ tab trình duyệt và URL.
+- Ảnh billing được cắt bỏ địa chỉ và thông tin thẻ; ảnh spend limits được assistant cắt bỏ tab trình duyệt và URL; ảnh API key được assistant che email và phần hiển thị của key.
+- Plan dự kiến Vỹ tạo key; Vượng có role Admin nên tự tạo key rồi chuyển riêng cho Vỹ giữ.
 
 **Phần không chọn (Rejected):** PaaS vì không có Docker daemon cho sandbox; Google Cloud và Hetzner vì cần thẻ; DeepSeek V4.1 Flash vì đắt hơn khoảng 2.5 lần và dữ liệu gửi ra ngoài; OpenRouter vì thêm trung gian; model free tier vì rate limit và có thể dùng dữ liệu để huấn luyện.
 
-**Phần làm tay (By hand):** Vượng tạo VM trên Azure Portal, chọn region và size, chạy Cloud Shell để xem policy và Public IP, chỉnh limit organization trên Claude Console và chụp ảnh. Vỹ tạo organization, nạp $5, tạo workspace `leetkob` và limit workspace. Phúc và Vỹ gửi SSH public key. Assistant chạy các lệnh cài Docker, tạo `deploy`, thêm key và kiểm tra qua SSH; soạn ADR, evidence và PR.
+**Phần làm tay (By hand):** Vượng tạo VM trên Azure Portal, chọn region và size, chạy Cloud Shell để xem policy và Public IP, chỉnh limit organization trên Claude Console, tạo API key `leetkob-key` trong workspace `leetkob` (lựa chọn "Somewhere else", key không qua assistant) và chụp ảnh. Vỹ tạo organization, nạp $5, tạo workspace `leetkob` và limit workspace. Phúc và Vỹ gửi SSH public key. Assistant chạy các lệnh cài Docker, tạo `deploy`, thêm key và kiểm tra qua SSH; soạn ADR, evidence và PR.

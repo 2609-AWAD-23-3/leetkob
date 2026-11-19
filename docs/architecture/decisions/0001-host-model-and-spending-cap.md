@@ -103,7 +103,19 @@ PA03-T08 đo số token thật trên một call và cập nhật lại phép tí
 | Organization | Spend limit $10/tháng; email cho admin khi chi tới $4 |
 | Billing | Credit trả trước $5.00 (mua 19/11/2026); Auto-reload tắt, API dừng khi hết số dư |
 
-Bằng chứng: [spend limits](../../evidence/PA03/T02/claude-console-spend-limits.png) và [billing](../../evidence/PA03/T02/claude-console-billing-auto-reload-off.png). Ảnh đã cắt bỏ địa chỉ thanh toán và thông tin thẻ.
+Bằng chứng: [spend limits](../../evidence/PA03/T02/claude-console-spend-limits.png), [billing](../../evidence/PA03/T02/claude-console-billing-auto-reload-off.png) và [API key](../../evidence/PA03/T02/claude-console-api-key-workspace.png). Ảnh đã cắt bỏ địa chỉ thanh toán, thông tin thẻ, email và phần hiển thị của key.
+
+### API key
+
+| Mục | Giá trị |
+| --- | --- |
+| Tên | `leetkob-key` |
+| Scope | Workspace `leetkob`, nên bị limit $5/tháng chặn |
+| Loại | Key gắn với tài khoản người dùng (linked account: Vượng), tạo qua lựa chọn "Somewhere else" của Console |
+| Ngày tạo | 19/11/2026 |
+| Hết hạn | **20/01/2027** |
+
+Key gắn với tài khoản của Vượng: nếu tài khoản này rời organization, key có thể ngừng hoạt động. Nếu deployment cần chạy qua ngày 20/01/2027 (chờ điểm PA04), người giữ key tạo key mới trong workspace `leetkob` và PA03-T12 cập nhật `MODEL_API_KEY` trên server trước ngày đó.
 
 ### Vai trò
 
@@ -111,7 +123,8 @@ Bằng chứng: [spend limits](../../evidence/PA03/T02/claude-console-spend-limi
 | --- | --- |
 | Tạo organization, nạp credit, tạo workspace `leetkob` và limit workspace | Vỹ |
 | Hạ limit organization xuống $10 và thêm cảnh báo $4 (role Admin) | Vượng |
-| Tạo và giữ API key, trong workspace `leetkob` | Vỹ (key chưa tạo tại thời điểm ghi) |
+| Tạo API key `leetkob-key` trong workspace `leetkob` (role Admin) | Vượng |
+| Giữ API key | Vỹ; Vượng chuyển qua kênh riêng và không giữ bản copy |
 | Đặt `MODEL_API_KEY` lên server | Người giữ key cùng Phúc ở PA03-T12, qua kênh riêng |
 
 Key không được đưa vào Git, Issue, PR, chat nhóm, log hay sandbox. Key phải được tạo trong workspace `leetkob`; key ở workspace Default chỉ bị chặn bởi limit của organization.
@@ -120,6 +133,7 @@ Key không được đưa vào Git, Issue, PR, chat nhóm, log hay sandbox. Key 
 
 - PA03-T08 dùng SDK của Anthropic với `claude-haiku-5-5`; PA03-T12 có host và biết biến `MODEL_API_KEY`.
 - Cap $5/tháng đủ cho dev run PA03 và vài lần chạy PA04 theo ước tính trên; nếu cần thêm, Admin tăng limit và nạp credit, ghi lại trong tài liệu này.
+- API key hết hạn ngày 20/01/2027; phải thay key trước ngày đó nếu deployment còn chạy.
 - Một VM duy nhất, không có dự phòng; multi-host và autoscaling nằm ngoài scope PA03.
 - Cấu hình host được kiểm tra bằng các lệnh trong [evidence T02](../../evidence/PA03/T02/README.md). Đăng nhập trực tiếp bằng `deploy` do Phúc kiểm chứng khi review.
 

@@ -25,6 +25,8 @@ Chưa kiểm tra: đăng nhập trực tiếp `ssh deploy@70.153.86.114` bằng 
 - [Spend limits](claude-console-spend-limits.png): organization $10/tháng, cảnh báo admin ở $4; workspace `leetkob` $5/tháng; cả hai đã dùng $0.
 - [Billing](claude-console-billing-auto-reload-off.png): credit $5.00, "Auto-reload is off. API requests will stop when your balance runs out."
 
-Ảnh đã cắt bỏ tab trình duyệt, URL, địa chỉ thanh toán và thông tin thẻ. API key chưa được tạo tại thời điểm chụp.
+- [API key](claude-console-api-key-workspace.png): key `leetkob-key`, scope workspace `leetkob`, tạo bởi Vượng ngày 19/11/2026, hết hạn 20/01/2027.
+
+Ảnh đã cắt bỏ tab trình duyệt, URL, địa chỉ thanh toán, thông tin thẻ, email và phần hiển thị của key. Chưa có call model thật bằng key này; PA03-T08 ghi call đầu tiên kèm request id và số token.
 
 Xem thêm [nhật ký AI theo task](AI-LOG.md).
