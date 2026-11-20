@@ -1,12 +1,12 @@
 # PA03-T05 — Kiểm tra Sandbox và 9 bài tấn công
 
-Nhánh `feat/pa03-t05-sandbox` (Refs #34), người thực hiện `@BHVPhuc`, reviewer độc lập `@vinny2707`.
+Nhánh `feat/pa03-t05-sandbox` ([PR #46](https://github.com/2609-AWAD-23-3/leetkob/pull/46), Refs #34), người thực hiện `@BHVPhuc`, reviewer độc lập `@vinny2707`.
 
 ## Môi trường kiểm chứng thực tế
 
 - Kiểm thử unit/quality gate chạy trên Windows PowerShell với Node `v24.22.1`, npm `11.19.1` (`npm.cmd`).
 - Kiểm thử Docker thật (`npm run test:sandbox`) chạy từ checkout local tới Docker Engine trên host Linux của nhóm (`Ubuntu 24.04.5 LTS`, Docker `29.10.0`, `CgroupVersion=2/systemd`, cùng cgroup v2 với `ubuntu-latest` của GitHub Actions) qua tunnel SSH tạm thời (`DOCKER_HOST=tcp://127.0.0.1:23759`, đã đóng ngay sau khi chạy xong).
-- Chưa có CI run trên GitHub Actions cho tới khi mở PR và push lên remote.
+- CI GitHub Actions tại commit cài đặt `e9c8904`: [Run 44779595118](https://github.com/2609-AWAD-23-3/leetkob/actions/runs/44779595118) trên `ubuntu-latest` đạt `SUCCESS` cho cả [quality-gate](https://github.com/2609-AWAD-23-3/leetkob/actions/runs/44779595118/job/136438426055) (`8s`) và [sandbox-attacks](https://github.com/2609-AWAD-23-3/leetkob/actions/runs/44779595118/job/136438425404) (`47s`). Ghi chú: trigger tag `pa3` sẽ được kiểm chứng tiếp khi `T13` gắn tag `pa3` nộp bài.
 
 ## Thành phần triển khai
 
@@ -42,7 +42,8 @@ Nhánh `feat/pa03-t05-sandbox` (Refs #34), người thực hiện `@BHVPhuc`, re
 | `npm run format-check` | exit `0` | `prettier --check .` |
 | `npm run type-check` | exit `0` | `tsc -p tsconfig.check.json` |
 | `npm test` | exit `0` | `95/95` tests pass (83 baseline + 12 unit tests sandbox), không cần Docker hay network |
-| `npm run test:sandbox` | exit `0` | `11/11` tests pass trên Docker Linux Ubuntu 24.04 (`baseline` + `self-SIGKILL` + `M1`–`M9`) |
+| `npm run test:sandbox` | exit `0` | `11/11` tests pass trên Docker Linux Ubuntu 24.04 (`baseline` + `self-SIGKILL` + `M1`–`M9`) và trên CI job `sandbox-attacks` (`47s`) |
+| GitHub Actions CI (`quality-gate` + `sandbox-attacks`) | `SUCCESS` | [Run 44779595118](https://github.com/2609-AWAD-23-3/leetkob/actions/runs/44779595118) tại commit `e9c8904` |
 | `git diff --check` | exit `0` | Không lỗi whitespace |
 
 Xem thêm [nhật ký AI theo task](AI-LOG.md).
