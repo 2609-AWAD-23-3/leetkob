@@ -14,6 +14,27 @@ export type {
   Verdict,
 } from './types.js';
 export { createInMemoryPublishStore } from './in-memory-publish-store.js';
+// PA03-T03: async Store interfaces and the in-memory fake.
+// Domain types live in src/shared/domain/.
+export type { AuthStore, UserCredentials } from './auth-store.js';
+export type { JobQueue } from './job-queue.js';
+export type { LabStore } from './lab-store.js';
+export type { ReviewStore } from './review-store.js';
+export type { Store } from './store.js';
+export type { SubmissionStore } from './submission-store.js';
+export type { VerdictStore } from './verdict-store.js';
+export {
+  createInMemoryStore,
+  type InMemoryStoreFixture,
+  type InMemoryStoreOptions,
+  type SeedUser,
+  type StoreSeed,
+} from './in-memory/index.js';
+export {
+  createStoreSeed,
+  STORE_FIXTURE_CREATED_AT,
+  STORE_FIXTURE_OPENS_AT,
+} from './in-memory/seed.js';
 export {
   createFixedClock,
   createPublishSeed,
