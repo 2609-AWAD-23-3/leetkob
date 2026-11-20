@@ -19,13 +19,14 @@ const EXHAUSTED_ERROR = 'max attempts reached without completion';
 function heldJob(
   ctx: Context,
   jobId: string,
-  workerId: string,
+  leaseToken: string,
 ): StoredJob | undefined {
   const job = ctx.state.jobs.get(jobId);
   if (
     !job ||
     job.done ||
-    job.leaseOwner !== workerId ||
+    job.leaseToken === null ||
+    job.leaseToken !== leaseToken ||
     job.leaseExpiresAt === null ||
     Date.parse(job.leaseExpiresAt) <= ctx.nowMs()
   )
@@ -37,6 +38,7 @@ function heldJob(
 function exhaust(ctx: Context, job: StoredJob, error: string): void {
   job.done = true;
   job.leaseOwner = null;
+  job.leaseToken = null;
   job.leaseExpiresAt = null;
   job.lastError = error;
   const submission = ctx.state.submissions.get(job.submissionId);
@@ -61,6 +63,7 @@ export function createJobQueue(ctx: Context): JobQueue {
           continue;
         }
         job.leaseOwner = workerId;
+        job.leaseToken = ctx.newId();
         job.leaseExpiresAt = new Date(now + leaseMs).toISOString();
         job.attempts += 1;
         const submission = ctx.state.submissions.get(job.submissionId);
@@ -70,16 +73,16 @@ export function createJobQueue(ctx: Context): JobQueue {
       return undefined;
     },
 
-    async extendLease({ jobId, workerId, leaseMs }) {
+    async extendLease({ jobId, leaseToken, leaseMs }) {
       requirePositiveInteger(leaseMs, 'leaseMs');
-      const job = heldJob(ctx, jobId, workerId);
+      const job = heldJob(ctx, jobId, leaseToken);
       if (!job) return false;
       job.leaseExpiresAt = new Date(ctx.nowMs() + leaseMs).toISOString();
       return true;
     },
 
-    async complete({ jobId, workerId, judgeResult, verdicts }) {
-      const job = heldJob(ctx, jobId, workerId);
+    async complete({ jobId, leaseToken, judgeResult, verdicts }) {
+      const job = heldJob(ctx, jobId, leaseToken);
       if (!job) return false;
       const submission = ctx.state.submissions.get(job.submissionId);
       const lab = submission ? ctx.state.labs.get(submission.labId) : undefined;
@@ -131,13 +134,14 @@ export function createJobQueue(ctx: Context): JobQueue {
       submission.status = 'judged';
       job.done = true;
       job.leaseOwner = null;
+      job.leaseToken = null;
       job.leaseExpiresAt = null;
       return true;
     },
 
-    async fail({ jobId, workerId, error, maxAttempts }) {
+    async fail({ jobId, leaseToken, error, maxAttempts }) {
       requirePositiveInteger(maxAttempts, 'maxAttempts');
-      const job = heldJob(ctx, jobId, workerId);
+      const job = heldJob(ctx, jobId, leaseToken);
       if (!job) return false;
       if (job.attempts >= maxAttempts) {
         exhaust(ctx, job, String(error));
@@ -145,6 +149,7 @@ export function createJobQueue(ctx: Context): JobQueue {
       }
       job.lastError = String(error);
       job.leaseOwner = null;
+      job.leaseToken = null;
       job.leaseExpiresAt = null;
       const submission = ctx.state.submissions.get(job.submissionId);
       if (submission) submission.status = 'queued';

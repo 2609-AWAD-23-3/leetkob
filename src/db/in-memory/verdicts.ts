@@ -1,5 +1,6 @@
 import type { ModelCallLog } from '../../shared/domain/index.js';
 import type { VerdictStore } from '../verdict-store.js';
+import { validateModelCallMetrics } from '../validation.js';
 import { clone, toVerdict, type Context } from './state.js';
 
 export function createVerdictStore(ctx: Context): VerdictStore {
@@ -11,6 +12,7 @@ export function createVerdictStore(ctx: Context): VerdictStore {
     },
 
     async recordModelCall(log) {
+      validateModelCallMetrics(log);
       if (!ctx.state.submissions.has(log.submissionId))
         throw new TypeError('Model call refers to an unknown submission');
       const stored: ModelCallLog = {

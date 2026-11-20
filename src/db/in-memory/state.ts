@@ -11,6 +11,7 @@ import type {
   TaDecision,
   User,
 } from '../../shared/domain/index.js';
+import type { Publication } from '../types.js';
 import {
   copyNewLab,
   requireId,
@@ -61,6 +62,7 @@ export interface State {
   verdictIdsByPair: Map<string, string>;
   decisionLog: ReviewDecisionLog[];
   modelCalls: ModelCallLog[];
+  publications: Map<string, Publication>;
   nextSeq: number;
 }
 
@@ -118,6 +120,7 @@ export function emptyState(): State {
     verdictIdsByPair: new Map(),
     decisionLog: [],
     modelCalls: [],
+    publications: new Map(),
     nextSeq: 0,
   };
 }
@@ -161,6 +164,8 @@ export function buildState(seed: StoreSeed): State {
   }
   for (const lab of seed.labs) {
     validateLab(lab, state.classes);
+    if (!state.users.has(lab.createdBy))
+      throw new TypeError('lab.createdBy is unknown');
     if (state.labs.has(lab.id)) throw new TypeError('Duplicate lab.id');
     state.labs.set(lab.id, copyLab(lab));
   }

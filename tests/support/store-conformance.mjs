@@ -57,6 +57,23 @@ function verdict(submissionId, constraintId, value, extra = {}) {
 }
 
 export function defineStoreConformance(label, makeFixture) {
+  test(`${label}: an unknown lab creator is rejected without replacing state`, async () => {
+    const bad = createStoreSeed();
+    bad.labs[0].createdBy = 'missing-user';
+    await assert.rejects(async () => {
+      const fixture = makeFixture({ seed: bad });
+      try {
+        await fixture.ready;
+      } finally {
+        await fixture.store.close();
+      }
+    }, TypeError);
+    const fixture = makeFixture({ seed: createStoreSeed() });
+    const before = await fixture.store.getLab(LAB);
+    await assert.rejects(async () => fixture.reset(bad), TypeError);
+    assert.deepEqual(await fixture.store.getLab(LAB), before);
+  });
+
   const setup = () => {
     const time = controllableClock();
     const { store } = makeFixture({
@@ -79,7 +96,7 @@ export function defineStoreConformance(label, makeFixture) {
       assert.equal(job.submissionId, submission.id);
       const ok = await store.complete({
         jobId: job.id,
-        workerId: 'worker-a',
+        leaseToken: job.leaseToken,
         judgeResult,
         verdicts: verdictsFor(submission.id),
       });
@@ -221,6 +238,28 @@ export function defineStoreConformance(label, makeFixture) {
     assert.equal((await store.getLab(LAB)).constraints[0].deduction, 3);
   });
 
+  test(`${label}: submit keeps its receive time when the clock crosses the deadline before it resolves`, async () => {
+    const { store, time } = setup();
+    const receivedAt = new Date(Date.parse(FIXTURE_DEADLINE) - 1).toISOString();
+    time.set(receivedAt);
+    const pending = store.submit({
+      labId: LAB,
+      studentId: 'student-1',
+      code: '',
+    });
+    time.advance(2);
+    const submission = await pending;
+    assert.equal(submission.submittedAt, receivedAt);
+    assert.equal(
+      (await store.getSubmission(submission.id)).submittedAt,
+      receivedAt,
+    );
+    assert.deepEqual(
+      (await store.listCountedSubmissions(LAB)).map((item) => item.id),
+      [submission.id],
+    );
+  });
+
   test(`${label}: submit stores a queued submission and exactly one job`, async () => {
     const { store } = setup();
     const submission = await store.submit({
@@ -265,7 +304,7 @@ export function defineStoreConformance(label, makeFixture) {
     assert.equal(
       await store.extendLease({
         jobId: first.id,
-        workerId: 'worker-a',
+        leaseToken: first.leaseToken,
         leaseMs: 1000,
       }),
       true,
@@ -285,7 +324,7 @@ export function defineStoreConformance(label, makeFixture) {
     assert.equal(
       await store.complete({
         jobId: first.id,
-        workerId: 'worker-a',
+        leaseToken: first.leaseToken,
         judgeResult: AC,
         verdicts,
       }),
@@ -294,7 +333,7 @@ export function defineStoreConformance(label, makeFixture) {
     assert.equal(
       await store.complete({
         jobId: second.id,
-        workerId: 'worker-b',
+        leaseToken: second.leaseToken,
         judgeResult: AC,
         verdicts,
       }),
@@ -303,7 +342,7 @@ export function defineStoreConformance(label, makeFixture) {
     assert.equal(
       await store.complete({
         jobId: second.id,
-        workerId: 'worker-b',
+        leaseToken: second.leaseToken,
         judgeResult: AC,
         verdicts,
       }),
@@ -319,6 +358,56 @@ export function defineStoreConformance(label, makeFixture) {
       }),
       undefined,
     );
+  });
+
+  test(`${label}: a stale claim cannot touch a newer lease, even from the same worker`, async () => {
+    const { store, time } = setup();
+    const submission = await store.submit({
+      labId: LAB,
+      studentId: 'student-1',
+      code: 'int main() {}',
+    });
+    const claim = () =>
+      store.claim({ workerId: 'worker-a', leaseMs: 1000, maxAttempts: 3 });
+    const stale = await claim();
+    time.advance(1001); // the first lease expired
+    const current = await claim();
+    assert.equal(current.id, stale.id);
+    assert.equal(typeof current.leaseToken, 'string');
+    assert.notEqual(current.leaseToken, stale.leaseToken);
+    const verdicts = [
+      verdict(submission.id, 'c1', 'pass'),
+      verdict(submission.id, 'c2', 'pass'),
+    ];
+    const staleLease = { jobId: stale.id, leaseToken: stale.leaseToken };
+    assert.equal(
+      await store.extendLease({ ...staleLease, leaseMs: 1000 }),
+      false,
+    );
+    assert.equal(
+      await store.fail({
+        ...staleLease,
+        error: 'from attempt 1',
+        maxAttempts: 3,
+      }),
+      false,
+    );
+    assert.equal(
+      await store.complete({ ...staleLease, judgeResult: AC, verdicts }),
+      false,
+    );
+    assert.equal((await store.getSubmission(submission.id)).status, 'judging');
+    assert.deepEqual(await store.listVerdicts(submission.id), []);
+    assert.equal(
+      await store.complete({
+        jobId: current.id,
+        leaseToken: current.leaseToken,
+        judgeResult: AC,
+        verdicts,
+      }),
+      true,
+    );
+    assert.equal((await store.listVerdicts(submission.id)).length, 2);
   });
 
   // Each case replaces the full, valid AC batch (c1 pass, c2 violation).
@@ -395,7 +484,7 @@ export function defineStoreConformance(label, makeFixture) {
       });
       const batch = {
         jobId: job.id,
-        workerId: 'worker-a',
+        leaseToken: job.leaseToken,
         judgeResult: AC,
         verdicts: [
           verdict(submission.id, 'c1', 'pass'),
@@ -447,7 +536,7 @@ export function defineStoreConformance(label, makeFixture) {
       await assert.rejects(
         store.fail({
           jobId: job.id,
-          workerId: 'worker-a',
+          leaseToken: job.leaseToken,
           error: 'x',
           maxAttempts,
         }),
@@ -471,7 +560,7 @@ export function defineStoreConformance(label, makeFixture) {
       });
       return store.fail({
         jobId: job.id,
-        workerId: 'worker-a',
+        leaseToken: job.leaseToken,
         error: 'sandbox down',
         maxAttempts: 2,
       });
@@ -749,5 +838,152 @@ export function defineStoreConformance(label, makeFixture) {
     });
     assert.equal(logged.createdAt, START);
     assert.deepEqual(await store.listModelCalls(submission.id), [logged]);
+  });
+
+  test(`${label}: invalid model call metrics write no log and zero metrics are valid`, async () => {
+    const { store } = setup();
+    const submission = await store.submit({
+      labId: LAB,
+      studentId: 'student-1',
+      code: '',
+    });
+    const log = {
+      submissionId: submission.id,
+      constraintIds: ['c1'],
+      provider: 'fake',
+      model: 'fake',
+      requestId: null,
+      inputTokens: 0,
+      outputTokens: 0,
+      latencyMs: 0,
+      costUsd: 0,
+      outcome: 'timeout',
+    };
+    for (const field of ['inputTokens', 'outputTokens', 'latencyMs']) {
+      for (const value of [
+        -1,
+        0.5,
+        NaN,
+        Infinity,
+        -Infinity,
+        2_147_483_648,
+        '1',
+      ])
+        await assert.rejects(
+          store.recordModelCall({ ...log, [field]: value }),
+          TypeError,
+        );
+    }
+    for (const value of [-1, NaN, Infinity, -Infinity, '0'])
+      await assert.rejects(
+        store.recordModelCall({ ...log, costUsd: value }),
+        TypeError,
+      );
+    assert.deepEqual(await store.listModelCalls(submission.id), []);
+    const saved = await store.recordModelCall(log);
+    assert.equal(saved.costUsd, 0);
+    assert.deepEqual(await store.listModelCalls(submission.id), [saved]);
+  });
+
+  test(`${label}: isTaAssignedToClass only accepts a TA of that class`, async () => {
+    const { store } = setup();
+    assert.equal(await store.isTaAssignedToClass('ta-1', 'class-1'), true);
+    assert.equal(await store.isTaAssignedToClass('ta-2', 'class-1'), false);
+    assert.equal(
+      await store.isTaAssignedToClass('student-1', 'class-1'),
+      false,
+    );
+  });
+
+  test(`${label}: publish follows the PA02 order of checks`, async () => {
+    const { store, judge, time } = setup();
+    const publish = (publishedBy = 'ta-1') =>
+      store.publishLab({ labId: LAB, publishedBy });
+    assert.deepEqual(
+      await store.publishLab({ labId: 'lab-unknown', publishedBy: 'ta-1' }),
+      { kind: 'lab_not_found' },
+    );
+    await judge('student-1', AC, (id) => [
+      verdict(id, 'c1', 'pass'),
+      verdict(id, 'c2', 'violation'),
+    ]);
+    // Before the deadline.
+    assert.deepEqual(await publish(), {
+      kind: 'before_deadline',
+      deadline: FIXTURE_DEADLINE,
+    });
+    // At the deadline, an unreviewed pass still blocks.
+    time.set(FIXTURE_DEADLINE);
+    const [, violationItem] = await store.listReviewQueue(LAB);
+    await store.decide({
+      itemId: violationItem.id,
+      decision: 'violation',
+      taId: 'ta-1',
+    });
+    assert.deepEqual(await publish(), {
+      kind: 'pending_reviews',
+      pendingCount: 1,
+    });
+    await assert.rejects(publish('ghost-ta'), TypeError);
+    assert.equal(await store.confirmPasses({ labId: LAB, taId: 'ta-1' }), 1);
+    const published = await publish();
+    assert.deepEqual(published, {
+      kind: 'published',
+      publication: {
+        labId: LAB,
+        publishedAt: FIXTURE_DEADLINE,
+        publishedBy: 'ta-1',
+        summary: {
+          queueItemCount: 2,
+          passDecisionCount: 1,
+          violationDecisionCount: 1,
+        },
+      },
+    });
+    assert.deepEqual(await store.getPublication(LAB), published.publication);
+    // Repeating returns the original publication, even for another caller.
+    time.advance(60_000);
+    assert.deepEqual(await publish('ta-2'), {
+      kind: 'already_published',
+      publication: published.publication,
+    });
+  });
+
+  test(`${label}: a published lab no longer accepts review changes`, async () => {
+    const { store, judge, time } = setup();
+    await judge('student-1', AC, (id) => [
+      verdict(id, 'c1', 'pass'),
+      verdict(id, 'c2', 'pass'),
+    ]);
+    time.set(FIXTURE_DEADLINE);
+    await store.confirmPasses({ labId: LAB, taId: 'ta-1' });
+    assert.equal(
+      (await store.publishLab({ labId: LAB, publishedBy: 'ta-1' })).kind,
+      'published',
+    );
+    const [item] = await store.listReviewQueue(LAB);
+    assert.equal(
+      await store.decide({
+        itemId: item.id,
+        decision: 'violation',
+        taId: 'ta-1',
+      }),
+      undefined,
+    );
+    assert.equal(await store.confirmPasses({ labId: LAB, taId: 'ta-1' }), 0);
+    assert.equal((await store.getReviewItem(item.id)).taDecision, 'pass');
+    assert.equal((await store.listDecisionLog(item.id)).length, 1);
+  });
+
+  test(`${label}: a lab without submissions publishes an empty summary`, async () => {
+    const { store, time } = setup();
+    time.set(FIXTURE_DEADLINE);
+    const result = await store.publishLab({ labId: LAB, publishedBy: 'ta-1' });
+    assert.equal(result.kind, 'published');
+    assert.deepEqual(result.publication.summary, {
+      queueItemCount: 0,
+      passDecisionCount: 0,
+      violationDecisionCount: 0,
+    });
   });
 }

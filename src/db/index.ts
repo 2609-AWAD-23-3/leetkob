@@ -19,6 +19,9 @@ export { createInMemoryPublishStore } from './in-memory-publish-store.js';
 export type { AuthStore, UserCredentials } from './auth-store.js';
 export type { JobQueue } from './job-queue.js';
 export type { LabStore } from './lab-store.js';
+export type { PublicationStore } from './publication-store.js';
+// The Postgres implementation lives in ./postgres/index.js (createPostgresStore,
+// migrate) so code that only needs the in-memory fake does not load `pg`.
 export type { ReviewStore } from './review-store.js';
 export type { Store } from './store.js';
 export type { SubmissionStore } from './submission-store.js';

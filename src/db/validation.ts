@@ -5,6 +5,7 @@ import {
   type JudgeResult,
   type NewConstraintVerdict,
   type NewLab,
+  type NewModelCallLog,
 } from '../shared/domain/index.js';
 
 // Input checks shared by every Store implementation, so the in-memory fake
@@ -194,6 +195,18 @@ export function copyJudgeResult(result: JudgeResult): JudgeResult {
     verdict: result.verdict,
     tests: result.tests.map(({ testId, verdict }) => ({ testId, verdict })),
   };
+}
+
+// Match Postgres integer storage and reject invalid provider accounting
+// before either implementation writes a log.
+export function validateModelCallMetrics(log: NewModelCallLog): void {
+  for (const field of ['inputTokens', 'outputTokens', 'latencyMs'] as const) {
+    const value = log[field];
+    if (!Number.isInteger(value) || value < 0 || value > 2_147_483_647)
+      throw new TypeError(`${field} must be a nonnegative 32-bit integer`);
+  }
+  if (!Number.isFinite(log.costUsd) || log.costUsd < 0)
+    throw new TypeError('costUsd must be finite and nonnegative');
 }
 
 export function validateNewVerdict(

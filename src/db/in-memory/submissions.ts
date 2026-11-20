@@ -41,6 +41,7 @@ export function enqueueJob(ctx: Context, submissionId: string): void {
     submissionId,
     attempts: 0,
     leaseOwner: null,
+    leaseToken: null,
     leaseExpiresAt: null,
     lastError: null,
     done: false,
@@ -50,6 +51,7 @@ export function enqueueJob(ctx: Context, submissionId: string): void {
 export function createSubmissionStore(ctx: Context): SubmissionStore {
   return {
     async submit({ labId, studentId, code }) {
+      const submittedAt = ctx.now();
       requireId(labId, 'labId');
       requireId(studentId, 'studentId');
       if (typeof code !== 'string')
@@ -62,7 +64,7 @@ export function createSubmissionStore(ctx: Context): SubmissionStore {
         labId,
         studentId,
         code,
-        submittedAt: ctx.now(),
+        submittedAt,
         status: 'queued',
         judgeResult: null,
         seq: ctx.state.nextSeq++,

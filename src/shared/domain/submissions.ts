@@ -30,7 +30,8 @@ export interface Job {
   id: string;
   submissionId: string;
   attempts: number;
-  leaseOwner: string | null;
+  leaseOwner: string | null; // worker id, for logs and monitoring
+  leaseToken: string | null; // identifies one claim; required to finish it
   leaseExpiresAt: string | null;
   lastError: string | null;
 }

@@ -1,5 +1,7 @@
 import type { Lab, ReviewItem, TaDecision } from '../../shared/domain/index.js';
+import type { PublicationStore } from '../publication-store.js';
 import type { ReviewStore } from '../review-store.js';
+import type { Publication, ReviewState } from '../types.js';
 import {
   copyEvidence,
   sameEvidence,
@@ -118,7 +120,34 @@ function applyDecision(
   verdict.reviewedAt = changedAt;
 }
 
-export function createReviewStore(ctx: Context): ReviewStore {
+function reviewState(ctx: Context, labId: string): ReviewState | undefined {
+  const lab = ctx.state.labs.get(labId);
+  if (!lab) return undefined;
+  const items = queueVerdicts(ctx.state, lab);
+  let unfinished = 0;
+  for (const submission of countedSubmissions(ctx.state, labId)) {
+    if (submission.status !== 'judged') {
+      unfinished += 1; // queued, judging or failed
+    } else if (isReviewable(submission)) {
+      for (const constraint of lab.constraints) {
+        if (!ctx.state.verdictIdsByPair.has(key(submission.id, constraint.id)))
+          unfinished += 1; // a verdict the pipeline has not produced
+      }
+    }
+  }
+  const pass = items.filter((v) => v.taDecision === 'pass').length;
+  const violation = items.filter((v) => v.taDecision === 'violation').length;
+  return {
+    queueItemCount: items.length,
+    passDecisionCount: pass,
+    violationDecisionCount: violation,
+    pendingCount: items.length - pass - violation + unfinished,
+  };
+}
+
+export function createReviewStore(
+  ctx: Context,
+): ReviewStore & PublicationStore {
   return {
     async listReviewQueue(labId) {
       const lab = ctx.state.labs.get(labId);
@@ -136,32 +165,7 @@ export function createReviewStore(ctx: Context): ReviewStore {
     },
 
     async getReviewState(labId) {
-      const lab = ctx.state.labs.get(labId);
-      if (!lab) return undefined;
-      const items = queueVerdicts(ctx.state, lab);
-      let unfinished = 0;
-      for (const submission of countedSubmissions(ctx.state, labId)) {
-        if (submission.status !== 'judged') {
-          unfinished += 1; // queued, judging or failed
-        } else if (isReviewable(submission)) {
-          for (const constraint of lab.constraints) {
-            if (
-              !ctx.state.verdictIdsByPair.has(key(submission.id, constraint.id))
-            )
-              unfinished += 1; // a verdict the pipeline has not produced
-          }
-        }
-      }
-      const pass = items.filter((v) => v.taDecision === 'pass').length;
-      const violation = items.filter(
-        (v) => v.taDecision === 'violation',
-      ).length;
-      return {
-        queueItemCount: items.length,
-        passDecisionCount: pass,
-        violationDecisionCount: violation,
-        pendingCount: items.length - pass - violation + unfinished,
-      };
+      return reviewState(ctx, labId);
     },
 
     async decide({ itemId, decision, taId, evidence }) {
@@ -170,7 +174,8 @@ export function createReviewStore(ctx: Context): ReviewStore {
         throw new TypeError('decision must be pass or violation');
       if (evidence !== undefined) validateEvidenceList(evidence, 'evidence');
       const found = findQueueItem(ctx.state, itemId);
-      if (!found) return undefined;
+      // A published lab is final: decisions can no longer change (FAQ-12).
+      if (!found || ctx.state.publications.has(found.lab.id)) return undefined;
       applyDecision(ctx, found.verdict, decision, taId, evidence ?? []);
       return toReviewItem(ctx.state, found.lab, found.verdict);
     },
@@ -178,7 +183,7 @@ export function createReviewStore(ctx: Context): ReviewStore {
     async confirmPasses({ labId, taId }) {
       requireReviewer(ctx, taId);
       const lab = ctx.state.labs.get(labId);
-      if (!lab) return 0;
+      if (!lab || ctx.state.publications.has(labId)) return 0;
       let count = 0;
       for (const verdict of queueVerdicts(ctx.state, lab)) {
         if (verdict.verdict !== 'pass' || verdict.taDecision !== null) continue;
@@ -192,6 +197,44 @@ export function createReviewStore(ctx: Context): ReviewStore {
       return ctx.state.decisionLog
         .filter((entry) => entry.itemId === itemId)
         .map(clone);
+    },
+
+    async isTaAssignedToClass(taId, classId) {
+      const membership = ctx.state.memberships.get(key(taId, classId));
+      return membership?.role === 'TA';
+    },
+
+    async getPublication(labId) {
+      const publication = ctx.state.publications.get(labId);
+      return publication ? clone(publication) : undefined;
+    },
+
+    async publishLab({ labId, publishedBy }) {
+      const lab = ctx.state.labs.get(labId);
+      if (!lab) return { kind: 'lab_not_found' };
+      const existing = ctx.state.publications.get(labId);
+      if (existing)
+        return { kind: 'already_published', publication: clone(existing) };
+      requireReviewer(ctx, publishedBy);
+      const now = ctx.now(); // the clock is read once per new publication
+      if (Date.parse(now) < Date.parse(lab.deadline))
+        return { kind: 'before_deadline', deadline: lab.deadline };
+      const state = reviewState(ctx, labId);
+      if (!state) return { kind: 'lab_not_found' };
+      if (state.pendingCount > 0)
+        return { kind: 'pending_reviews', pendingCount: state.pendingCount };
+      const publication: Publication = {
+        labId,
+        publishedAt: now,
+        publishedBy,
+        summary: {
+          queueItemCount: state.queueItemCount,
+          passDecisionCount: state.passDecisionCount,
+          violationDecisionCount: state.violationDecisionCount,
+        },
+      };
+      ctx.state.publications.set(labId, publication);
+      return { kind: 'published', publication: clone(publication) };
     },
   };
 }

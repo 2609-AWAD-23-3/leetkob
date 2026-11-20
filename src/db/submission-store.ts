@@ -3,9 +3,10 @@ import type { Submission } from '../shared/domain/index.js';
 // Used by PA03-T04 (submit, status), PA03-T06 and PA03-T11.
 export interface SubmissionStore {
   // Stores a 'queued' submission and its judge job in one atomic step.
-  // submittedAt is the store clock (server receive time, FAQ-03). Deadline,
-  // size, ownership and open-window checks (labPhase) belong to the API
-  // before calling this.
+  // submittedAt captures the store clock on entry (server receive time,
+  // FAQ-03), before awaiting readiness or database I/O. It is never supplied
+  // by the client. Deadline, size, ownership and open-window checks (labPhase)
+  // belong to the API before calling this.
   submit(input: {
     labId: string;
     studentId: string;
