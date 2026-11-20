@@ -18,7 +18,8 @@
     "lint": "oxlint --deny-warnings src tests scripts",
     "format-check": "prettier --check .",
     "type-check": "tsc -p tsconfig.check.json",
-    "test": "npm run build && node scripts/test.mjs"
+    "test": "npm run build && node scripts/test.mjs",
+    "test:sandbox": "npm run build && node scripts/test-sandbox.mjs"
   },
   "dependencies": {
     "fastify": "5.12.8"

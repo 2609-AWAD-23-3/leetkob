@@ -8,6 +8,8 @@ on:
     tags:
       - 'pa2'
       - 'pa02*'
+      - 'pa3'
+      - 'pa03*'
   pull_request:
     branches:
       - main
@@ -48,3 +50,22 @@ jobs:
 
       - name: Test suite (unit, contract, integration)
         run: npm test
+
+  sandbox-attacks:
+    name: sandbox-attacks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 24.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run Docker sandbox and 9 attack tests
+        run: npm run test:sandbox
