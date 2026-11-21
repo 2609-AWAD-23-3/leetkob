@@ -19,13 +19,17 @@
     "format-check": "prettier --check .",
     "type-check": "tsc -p tsconfig.check.json",
     "test": "npm run build && node scripts/test.mjs",
+    "db:migrate": "npm run build && node scripts/db-migrate.mjs",
+    "test:db": "npm run build && node scripts/test-db.mjs",
     "test:sandbox": "npm run build && node scripts/test-sandbox.mjs"
   },
   "dependencies": {
-    "fastify": "5.12.8"
+    "fastify": "5.12.8",
+    "pg": "8.23.1"
   },
   "devDependencies": {
     "@types/node": "24.19.2",
+    "@types/pg": "8.23.1",
     "oxlint": "1.92.0",
     "prettier": "3.9.10",
     "tsx": "4.23.15",

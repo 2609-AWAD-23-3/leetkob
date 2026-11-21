@@ -51,6 +51,43 @@ jobs:
       - name: Test suite (unit, contract, integration)
         run: npm test
 
+  # PA03-T03: the Store conformance suite against a real Postgres. Kept out
+  # of quality-gate so `npm test` never needs a database.
+  postgres-store:
+    name: postgres-store
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: leetkob
+          POSTGRES_PASSWORD: leetkob_ci
+          POSTGRES_DB: leetkob
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U leetkob -d leetkob"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      TEST_DATABASE_URL: postgres://leetkob:leetkob_ci@127.0.0.1:5432/leetkob
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 24.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Postgres store tests
+        run: npm run test:db
+
   sandbox-attacks:
     name: sandbox-attacks
     runs-on: ubuntu-latest

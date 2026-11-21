@@ -1,0 +1,27 @@
+# Local Postgres for development and the Postgres store tests (PA03-T03).
+# Start:  docker compose -f docker/compose.postgres.yml up -d --wait
+# Use:    DATABASE_URL=postgres://leetkob:leetkob_local@127.0.0.1:5433/leetkob
+# The password is a local-only default, not a secret: the port is bound to
+# 127.0.0.1 and the data lives in a throwaway volume. Deployments (PA03-T12)
+# set their own credentials through the server environment.
+name: leetkob-postgres
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: leetkob
+      POSTGRES_PASSWORD: leetkob_local
+      POSTGRES_DB: leetkob
+    ports:
+      - '127.0.0.1:5433:5432'
+    volumes:
+      - leetkob-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U leetkob -d leetkob']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  leetkob-postgres-data:
