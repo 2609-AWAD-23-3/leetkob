@@ -1,7 +1,9 @@
 import type { ClassMembership, User } from '../../shared/domain/index.js';
 import type { AuthStore } from '../auth-store.js';
+import { normalizeUsername, validateAccount } from '../../shared/accounts.js';
 import { requireId, requireTimestamp } from '../validation.js';
 import type { PostgresContext } from './client.js';
+import { NORMALIZED_USERNAME_SQL } from './account-sql.js';
 
 interface UserRow {
   id: string;
@@ -31,11 +33,30 @@ function toMembership(row: {
 export function createAuthStore(ctx: PostgresContext): AuthStore {
   const { pool } = ctx;
   return {
+    async createStudent(input) {
+      const account = { ...input, username: normalizeUsername(input.username) };
+      validateAccount(account);
+      await ctx.ready;
+      const { rows } = await pool.query<UserRow>(
+        `INSERT INTO users (id, username, display_name, role, password_hash)
+         VALUES ($1, $2, $3, 'student', $4)
+         ON CONFLICT (${NORMALIZED_USERNAME_SQL}) DO NOTHING RETURNING *`,
+        [
+          ctx.newId(),
+          account.username,
+          account.displayName,
+          account.passwordHash,
+        ],
+      );
+      return rows[0]
+        ? { kind: 'created', user: toUser(rows[0]) }
+        : { kind: 'username-conflict' };
+    },
     async findUserByUsername(username) {
       await ctx.ready;
       const { rows } = await pool.query<UserRow>(
-        'SELECT * FROM users WHERE username = $1',
-        [username],
+        `SELECT * FROM users WHERE ${NORMALIZED_USERNAME_SQL} = $1`,
+        [normalizeUsername(username)],
       );
       const row = rows[0];
       return row

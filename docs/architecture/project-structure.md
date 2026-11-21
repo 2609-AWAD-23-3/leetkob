@@ -57,7 +57,7 @@ Giữ lỗi RFC 9457 cùng `src/api/auth/` trong T00 vì file hiện gắn với
 | --- | --- | --- |
 | T01 | Vỹ | `docs/plans/`, `docs/reference/`, quy trình ở `docs/workflow.md`, quy tắc ở `AGENTS.md` và mẫu GitHub. |
 | T02 | Vượng | Quyết định host, model và ngân sách ở `docs/architecture/decisions/`; bàn giao cấu hình cho T08/T12. |
-| T03 | Vượng | `src/db/`, sau này `src/db/migrations/`; dữ liệu dùng chung cho API/worker. Unit và integration tests cho store/migrations. |
+| T03 | Vượng | `src/db/`; migration riêng ở `src/db/migrations/`, demo seed ở `src/db/seeds/`; dữ liệu dùng chung cho API/worker. Unit và integration tests cho store/migrations. |
 | T04 | Vượng | `src/api/auth/`, `src/api/modules/{auth,classes,labs,submissions}/`, kiểm thử API trong `tests/contract/` và `tests/integration/`. |
 | T05 | Phúc | `src/sandbox/` cho runner; `sandbox/attacks/` chứa bài tấn công; chạy kiểm thử sandbox trong CI; image trong `docker/`. |
 | T06 | Phúc | `src/worker/` cho queue consumer, claim/lease và chấm; `src/db/` cùng T03 cho job/store. Kiểm thử restart và không lưu trùng trong integration. |

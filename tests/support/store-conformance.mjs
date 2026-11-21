@@ -57,6 +57,78 @@ function verdict(submissionId, constraintId, value, extra = {}) {
 }
 
 export function defineStoreConformance(label, makeFixture) {
+  test(`${label}: invalid display text is rejected before storing an account`, async () => {
+    const { store } = makeFixture({});
+    for (const displayName of ['A\u0000B', 'Name\ud800', '\udfff']) {
+      await assert.rejects(
+        store.createStudent({
+          username: 'invalid.text',
+          displayName,
+          passwordHash: 'test-hash',
+        }),
+        TypeError,
+      );
+      assert.equal(await store.findUserByUsername('invalid.text'), undefined);
+    }
+  });
+  test(`${label}: registration normalizes usernames and atomically prevents duplicates`, async () => {
+    const { store } = makeFixture({ seed: createStoreSeed() });
+    const input = {
+      username: '  New.Student\u00a0',
+      displayName: 'New Student',
+      passwordHash: 'test-hash',
+    };
+    const outcomes = await Promise.all([
+      store.createStudent(input),
+      store.createStudent({ ...input, username: 'NEW.STUDENT' }),
+    ]);
+    assert.deepEqual(outcomes.map((result) => result.kind).sort(), [
+      'created',
+      'username-conflict',
+    ]);
+    const created = outcomes.find((result) => result.kind === 'created').user;
+    assert.equal(created.role, 'student');
+    assert.equal(created.username, 'new.student');
+    assert.equal('passwordHash' in created, false);
+    assert.deepEqual(await store.listMemberships(created.id), []);
+    assert.equal(
+      (await store.findUserByUsername('\u00a0NEW.STUDENT\t')).user.id,
+      created.id,
+    );
+    assert.equal(
+      (await store.createStudent({ ...input, username: 'TA1' })).kind,
+      'username-conflict',
+    );
+    await assert.rejects(
+      store.createStudent({ ...input, username: 'bad name' }),
+      TypeError,
+    );
+  });
+  test(`${label}: normalized lookup also covers legacy mixed-case and padded usernames`, async () => {
+    const seed = createStoreSeed();
+    seed.users.push({
+      id: 'legacy-user',
+      username: '\u00a0Mixed.User\t',
+      displayName: 'Legacy',
+      role: 'student',
+      passwordHash: 'test-hash',
+    });
+    const { store } = makeFixture({ seed });
+    assert.equal(
+      (await store.findUserByUsername('MIXED.USER')).user.id,
+      'legacy-user',
+    );
+    assert.equal(
+      (
+        await store.createStudent({
+          username: 'mixed.user',
+          displayName: 'New',
+          passwordHash: 'test-hash',
+        })
+      ).kind,
+      'username-conflict',
+    );
+  });
   test(`${label}: an unknown lab creator is rejected without replacing state`, async () => {
     const bad = createStoreSeed();
     bad.labs[0].createdBy = 'missing-user';

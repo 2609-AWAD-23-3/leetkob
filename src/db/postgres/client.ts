@@ -1,5 +1,5 @@
 import pg from 'pg';
-import { MIGRATIONS } from './migrations.js';
+import { MIGRATIONS } from '../migrations/index.js';
 
 export type Queryable = pg.Pool | pg.PoolClient;
 
@@ -17,12 +17,21 @@ const SCHEMA_PATTERN = /^[a-z_][a-z0-9_]{0,62}$/;
 export function createPool(connectionString: string, schema?: string): pg.Pool {
   if (schema !== undefined && !SCHEMA_PATTERN.test(schema))
     throw new TypeError('schema must be a lowercase SQL identifier');
-  return new pg.Pool({
+  const pool = new pg.Pool({
     connectionString,
     max: 4,
+    connectionTimeoutMillis: 5000,
     idleTimeoutMillis: 1000,
     ...(schema === undefined ? {} : { options: `-c search_path=${schema}` }),
   });
+  // pg removes failed idle clients itself. A listener prevents EventEmitter's
+  // unhandled-error process exit; never print raw DB errors/connection details.
+  pool.on('error', () => {
+    console.error(
+      'An idle PostgreSQL connection was lost; the pool will reconnect on demand.',
+    );
+  });
+  return pool;
 }
 
 // Runs fn in one transaction on one connection; rolls back on any error.

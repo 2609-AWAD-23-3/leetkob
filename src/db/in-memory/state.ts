@@ -11,6 +11,7 @@ import type {
   TaDecision,
   User,
 } from '../../shared/domain/index.js';
+import { normalizeUsername } from '../../shared/accounts.js';
 import type { Publication } from '../types.js';
 import {
   copyNewLab,
@@ -139,10 +140,13 @@ export function buildState(seed: StoreSeed): State {
     requireText(user.passwordHash, 'user.passwordHash');
     if (!['admin', 'TA', 'student'].includes(user.role))
       throw new TypeError('user.role is not supported');
-    if (state.users.has(user.id) || state.userIdsByUsername.has(user.username))
+    if (
+      state.users.has(user.id) ||
+      state.userIdsByUsername.has(normalizeUsername(user.username))
+    )
       throw new TypeError('Duplicate user id or username');
     state.users.set(user.id, clone(user));
-    state.userIdsByUsername.set(user.username, user.id);
+    state.userIdsByUsername.set(normalizeUsername(user.username), user.id);
   }
   for (const classRoom of seed.classes) {
     requireId(classRoom.id, 'class.id');

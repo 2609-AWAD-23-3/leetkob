@@ -5,10 +5,17 @@ import pg from 'pg';
 import { createStoreSeed } from '../../dist/db/index.js';
 import { createPostgresStore } from '../../dist/db/postgres/index.js';
 import { createJobQueue } from '../../dist/db/postgres/job-queue.js';
-import { MIGRATIONS } from '../../dist/db/postgres/migrations.js';
+import { MIGRATIONS } from '../../dist/db/migrations/index.js';
 import { createReviewStore } from '../../dist/db/postgres/reviews.js';
 import { createSubmissionStore } from '../../dist/db/postgres/submissions.js';
 import { defineStoreConformance } from '../support/store-conformance.mjs';
+import { assertAuthFlow } from '../support/auth-flow.mjs';
+import {
+  createDemoAccounts,
+  seedDemoAccounts,
+} from '../../dist/db/seeds/demo-accounts.js';
+import { createPool, migrate } from '../../dist/db/postgres/client.js';
+import { createApp } from '../../dist/api/app.js';
 
 // Runs only when TEST_DATABASE_URL points at a disposable Postgres, for
 // example the one from docker/compose.postgres.yml. `npm test` stays free of
@@ -50,6 +57,249 @@ if (!url) {
   });
 
   defineStoreConformance('postgres store', (options) => makeFixture(options));
+
+  test('postgres auth: invalid text returns 400 and valid Unicode still logs in', async (t) => {
+    const fixture = makeFixture({});
+    const app = createApp({ auth: { store: fixture.store } });
+    t.after(() => app.close());
+    const input = {
+      username: 'unicode.test',
+      password: 'test-only-password-value',
+      displayName: 'Unicode Test',
+    };
+    for (const payload of [
+      { ...input, displayName: 'A\u0000B' },
+      { ...input, displayName: '\ud800' },
+      { ...input, password: 'a'.repeat(14) + '\ud800' },
+      { ...input, password: 'a'.repeat(14) + '\ud801' },
+    ]) {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/auth/register',
+        payload,
+      });
+      assert.equal(response.statusCode, 400, response.body);
+    }
+    assert.equal(
+      (
+        await app.inject({
+          method: 'POST',
+          url: '/auth/login',
+          payload: {
+            username: input.username,
+            password: 'a'.repeat(14) + '\ud801',
+          },
+        })
+      ).statusCode,
+      400,
+    );
+    assert.equal(
+      await fixture.store.findUserByUsername(input.username),
+      undefined,
+    );
+    const valid = {
+      ...input,
+      displayName: 'Nguyễn Văn 😀',
+      password: 'Mật khẩu 😀 dành cho test',
+    };
+    assert.equal(
+      (
+        await app.inject({
+          method: 'POST',
+          url: '/auth/register',
+          payload: valid,
+        })
+      ).statusCode,
+      201,
+    );
+    assert.equal(
+      (
+        await app.inject({
+          method: 'POST',
+          url: '/auth/login',
+          payload: { username: valid.username, password: valid.password },
+        })
+      ).statusCode,
+      200,
+    );
+  });
+
+  test('postgres pool: losing an idle connection keeps the process alive and reconnects', () => {
+    const source = `
+      import assert from 'node:assert/strict';
+      import pg from 'pg';
+      import { createPool } from './dist/db/postgres/client.js';
+      const admin = new pg.Client({ connectionString: process.env.TEST_DATABASE_URL });
+      const pool = createPool(process.env.TEST_DATABASE_URL);
+      await admin.connect();
+      try {
+        const client = await pool.connect();
+        const { rows } = await client.query('SELECT pg_backend_pid() AS pid');
+        const ended = new Promise((resolve) => client.once('end', resolve));
+        client.release();
+        await admin.query('SELECT pg_terminate_backend($1)', [rows[0].pid]);
+        await ended;
+        const next = await pool.query('SELECT pg_backend_pid() AS pid');
+        assert.notEqual(next.rows[0].pid, rows[0].pid);
+        console.log('idle-connection-recovered');
+      } finally { await pool.end(); await admin.end(); }
+    `;
+    const child = spawnSync(
+      process.execPath,
+      ['--input-type=module', '-e', source],
+      {
+        cwd: new URL('../../', import.meta.url),
+        env: process.env,
+        encoding: 'utf8',
+        timeout: 10_000,
+      },
+    );
+    assert.ifError(child.error);
+    assert.equal(child.status, 0, child.stderr);
+    assert.match(child.stdout, /idle-connection-recovered/);
+    assert.doesNotMatch(child.stderr, /Unhandled 'error' event/);
+    assert.match(child.stderr, /idle PostgreSQL connection was lost/);
+  });
+
+  test('postgres auth: real HTTP flow stores only token hash', async (t) => {
+    const fixture = makeFixture({});
+    const { userId, token } = await assertAuthFlow(fixture.store, t);
+    const schema = schemas.at(-1);
+    const pool = createPool(url, schema);
+    try {
+      const { rows } = await pool.query(
+        'SELECT token_hash FROM sessions WHERE user_id=$1',
+        [userId],
+      );
+      assert.equal(rows.length, 1);
+      assert.notEqual(rows[0].token_hash, token);
+      assert.match(rows[0].token_hash, /^[a-f0-9]{64}$/);
+    } finally {
+      await pool.end();
+    }
+  });
+
+  test('postgres auth: seed is repeatable, concurrent-safe and preserves credentials', async (t) => {
+    const fixture = makeFixture({});
+    await fixture.ready;
+    const pool = createPool(url, schemas.at(-1));
+    t.after(() => pool.end());
+    const accounts = createDemoAccounts(() => 'test-only-demo-password');
+    const results = await Promise.all([
+      seedDemoAccounts(pool, accounts),
+      seedDemoAccounts(pool, accounts),
+    ]);
+    assert.deepEqual(
+      results.map((result) => result.added).sort((a, b) => a - b),
+      [0, 113],
+    );
+    const before = (
+      await pool.query('SELECT id,password_hash FROM users ORDER BY id')
+    ).rows;
+    assert.equal(
+      (await pool.query('SELECT * FROM class_memberships')).rowCount,
+      170,
+    );
+    assert.equal((await pool.query('SELECT * FROM labs')).rowCount, 0);
+    const changed = accounts.map((user) => ({
+      ...user,
+      password: 'a-different-test-password',
+    }));
+    assert.deepEqual(await seedDemoAccounts(pool, changed), {
+      added: 0,
+      skipped: 113,
+      updated: 0,
+    });
+    assert.deepEqual(
+      (await pool.query('SELECT id,password_hash FROM users ORDER BY id')).rows,
+      before,
+    );
+    const app = createApp({ auth: { store: fixture.store } });
+    t.after(() => app.close());
+    for (const username of ['admin.vuong', 'ta01', 'student001']) {
+      const login = await app.inject({
+        method: 'POST',
+        url: '/auth/login',
+        payload: { username, password: 'test-only-demo-password' },
+      });
+      assert.equal(login.statusCode, 200, login.body);
+    }
+    await fixture.store.createSession({
+      tokenHash: 'test-demo-session',
+      userId: 'demo-admin-vuong',
+      expiresAt: '2099-01-01T00:00:00.000Z',
+    });
+    const outsider = await fixture.store.createStudent({
+      username: 'outside.seed',
+      displayName: 'Outside',
+      passwordHash: before[0].password_hash,
+    });
+    const outsideBefore =
+      await fixture.store.findUserByUsername('outside.seed');
+    const reset = accounts.map((user, index) =>
+      index === 0 ? { ...user, password: 'password123' } : user,
+    );
+    assert.deepEqual(
+      await seedDemoAccounts(pool, reset, { resetPasswords: true }),
+      { added: 0, updated: 1, skipped: 112 },
+    );
+    assert.equal(
+      await fixture.store.getSessionUser('test-demo-session'),
+      undefined,
+    );
+    assert.deepEqual(
+      await fixture.store.findUserByUsername('outside.seed'),
+      outsideBefore,
+    );
+    assert.equal(outsider.kind, 'created');
+    assert.equal(
+      (
+        await app.inject({
+          method: 'POST',
+          url: '/auth/login',
+          payload: { username: 'admin.vuong', password: 'password123' },
+        })
+      ).statusCode,
+      200,
+    );
+    await pool.query(
+      "UPDATE users SET role='student' WHERE id='demo-admin-vy'",
+    );
+    await assert.rejects(seedDemoAccounts(pool, accounts), /conflicts/);
+    assert.equal(
+      (await pool.query('SELECT count(*)::int AS count FROM users')).rows[0]
+        .count,
+      114,
+    );
+  });
+
+  test('postgres auth: normalized migration refuses collisions without deleting users', async (t) => {
+    const schema = `${run}_username_conflict`;
+    schemas.push(schema);
+    const pool = createPool(url, schema);
+    t.after(() => pool.end());
+    await pool.query(`CREATE SCHEMA ${schema}`);
+    await pool.query(MIGRATIONS[0].sql);
+    await pool.query(MIGRATIONS[1].sql);
+    await pool.query(
+      'CREATE TABLE schema_migrations (id text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())',
+    );
+    await pool.query(
+      "INSERT INTO schema_migrations (id) VALUES ('0001_init'), ('0002_model_call_metrics')",
+    );
+    await pool.query(
+      "INSERT INTO users (id,username,display_name,role,password_hash) VALUES ('one','Alice','One','student','fake'), ('two',' alice ','Two','student','fake')",
+    );
+    await assert.rejects(
+      migrate(pool, schema),
+      /Username normalization conflicts/,
+    );
+    assert.equal((await pool.query('SELECT * FROM users')).rowCount, 2);
+    assert.equal(
+      (await pool.query('SELECT * FROM schema_migrations')).rowCount,
+      2,
+    );
+  });
 
   const at = (iso) => () => new Date(iso);
   const OPEN = '2026-11-09T10:00:00.000Z';
@@ -107,7 +357,11 @@ if (!url) {
     });
     await db.connect();
     try {
-      const expected = ['0001_init', '0002_model_call_metrics'];
+      const expected = [
+        '0001_init',
+        '0002_model_call_metrics',
+        '0003_normalized_username',
+      ];
       const applied = await db.query(
         'SELECT id FROM schema_migrations ORDER BY id',
       );
@@ -119,7 +373,7 @@ if (!url) {
       await reopened.ready;
       assert.equal(
         (await db.query('SELECT * FROM schema_migrations')).rowCount,
-        2,
+        3,
       );
     } finally {
       await db.end();
@@ -154,7 +408,7 @@ if (!url) {
       );
       assert.deepEqual(
         applied.rows.map((row) => row.id),
-        ['0001_init', '0002_model_call_metrics'],
+        ['0001_init', '0002_model_call_metrics', '0003_normalized_username'],
       );
     } finally {
       await db.end();
