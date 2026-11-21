@@ -21,6 +21,14 @@
 #define EXIT_CGROUP_OOM 197
 #define SOURCE_PATH "/tmp/solution.cpp"
 #define BINARY_PATH "/tmp/solution"
+#define MAX_STATUS_TOKEN_LEN 96u
+
+static char g_status_token[128] = "";
+static char g_cgroup_buf[2048];
+static uint8_t g_pipe_buf[16384];
+static int g_mem_events_fd = -1;
+static int g_cpu_stat_fd = -1;
+static int g_cpu_stat_is_v1 = 0;
 
 static char* const CLEAN_ENV[] = {
     "PATH=/usr/local/bin:/usr/bin:/bin",
@@ -29,6 +37,90 @@ static char* const CLEAN_ENV[] = {
     "LANG=C.UTF-8",
     NULL,
 };
+
+static int is_valid_token_char(char c) {
+  return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') ||
+         c == '_' || c == '-';
+}
+
+static void prefault_static_buffers(void) {
+  for (size_t i = 0; i < sizeof(g_cgroup_buf); i++) {
+    ((volatile char*)g_cgroup_buf)[i] = '\0';
+  }
+  for (size_t i = 0; i < sizeof(g_pipe_buf); i += 4096u) {
+    ((volatile uint8_t*)g_pipe_buf)[i] = 1u;
+  }
+  ((volatile uint8_t*)g_pipe_buf)[sizeof(g_pipe_buf) - 1u] = 1u;
+}
+
+static void init_cgroup_fds(void) {
+  prefault_static_buffers();
+  g_mem_events_fd = open("/sys/fs/cgroup/memory.events", O_RDONLY | O_CLOEXEC);
+  g_cpu_stat_fd = open("/sys/fs/cgroup/cpu.stat", O_RDONLY | O_CLOEXEC);
+  if (g_cpu_stat_fd >= 0) {
+    g_cpu_stat_is_v1 = 0;
+    return;
+  }
+
+  const char* v1_paths[] = {
+      "/sys/fs/cgroup/cpuacct/cpuacct.usage",
+      "/sys/fs/cgroup/cpu,cpuacct/cpuacct.usage",
+  };
+  for (size_t i = 0; i < sizeof(v1_paths) / sizeof(v1_paths[0]); i++) {
+    int fd = open(v1_paths[i], O_RDONLY | O_CLOEXEC);
+    if (fd >= 0) {
+      g_cpu_stat_fd = fd;
+      g_cpu_stat_is_v1 = 1;
+      return;
+    }
+  }
+}
+
+static int read_fd_into_buf(int fd, char* buf, size_t cap) {
+  if (fd < 0 || cap < 2u) {
+    return 0;
+  }
+  ssize_t n = 0;
+  for (;;) {
+    n = pread(fd, buf, cap - 1u, 0);
+    if (n < 0 && errno == EINTR) {
+      continue;
+    }
+    break;
+  }
+  if (n <= 0) {
+    buf[0] = '\0';
+    return 0;
+  }
+  buf[(size_t)n] = '\0';
+  return 1;
+}
+
+static int parse_cgroup_key_u64(const char* buf, const char* key, uint64_t* out_val) {
+  size_t key_len = strlen(key);
+  const char* p = buf;
+  while (*p != '\0') {
+    if (strncmp(p, key, key_len) == 0 && (p[key_len] == ' ' || p[key_len] == '\t')) {
+      const char* num_start = p + key_len + 1;
+      while (*num_start == ' ' || *num_start == '\t') {
+        num_start++;
+      }
+      char* end = NULL;
+      errno = 0;
+      unsigned long long val = strtoull(num_start, &end, 10);
+      if (errno == 0 && end != num_start) {
+        *out_val = (uint64_t)val;
+        return 1;
+      }
+    }
+    const char* nl = strchr(p, '\n');
+    if (nl == NULL) {
+      break;
+    }
+    p = nl + 1;
+  }
+  return 0;
+}
 
 static int write_all(int fd, const uint8_t* buf, size_t len) {
   size_t offset = 0;
@@ -69,6 +161,19 @@ static unsigned long parse_positive_ulong(const char* raw, unsigned long fallbac
   return value;
 }
 
+static void emit_status_frame(const char* outcome, int exit_code, int sig, uint64_t cpu_usec) {
+  (void)fflush(stderr);
+  if (g_status_token[0] == '\0') {
+    return;
+  }
+  char frame[256];
+  int n = snprintf(frame, sizeof(frame), "\n__LEETKOB_STATUS__:%s:%s:%d:%d:%llu\n",
+                   g_status_token, outcome, exit_code, sig, (unsigned long long)cpu_usec);
+  if (n > 0 && (size_t)n < sizeof(frame)) {
+    (void)write_all(STDERR_FILENO, (const uint8_t*)frame, (size_t)n);
+  }
+}
+
 static int set_child_rlimits(unsigned long cpu_limit_sec, unsigned long fsize_limit_bytes) {
   struct rlimit core_limit = {0, 0};
   if (setrlimit(RLIMIT_CORE, &core_limit) != 0) {
@@ -97,61 +202,162 @@ static int set_child_rlimits(unsigned long cpu_limit_sec, unsigned long fsize_li
 }
 
 static int cgroup_oom_killed(void) {
-  FILE* fp = fopen("/sys/fs/cgroup/memory.events", "r");
-  if (fp == NULL) {
+  if (!read_fd_into_buf(g_mem_events_fd, g_cgroup_buf, sizeof(g_cgroup_buf))) {
     return 0;
   }
-  char line[256];
-  int found = 0;
-  while (fgets(line, sizeof(line), fp) != NULL) {
-    unsigned long long count = 0;
-    if (sscanf(line, "oom_kill %llu", &count) == 1 && count > 0) {
-      found = 1;
-      break;
-    }
-    if (sscanf(line, "oom_group_kill %llu", &count) == 1 && count > 0) {
-      found = 1;
-      break;
-    }
+  uint64_t count = 0;
+  if (parse_cgroup_key_u64(g_cgroup_buf, "oom_kill", &count) && count > 0) {
+    return 1;
   }
-  fclose(fp);
-  return found;
+  if (parse_cgroup_key_u64(g_cgroup_buf, "oom_group_kill", &count) && count > 0) {
+    return 1;
+  }
+  return 0;
 }
 
-static int exit_code_from_wait(int status, const struct rusage* usage, unsigned long cpu_limit_sec) {
-  uint64_t cpu_ms = (uint64_t)usage->ru_utime.tv_sec * 1000ull +
-                    (uint64_t)usage->ru_utime.tv_usec / 1000ull +
-                    (uint64_t)usage->ru_stime.tv_sec * 1000ull +
-                    (uint64_t)usage->ru_stime.tv_usec / 1000ull;
+static int read_cgroup_cpu_usec(uint64_t* out_usec) {
+  if (!read_fd_into_buf(g_cpu_stat_fd, g_cgroup_buf, sizeof(g_cgroup_buf))) {
+    return 0;
+  }
+  if (!g_cpu_stat_is_v1) {
+    return parse_cgroup_key_u64(g_cgroup_buf, "usage_usec", out_usec);
+  }
+  char* end = NULL;
+  errno = 0;
+  unsigned long long ns = strtoull(g_cgroup_buf, &end, 10);
+  if (errno == 0 && end != g_cgroup_buf) {
+    *out_usec = (uint64_t)(ns / 1000ull);
+    return 1;
+  }
+  return 0;
+}
+
+static uint64_t rusage_to_usec(const struct rusage* ru) {
+  return (uint64_t)ru->ru_utime.tv_sec * 1000000ull + (uint64_t)ru->ru_utime.tv_usec +
+         (uint64_t)ru->ru_stime.tv_sec * 1000000ull + (uint64_t)ru->ru_stime.tv_usec;
+}
+
+static void kill_all_descendants(pid_t child_pid) {
+  if (getpid() == 1) {
+    // Running as container PID 1: kill(-1, SIGKILL) stops every descendant even across setsid().
+    (void)kill(-1, SIGKILL);
+    return;
+  }
+  (void)kill(-child_pid, SIGKILL);
+  (void)kill(child_pid, SIGKILL);
+}
+
+static void reap_extra_children(void) {
+  while (waitpid(-1, NULL, WNOHANG) > 0) {
+  }
+}
+
+static uint64_t compute_aggregate_cpu_usec(const struct rusage* main_usage,
+                                           int has_start_cgroup,
+                                           uint64_t start_cgroup_usec,
+                                           uint64_t observed_cpu_usec) {
+  uint64_t max_usec = observed_cpu_usec;
+
+  uint64_t main_usec = rusage_to_usec(main_usage);
+  if (main_usec > max_usec) {
+    max_usec = main_usec;
+  }
+
+  struct rusage children_usage;
+  memset(&children_usage, 0, sizeof(children_usage));
+  if (getrusage(RUSAGE_CHILDREN, &children_usage) == 0) {
+    uint64_t children_usec = rusage_to_usec(&children_usage);
+    if (children_usec > max_usec) {
+      max_usec = children_usec;
+    }
+  }
+
+  if (has_start_cgroup) {
+    uint64_t cur_cgroup_usec = 0;
+    if (read_cgroup_cpu_usec(&cur_cgroup_usec) && cur_cgroup_usec > start_cgroup_usec) {
+      uint64_t delta_usec = cur_cgroup_usec - start_cgroup_usec;
+      if (delta_usec > max_usec) {
+        max_usec = delta_usec;
+      }
+    }
+  }
+
+  return max_usec;
+}
+
+static void classify_child_result(int status,
+                                  uint64_t cpu_usec,
+                                  unsigned long cpu_limit_sec,
+                                  int output_exceeded,
+                                  int cpu_exceeded,
+                                  const char** out_outcome,
+                                  int* out_exit_code,
+                                  int* out_sig) {
+  uint64_t cpu_limit_usec = (uint64_t)cpu_limit_sec * 1000000ull;
+
+  if (output_exceeded) {
+    *out_outcome = "output_size_limit";
+    *out_exit_code = 128 + SIGXFSZ;
+    *out_sig = SIGXFSZ;
+    return;
+  }
+
+  if (cpu_exceeded || cpu_usec >= cpu_limit_usec) {
+    *out_outcome = "cpu_time_limit";
+    *out_exit_code = 128 + SIGXCPU;
+    *out_sig = SIGXCPU;
+    return;
+  }
 
   if (WIFSIGNALED(status)) {
     int sig = WTERMSIG(status);
-    if (sig == SIGXCPU || (sig == SIGKILL && cpu_ms >= (uint64_t)cpu_limit_sec * 900ull)) {
-      return 128 + SIGXCPU;
+    if (sig == SIGXCPU || (sig == SIGKILL && cpu_usec >= (uint64_t)cpu_limit_sec * 900000ull)) {
+      *out_outcome = "cpu_time_limit";
+      *out_exit_code = 128 + SIGXCPU;
+      *out_sig = SIGXCPU;
+      return;
     }
     if (sig == SIGKILL && cgroup_oom_killed()) {
-      return EXIT_CGROUP_OOM;
+      *out_outcome = "memory_limit";
+      *out_exit_code = EXIT_CGROUP_OOM;
+      *out_sig = SIGKILL;
+      return;
     }
     if (sig == SIGXFSZ) {
-      return 128 + SIGXFSZ;
+      *out_outcome = "output_size_limit";
+      *out_exit_code = 128 + SIGXFSZ;
+      *out_sig = SIGXFSZ;
+      return;
     }
-    return 128 + sig;
+    *out_outcome = "signaled";
+    *out_exit_code = 128 + sig;
+    *out_sig = sig;
+    return;
   }
 
   if (WIFEXITED(status)) {
-    if (cpu_ms >= (uint64_t)cpu_limit_sec * 1000ull) {
-      return 128 + SIGXCPU;
+    if (cgroup_oom_killed()) {
+      *out_outcome = "memory_limit";
+      *out_exit_code = EXIT_CGROUP_OOM;
+      *out_sig = SIGKILL;
+      return;
     }
-    return WEXITSTATUS(status);
+    *out_outcome = "exited";
+    *out_exit_code = WEXITSTATUS(status);
+    *out_sig = 0;
+    return;
   }
 
-  return 1;
+  *out_outcome = "infra_error";
+  *out_exit_code = 1;
+  *out_sig = 0;
 }
 
 static int run_compile_mode(unsigned long cpu_limit_sec, unsigned long output_limit_bytes) {
   uint8_t* src_buf = malloc(MAX_SOURCE_BYTES + 1u);
   if (src_buf == NULL) {
     fprintf(stderr, "runner: out of memory allocating source buffer\n");
+    emit_status_frame("infra_error", 1, 0, 0);
     return 1;
   }
 
@@ -162,6 +368,7 @@ static int run_compile_mode(unsigned long cpu_limit_sec, unsigned long output_li
       if (errno == EINTR) continue;
       perror("runner: read source");
       free(src_buf);
+      emit_status_frame("infra_error", 1, 0, 0);
       return 1;
     }
     if (n == 0) break;
@@ -169,6 +376,7 @@ static int run_compile_mode(unsigned long cpu_limit_sec, unsigned long output_li
     if (total > MAX_SOURCE_BYTES) {
       fprintf(stderr, "runner: source exceeds %u bytes\n", MAX_SOURCE_BYTES);
       free(src_buf);
+      emit_status_frame("infra_error", 1, 0, 0);
       return 1;
     }
   }
@@ -177,20 +385,28 @@ static int run_compile_mode(unsigned long cpu_limit_sec, unsigned long output_li
   if (src_fd < 0) {
     perror("runner: open source file");
     free(src_buf);
+    emit_status_frame("infra_error", 1, 0, 0);
     return 1;
   }
   if (write_all(src_fd, src_buf, total) != 0) {
     perror("runner: write source file");
     close(src_fd);
     free(src_buf);
+    emit_status_frame("infra_error", 1, 0, 0);
     return 1;
   }
   close(src_fd);
   free(src_buf);
 
+  uint64_t start_cgroup_usec = 0;
+  int has_start_cgroup = read_cgroup_cpu_usec(&start_cgroup_usec);
+  uint64_t cpu_limit_usec = (uint64_t)cpu_limit_sec * 1000000ull;
+
   pid_t pid = fork();
   if (pid < 0) {
     perror("runner: fork compiler");
+    unlink(SOURCE_PATH);
+    emit_status_frame("infra_error", 1, 0, 0);
     return 1;
   }
 
@@ -201,6 +417,7 @@ static int run_compile_mode(unsigned long cpu_limit_sec, unsigned long output_li
     if (set_child_rlimits(cpu_limit_sec, 32ul * 1024ul * 1024ul) != 0) {
       _exit(127);
     }
+    (void)setpgid(0, 0);
     char* const gpp_argv[] = {
         "/usr/bin/g++",
         "-std=c++17",
@@ -215,26 +432,75 @@ static int run_compile_mode(unsigned long cpu_limit_sec, unsigned long output_li
   }
 
   int status = 0;
+  int child_reaped = 0;
+  int cpu_exceeded = 0;
+  uint64_t observed_cpu_usec = 0;
   struct rusage usage;
   memset(&usage, 0, sizeof(usage));
-  while (wait4(pid, &status, 0, &usage) < 0) {
-    if (errno == EINTR) continue;
-    perror("runner: wait4 compiler");
-    return 1;
+
+  while (!child_reaped) {
+    pid_t w = wait4(pid, &status, WNOHANG, &usage);
+    if (w == pid) {
+      child_reaped = 1;
+      break;
+    }
+    if (w < 0 && errno != EINTR) {
+      break;
+    }
+
+    uint64_t cur_cpu_usec =
+        compute_aggregate_cpu_usec(&usage, has_start_cgroup, start_cgroup_usec, observed_cpu_usec);
+    if (cur_cpu_usec > observed_cpu_usec) {
+      observed_cpu_usec = cur_cpu_usec;
+    }
+    if (cur_cpu_usec >= cpu_limit_usec) {
+      cpu_exceeded = 1;
+      kill_all_descendants(pid);
+      break;
+    }
+
+    (void)usleep(50000u);
   }
 
+  while (!child_reaped) {
+    pid_t w = wait4(pid, &status, 0, &usage);
+    if (w == pid) {
+      child_reaped = 1;
+    } else if (w < 0 && errno == EINTR) {
+      continue;
+    } else {
+      break;
+    }
+  }
+
+  reap_extra_children();
   unlink(SOURCE_PATH);
 
-  int rc = exit_code_from_wait(status, &usage, cpu_limit_sec);
-  if (rc != 0) {
+  uint64_t final_cpu_usec =
+      compute_aggregate_cpu_usec(&usage, has_start_cgroup, start_cgroup_usec, observed_cpu_usec);
+
+  const char* outcome = "infra_error";
+  int result_code = 1;
+  int result_sig = 0;
+  if (child_reaped) {
+    classify_child_result(status, final_cpu_usec, cpu_limit_sec, 0, cpu_exceeded, &outcome,
+                          &result_code, &result_sig);
+  }
+
+  if (strcmp(outcome, "exited") != 0 || result_code != 0) {
     unlink(BINARY_PATH);
-    return rc;
+    emit_status_frame(outcome, result_code, result_sig, final_cpu_usec);
+    if (strcmp(outcome, "infra_error") == 0) {
+      return 1;
+    }
+    return g_status_token[0] != '\0' ? 0 : result_code;
   }
 
   int bin_fd = open(BINARY_PATH, O_RDONLY);
   if (bin_fd < 0) {
     perror("runner: open compiled binary");
     unlink(BINARY_PATH);
+    emit_status_frame("infra_error", 1, 0, final_cpu_usec);
     return 1;
   }
 
@@ -247,6 +513,7 @@ static int run_compile_mode(unsigned long cpu_limit_sec, unsigned long output_li
       perror("runner: read compiled binary");
       close(bin_fd);
       unlink(BINARY_PATH);
+      emit_status_frame("infra_error", 1, 0, final_cpu_usec);
       return 1;
     }
     if (n == 0) break;
@@ -255,12 +522,14 @@ static int run_compile_mode(unsigned long cpu_limit_sec, unsigned long output_li
       fprintf(stderr, "runner: compiled binary exceeds %u bytes\n", MAX_BINARY_BYTES);
       close(bin_fd);
       unlink(BINARY_PATH);
+      emit_status_frame("infra_error", 1, 0, final_cpu_usec);
       return 1;
     }
     if (write_all(STDOUT_FILENO, io_buf, (size_t)n) != 0) {
       perror("runner: write compiled binary");
       close(bin_fd);
       unlink(BINARY_PATH);
+      emit_status_frame("infra_error", 1, 0, final_cpu_usec);
       return 1;
     }
   }
@@ -268,14 +537,14 @@ static int run_compile_mode(unsigned long cpu_limit_sec, unsigned long output_li
   (void)output_limit_bytes;
   close(bin_fd);
   unlink(BINARY_PATH);
+  emit_status_frame("exited", 0, 0, final_cpu_usec);
   return 0;
 }
 
 static int drain_pipe(int pipe_fd, int out_fd, unsigned long* total_bytes,
                       unsigned long output_limit_bytes, int* output_exceeded) {
-  uint8_t buf[16384];
   for (;;) {
-    ssize_t n = read(pipe_fd, buf, sizeof(buf));
+    ssize_t n = read(pipe_fd, g_pipe_buf, sizeof(g_pipe_buf));
     if (n < 0) {
       if (errno == EINTR) continue;
       if (errno == EAGAIN || errno == EWOULDBLOCK) return 1;
@@ -292,13 +561,13 @@ static int drain_pipe(int pipe_fd, int out_fd, unsigned long* total_bytes,
     unsigned long remaining = output_limit_bytes - *total_bytes;
     if (count > remaining) {
       if (remaining > 0) {
-        (void)write_all(out_fd, buf, (size_t)remaining);
+        (void)write_all(out_fd, g_pipe_buf, (size_t)remaining);
       }
       *total_bytes += count;
       *output_exceeded = 1;
       return -1;
     }
-    if (write_all(out_fd, buf, count) != 0) {
+    if (write_all(out_fd, g_pipe_buf, count) != 0) {
       return -1;
     }
     *total_bytes += count;
@@ -309,11 +578,13 @@ static int run_execute_mode(unsigned long cpu_limit_sec, unsigned long output_li
   uint8_t header[HEADER_LEN + 1u];
   if (read_exact(STDIN_FILENO, header, HEADER_LEN) != 0) {
     fprintf(stderr, "runner: failed to read binary header\n");
+    emit_status_frame("infra_error", 1, 0, 0);
     return 1;
   }
   header[HEADER_LEN] = '\0';
   if (header[HEADER_LEN - 1u] != '\n') {
     fprintf(stderr, "runner: invalid binary header terminator\n");
+    emit_status_frame("infra_error", 1, 0, 0);
     return 1;
   }
   header[HEADER_LEN - 1u] = '\0';
@@ -324,6 +595,7 @@ static int run_execute_mode(unsigned long cpu_limit_sec, unsigned long output_li
   if (errno != 0 || end == (const char*)header || *end != '\0' || bin_len_ull == 0 ||
       bin_len_ull > MAX_BINARY_BYTES) {
     fprintf(stderr, "runner: invalid binary length\n");
+    emit_status_frame("infra_error", 1, 0, 0);
     return 1;
   }
   size_t bin_len = (size_t)bin_len_ull;
@@ -331,6 +603,7 @@ static int run_execute_mode(unsigned long cpu_limit_sec, unsigned long output_li
   int bin_fd = open(BINARY_PATH, O_WRONLY | O_CREAT | O_TRUNC, 0700);
   if (bin_fd < 0) {
     perror("runner: open binary target");
+    emit_status_frame("infra_error", 1, 0, 0);
     return 1;
   }
 
@@ -342,12 +615,14 @@ static int run_execute_mode(unsigned long cpu_limit_sec, unsigned long output_li
       fprintf(stderr, "runner: unexpected EOF reading binary payload\n");
       close(bin_fd);
       unlink(BINARY_PATH);
+      emit_status_frame("infra_error", 1, 0, 0);
       return 1;
     }
     if (write_all(bin_fd, io_buf, chunk) != 0) {
       perror("runner: write binary payload");
       close(bin_fd);
       unlink(BINARY_PATH);
+      emit_status_frame("infra_error", 1, 0, 0);
       return 1;
     }
     remaining -= chunk;
@@ -359,8 +634,13 @@ static int run_execute_mode(unsigned long cpu_limit_sec, unsigned long output_li
   if (pipe2(out_pipe, O_CLOEXEC) != 0 || pipe2(err_pipe, O_CLOEXEC) != 0) {
     perror("runner: pipe2");
     unlink(BINARY_PATH);
+    emit_status_frame("infra_error", 1, 0, 0);
     return 1;
   }
+
+  uint64_t start_cgroup_usec = 0;
+  int has_start_cgroup = read_cgroup_cpu_usec(&start_cgroup_usec);
+  uint64_t cpu_limit_usec = (uint64_t)cpu_limit_sec * 1000000ull;
 
   pid_t pid = fork();
   if (pid < 0) {
@@ -370,6 +650,7 @@ static int run_execute_mode(unsigned long cpu_limit_sec, unsigned long output_li
     close(err_pipe[0]);
     close(err_pipe[1]);
     unlink(BINARY_PATH);
+    emit_status_frame("infra_error", 1, 0, 0);
     return 1;
   }
 
@@ -398,14 +679,16 @@ static int run_execute_mode(unsigned long cpu_limit_sec, unsigned long output_li
 
   unsigned long total_output = 0;
   int output_exceeded = 0;
+  int cpu_exceeded = 0;
   int out_open = 1;
   int err_open = 1;
   int child_reaped = 0;
   int status = 0;
+  uint64_t observed_cpu_usec = 0;
   struct rusage usage;
   memset(&usage, 0, sizeof(usage));
 
-  while (!output_exceeded && (!child_reaped || out_open || err_open)) {
+  while (!output_exceeded && !cpu_exceeded && (!child_reaped || out_open || err_open)) {
     struct pollfd fds[2];
     nfds_t nfds = 0;
     if (out_open) {
@@ -422,7 +705,7 @@ static int run_execute_mode(unsigned long cpu_limit_sec, unsigned long output_li
     }
 
     if (nfds > 0) {
-      int prc = poll(fds, nfds, 50);
+      int prc = poll(fds, nfds, 20);
       if (prc < 0 && errno != EINTR) {
         break;
       }
@@ -444,6 +727,8 @@ static int run_execute_mode(unsigned long cpu_limit_sec, unsigned long output_li
           break;
         }
       }
+    } else if (!child_reaped) {
+      (void)usleep(20000u);
     }
 
     if (!child_reaped) {
@@ -454,11 +739,24 @@ static int run_execute_mode(unsigned long cpu_limit_sec, unsigned long output_li
         break;
       }
     }
+
+    if (child_reaped) {
+      reap_extra_children();
+    }
+
+    uint64_t cur_cpu_usec =
+        compute_aggregate_cpu_usec(&usage, has_start_cgroup, start_cgroup_usec, observed_cpu_usec);
+    if (cur_cpu_usec > observed_cpu_usec) {
+      observed_cpu_usec = cur_cpu_usec;
+    }
+    if (cur_cpu_usec >= cpu_limit_usec) {
+      cpu_exceeded = 1;
+      break;
+    }
   }
 
-  if (output_exceeded) {
-    (void)kill(-pid, SIGKILL);
-    (void)kill(pid, SIGKILL);
+  if (output_exceeded || cpu_exceeded) {
+    kill_all_descendants(pid);
   }
 
   if (out_open) close(out_pipe[0]);
@@ -475,14 +773,40 @@ static int run_execute_mode(unsigned long cpu_limit_sec, unsigned long output_li
     }
   }
 
+  if (output_exceeded || cpu_exceeded) {
+    kill_all_descendants(pid);
+  }
+  reap_extra_children();
   unlink(BINARY_PATH);
 
-  if (output_exceeded) {
-    fprintf(stderr, "runner: output limit exceeded (%lu bytes)\n", output_limit_bytes);
-    return 128 + SIGXFSZ;
+  uint64_t final_cpu_usec =
+      compute_aggregate_cpu_usec(&usage, has_start_cgroup, start_cgroup_usec, observed_cpu_usec);
+  if (final_cpu_usec >= cpu_limit_usec) {
+    cpu_exceeded = 1;
   }
 
-  return exit_code_from_wait(status, &usage, cpu_limit_sec);
+  if (output_exceeded) {
+    char msg[96];
+    int msg_len = snprintf(msg, sizeof(msg), "runner: output limit exceeded (%lu bytes)\n",
+                           output_limit_bytes);
+    if (msg_len > 0 && (size_t)msg_len < sizeof(msg)) {
+      (void)write_all(STDERR_FILENO, (const uint8_t*)msg, (size_t)msg_len);
+    }
+  }
+
+  const char* outcome = "infra_error";
+  int result_code = 1;
+  int result_sig = 0;
+  if (child_reaped || output_exceeded || cpu_exceeded) {
+    classify_child_result(status, final_cpu_usec, cpu_limit_sec, output_exceeded, cpu_exceeded,
+                          &outcome, &result_code, &result_sig);
+  }
+
+  emit_status_frame(outcome, result_code, result_sig, final_cpu_usec);
+  if (strcmp(outcome, "infra_error") == 0) {
+    return 1;
+  }
+  return g_status_token[0] != '\0' ? 0 : result_code;
 }
 
 int main(int argc, char** argv) {
@@ -492,9 +816,35 @@ int main(int argc, char** argv) {
   }
 
   if (argc < 4) {
-    fprintf(stderr, "usage: leetkob-runner <compile|run> <cpuLimitSec> <outputLimitBytes>\n");
+    fprintf(stderr,
+            "usage: leetkob-runner <compile|run> <cpuLimitSec> <outputLimitBytes> "
+            "[statusToken]\n");
     return 2;
   }
+
+  if (argc >= 5 && argv[4] != NULL && argv[4][0] != '\0') {
+    size_t token_len = strlen(argv[4]);
+    if (token_len > MAX_STATUS_TOKEN_LEN) {
+      fprintf(stderr, "runner: status token too long\n");
+      return 2;
+    }
+    for (size_t i = 0; i < token_len; i++) {
+      if (!is_valid_token_char(argv[4][i])) {
+        fprintf(stderr, "runner: invalid status token\n");
+        return 2;
+      }
+    }
+    memcpy(g_status_token, argv[4], token_len);
+    g_status_token[token_len] = '\0';
+
+    // Erase the token from process cmdline memory before forking untrusted code.
+    volatile char* wipe = argv[4];
+    for (size_t i = 0; i < token_len; i++) {
+      wipe[i] = '\0';
+    }
+  }
+
+  init_cgroup_fds();
 
   unsigned long cpu_limit_sec = parse_positive_ulong(argv[2], 1ul);
   unsigned long output_limit_bytes = parse_positive_ulong(argv[3], 1048576ul);

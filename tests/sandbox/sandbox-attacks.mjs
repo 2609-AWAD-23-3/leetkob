@@ -68,6 +68,37 @@ int main() {
   assert.equal(tc.exitCode, 137);
 });
 
+test('regression: student exit code 125 returns RuntimeError instead of Docker infrastructure error', async () => {
+  const runner = createDockerSandboxRunner();
+  const source = `
+int main() {
+  return 125;
+}
+`;
+  const result = await runner.compileAndRun(source, [
+    { id: 'exit-125', input: '', expectedOutput: '' },
+  ]);
+
+  assert.equal(result.compileResult.success, true);
+  assert.equal(result.verdict, 'RuntimeError');
+  const tc = result.testResults[0];
+  assert.ok(tc);
+  assert.equal(tc.status, 'runtime_error');
+  assert.equal(tc.terminationReason, 'runtime_error');
+  assert.equal(tc.exitCode, 125);
+});
+
+test('regression: missing sandbox image throws Docker infrastructure error', async () => {
+  const runner = createDockerSandboxRunner({
+    imageTag: 'leetkob-sandbox:nonexistent-regression-tag',
+  });
+
+  await assert.rejects(
+    () => runner.compile('int main() { return 0; }'),
+    /Docker sandbox infrastructure error/,
+  );
+});
+
 test('M1: no network access', async () => {
   const runner = createDockerSandboxRunner();
   const source = await readAttack('m1-network.cpp');
@@ -98,6 +129,58 @@ test('M2: CPU time limit (1s)', async () => {
   assert.equal(tc.terminationReason, 'cpu_time_limit');
   assert.equal(tc.exitCode, 152);
   assert.doesNotMatch(tc.stdout, /CPU_ATTACK_FINISHED/);
+});
+
+test('M2 regression: forked process tree cannot bypass 1s aggregate CPU limit', async () => {
+  const runner = createDockerSandboxRunner();
+  const source = `
+#include <cstdint>
+#include <iostream>
+#include <sys/types.h>
+#include <time.h>
+#include <unistd.h>
+
+static void burn_cpu_ms(long target_ms) {
+  struct timespec start;
+  struct timespec now;
+  clock_gettime(CLOCK_THREAD_CPUTIME_ID, &start);
+  volatile uint64_t sink = 0;
+  for (;;) {
+    for (int i = 0; i < 100000; ++i) {
+      sink += static_cast<uint64_t>(i);
+    }
+    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &now);
+    long elapsed_ms = (now.tv_sec - start.tv_sec) * 1000L +
+                      (now.tv_nsec - start.tv_nsec) / 1000000L;
+    if (elapsed_ms >= target_ms) {
+      break;
+    }
+  }
+}
+
+int main() {
+  for (int i = 0; i < 2; ++i) {
+    pid_t pid = fork();
+    if (pid == 0) {
+      burn_cpu_ms(700);
+      _exit(0);
+    }
+  }
+  std::cout << "OK\\n" << std::flush;
+  return 0;
+}
+`;
+  const result = await runner.compileAndRun(source, [
+    { id: 'm2-fork-tree', input: '', expectedOutput: 'OK' },
+  ]);
+
+  assert.equal(result.compileResult.success, true);
+  assert.equal(result.verdict, 'TimeLimitExceeded');
+  const tc = result.testResults[0];
+  assert.ok(tc);
+  assert.equal(tc.status, 'time_limit_exceeded');
+  assert.equal(tc.terminationReason, 'cpu_time_limit');
+  assert.equal(tc.exitCode, 152);
 });
 
 test('M3: wall-clock limit kills the container, not only the process', async () => {

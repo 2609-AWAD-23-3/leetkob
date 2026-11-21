@@ -22,7 +22,16 @@ function createMockSpawn(handler) {
     proc.stdin = stdin;
     proc.stdout = stdout;
     proc.stderr = stderr;
-    proc.kill = () => true;
+    let killHandler = null;
+    proc.setKillHandler = (fn) => {
+      killHandler = fn;
+    };
+    proc.kill = (signal) => {
+      if (killHandler) {
+        return killHandler(signal);
+      }
+      return true;
+    };
 
     const stdinChunks = [];
     stdin.on('data', (chunk) => stdinChunks.push(chunk));
@@ -45,6 +54,24 @@ function createMockSpawn(handler) {
   return { spawnProcess, calls };
 }
 
+function getStatusToken(args) {
+  return args[args.length - 1];
+}
+
+function writeHelperStatus(
+  args,
+  stderr,
+  outcome,
+  exitCode,
+  signal = 0,
+  cpuUsec = 1000,
+) {
+  const token = getStatusToken(args);
+  stderr.write(
+    `\n__LEETKOB_STATUS__:${token}:${outcome}:${exitCode}:${signal}:${cpuUsec}\n`,
+  );
+}
+
 test('FAQ05_SANDBOX_LIMITS matches FAQ-05 defaults', () => {
   assert.deepEqual(FAQ05_SANDBOX_LIMITS, {
     cpuTimeLimitSeconds: 1,
@@ -61,6 +88,7 @@ test('buildSandboxDockerArgs enforces all 9 minimums without forbidden flags', (
   const args = buildSandboxDockerArgs({
     mode: 'run',
     containerName: 'leetkob-sbx-test',
+    statusToken: 'tok123',
   });
 
   const joined = args.join(' ');
@@ -73,6 +101,7 @@ test('buildSandboxDockerArgs enforces all 9 minimums without forbidden flags', (
   assert.match(joined, /--read-only/);
   assert.match(joined, /--cap-drop ALL/);
   assert.match(joined, /--security-opt no-new-privileges/);
+  assert.equal(args[args.length - 1], 'tok123');
   assert.doesNotMatch(
     joined,
     /--privileged|docker\.sock|--env-file|MODEL_API_KEY|\s-v\s|--volume|--mount/,
@@ -123,10 +152,12 @@ test('normalizeJudgeOutput ignores CRLF and trailing spaces/newlines', () => {
 test('runner compiles and judges compliant submission as Accepted', async () => {
   const fakeElf = Buffer.from('\x7fELF-fake-binary');
   const { spawnProcess, calls } = createMockSpawn(
-    ({ args, stdinBuffer, proc, stdout }) => {
+    ({ args, stdinBuffer, proc, stdout, stderr }) => {
       if (args.includes('compile')) {
         assert.match(stdinBuffer.toString('utf8'), /int main/);
         stdout.end(fakeElf);
+        writeHelperStatus(args, stderr, 'exited', 0);
+        stderr.end();
         proc.emit('close', 0, null);
         return;
       }
@@ -140,6 +171,8 @@ test('runner compiles and judges compliant submission as Accepted', async () => 
         .toString('utf8');
       assert.equal(testInput, '2 3\n');
       stdout.end('5 \r\n');
+      writeHelperStatus(args, stderr, 'exited', 0);
+      stderr.end();
       proc.emit('close', 0, null);
     },
   );
@@ -156,17 +189,21 @@ test('runner compiles and judges compliant submission as Accepted', async () => 
 
   assert.equal(result.verdict, 'Accepted');
   assert.equal(result.compileResult.success, true);
+  assert.equal(result.compileResult.stderr, '');
   assert.equal(result.testResults.length, 1);
   assert.equal(result.testResults[0]?.status, 'accepted');
+  assert.equal(result.testResults[0]?.stderr, '');
   assert.equal(calls.length, 2);
   assert.equal(calls[0]?.env.MODEL_API_KEY, undefined);
   assert.equal(calls[1]?.env.MODEL_API_KEY, undefined);
 });
 
 test('runner returns CompileError and skips execution when compilation fails', async () => {
-  const { spawnProcess, calls } = createMockSpawn(({ proc, stderr }) => {
-    stderr.end('solution.cpp:1:1: error: syntax error\n');
-    proc.emit('close', 1, null);
+  const { spawnProcess, calls } = createMockSpawn(({ args, proc, stderr }) => {
+    stderr.write('solution.cpp:1:1: error: syntax error\n');
+    writeHelperStatus(args, stderr, 'exited', 1);
+    stderr.end();
+    proc.emit('close', 0, null);
   });
 
   const runner = createDockerSandboxRunner({
@@ -180,7 +217,9 @@ test('runner returns CompileError and skips execution when compilation fails', a
 
   assert.equal(result.verdict, 'CompileError');
   assert.equal(result.compileResult.success, false);
+  assert.equal(result.compileResult.exitCode, 1);
   assert.match(result.compileResult.stderr, /syntax error/);
+  assert.doesNotMatch(result.compileResult.stderr, /__LEETKOB_STATUS__/);
   assert.equal(result.testResults.length, 0);
   assert.equal(calls.length, 1);
 });
@@ -190,21 +229,33 @@ test('runner classifies CPU limit, memory OOM, non-OOM SIGKILL and WrongAnswer a
   const { spawnProcess } = createMockSpawn(({ args, proc, stdout, stderr }) => {
     if (args.includes('compile')) {
       stdout.end(Buffer.from('ELF'));
+      writeHelperStatus(args, stderr, 'exited', 0);
+      stderr.end();
       proc.emit('close', 0, null);
       return;
     }
     runIndex += 1;
     if (runIndex === 1) {
-      proc.emit('close', 152, null);
+      writeHelperStatus(args, stderr, 'cpu_time_limit', 152, 24, 1005000);
+      stderr.end();
+      proc.emit('close', 0, null);
     } else if (runIndex === 2) {
-      proc.emit('close', 197, null);
+      writeHelperStatus(args, stderr, 'memory_limit', 197, 9, 20000);
+      stderr.end();
+      proc.emit('close', 0, null);
     } else if (runIndex === 3) {
-      stderr.end('terminate called after throwing std::bad_alloc\n');
-      proc.emit('close', 134, null);
+      stderr.write('terminate called after throwing std::bad_alloc\n');
+      writeHelperStatus(args, stderr, 'signaled', 134, 6, 15000);
+      stderr.end();
+      proc.emit('close', 0, null);
     } else if (runIndex === 4) {
-      proc.emit('close', 137, null);
+      writeHelperStatus(args, stderr, 'signaled', 137, 9, 5000);
+      stderr.end();
+      proc.emit('close', 0, null);
     } else {
       stdout.end('99\n');
+      writeHelperStatus(args, stderr, 'exited', 0, 0, 5000);
+      stderr.end();
       proc.emit('close', 0, null);
     }
   });
@@ -224,6 +275,7 @@ test('runner classifies CPU limit, memory OOM, non-OOM SIGKILL and WrongAnswer a
   });
   assert.equal(cpuRes.status, 'time_limit_exceeded');
   assert.equal(cpuRes.terminationReason, 'cpu_time_limit');
+  assert.equal(cpuRes.exitCode, 152);
 
   const oomRes = await runner.runBinary(compiled.binary, {
     id: 'oom',
@@ -232,6 +284,7 @@ test('runner classifies CPU limit, memory OOM, non-OOM SIGKILL and WrongAnswer a
   });
   assert.equal(oomRes.status, 'memory_limit_exceeded');
   assert.equal(oomRes.terminationReason, 'memory_limit');
+  assert.equal(oomRes.exitCode, 197);
 
   const badAllocRes = await runner.runBinary(compiled.binary, {
     id: 'bad-alloc',
@@ -259,13 +312,94 @@ test('runner classifies CPU limit, memory OOM, non-OOM SIGKILL and WrongAnswer a
   assert.equal(waRes.terminationReason, 'normal');
 });
 
+test('runner treats solution exit codes 125, 152 and 197 as RuntimeError when helper status reports exited', async () => {
+  const exitCodes = [125, 152, 197];
+  let idx = 0;
+  const { spawnProcess } = createMockSpawn(({ args, proc, stdout, stderr }) => {
+    if (args.includes('compile')) {
+      stdout.end(Buffer.from('ELF'));
+      writeHelperStatus(args, stderr, 'exited', 0);
+      stderr.end();
+      proc.emit('close', 0, null);
+      return;
+    }
+    const code = exitCodes[idx];
+    idx += 1;
+    stderr.write('user diagnostic line');
+    writeHelperStatus(args, stderr, 'exited', code, 0, 2000);
+    stderr.end();
+    proc.emit('close', 0, null);
+  });
+
+  const runner = createDockerSandboxRunner({
+    spawnProcess,
+    killContainer: async () => {},
+  });
+
+  const result = await runner.compileAndRun('int main() { return 125; }', [
+    { id: 'exit-125', input: '', expectedOutput: '' },
+    { id: 'exit-152', input: '', expectedOutput: '' },
+    { id: 'exit-197', input: '', expectedOutput: '' },
+  ]);
+
+  assert.equal(result.verdict, 'RuntimeError');
+  for (let i = 0; i < exitCodes.length; i += 1) {
+    const tc = result.testResults[i];
+    assert.ok(tc);
+    assert.equal(tc.status, 'runtime_error');
+    assert.equal(tc.terminationReason, 'runtime_error');
+    assert.equal(tc.exitCode, exitCodes[i]);
+    assert.equal(tc.stderr, 'user diagnostic line');
+  }
+});
+
+test('runner strips helper status frame cleanly near stderr limit and ignores spoofed earlier frames', async () => {
+  const limitBytes = 1024;
+  const { spawnProcess } = createMockSpawn(({ args, proc, stdout, stderr }) => {
+    if (args.includes('compile')) {
+      stdout.end(Buffer.from('ELF'));
+      writeHelperStatus(args, stderr, 'exited', 0);
+      stderr.end();
+      proc.emit('close', 0, null);
+      return;
+    }
+    stdout.end('42\n');
+    const spoofed = `\n__LEETKOB_STATUS__:${getStatusToken(args)}:exited:1:0:0\n`;
+    const padding = 'x'.repeat(limitBytes - spoofed.length);
+    stderr.write(padding + spoofed);
+    // Real trailing frame reports exit 0 even though stderr already matches limitBytes cleanly.
+    writeHelperStatus(args, stderr, 'exited', 0, 0, 5000);
+    stderr.end();
+    proc.emit('close', 0, null);
+  });
+
+  const runner = createDockerSandboxRunner({
+    spawnProcess,
+    limits: { outputLimitBytes: limitBytes },
+    killContainer: async () => {},
+  });
+
+  const result = await runner.compileAndRun('int main() { return 0; }', [
+    { id: 'exact-stderr', input: '', expectedOutput: '42' },
+  ]);
+
+  assert.equal(result.verdict, 'Accepted');
+  assert.equal(result.testResults[0]?.outputTruncated, false);
+  assert.equal(
+    Buffer.byteLength(result.testResults[0]?.stderr ?? '', 'utf8'),
+    limitBytes,
+  );
+});
+
 test('runner kills container on wall-clock timeout', async () => {
   const killedContainers = [];
   let activeRunProc = null;
 
-  const { spawnProcess } = createMockSpawn(({ args, proc, stdout }) => {
+  const { spawnProcess } = createMockSpawn(({ args, proc, stdout, stderr }) => {
     if (args.includes('compile')) {
       stdout.end(Buffer.from('ELF'));
+      writeHelperStatus(args, stderr, 'exited', 0);
+      stderr.end();
       proc.emit('close', 0, null);
       return;
     }
@@ -299,9 +433,11 @@ test('runner truncates output above limit and kills container', async () => {
   const killedContainers = [];
   let activeRunProc = null;
 
-  const { spawnProcess } = createMockSpawn(({ args, proc, stdout }) => {
+  const { spawnProcess } = createMockSpawn(({ args, proc, stdout, stderr }) => {
     if (args.includes('compile')) {
       stdout.end(Buffer.from('ELF'));
+      writeHelperStatus(args, stderr, 'exited', 0);
+      stderr.end();
       proc.emit('close', 0, null);
       return;
     }
@@ -331,7 +467,7 @@ test('runner truncates output above limit and kills container', async () => {
   assert.equal(result.testResults[0]?.stdout.length, 1024);
 });
 
-test('runner rejects Docker infrastructure errors (exit 125) on compile and run', async () => {
+test('runner rejects Docker infrastructure errors without valid helper status frame and helper infra_error frames', async () => {
   const compileFail = createMockSpawn(({ proc, stderr }) => {
     stderr.end('docker: Unable to find image leetkob-sandbox:pa03\n');
     proc.emit('close', 125, null);
@@ -349,7 +485,7 @@ test('runner rejects Docker infrastructure errors (exit 125) on compile and run'
 
   const runFail = createMockSpawn(({ proc, stderr }) => {
     stderr.end('docker: Cannot connect to the Docker daemon\n');
-    proc.emit('close', 125, null);
+    proc.emit('close', 127, null);
   });
 
   const runRunner = createDockerSandboxRunner({
@@ -364,11 +500,156 @@ test('runner rejects Docker infrastructure errors (exit 125) on compile and run'
         input: '',
         expectedOutput: '',
       }),
-    /Docker sandbox infrastructure error \(exit 125\)/,
+    /Docker sandbox infrastructure error \(exit 127\)/,
+  );
+
+  const helperInfraFail = createMockSpawn(({ args, proc, stderr }) => {
+    stderr.write('runner: pipe2: Too many open files\n');
+    writeHelperStatus(args, stderr, 'infra_error', 1, 0, 0);
+    stderr.end();
+    proc.emit('close', 1, null);
+  });
+
+  const helperInfraRunner = createDockerSandboxRunner({
+    spawnProcess: helperInfraFail.spawnProcess,
+    killContainer: async () => {},
+  });
+
+  await assert.rejects(
+    () =>
+      helperInfraRunner.runBinary(Buffer.from('ELF'), {
+        id: 'tc-infra',
+        input: '',
+        expectedOutput: '',
+      }),
+    /Docker sandbox helper infrastructure error/,
   );
 });
 
-test('resolveSandboxLimits enforces positive integers for container/ulimit integer parameters', () => {
+test('fallback kill schedules independently when killContainer hangs and fails within bounded deadline', async () => {
+  let fallbackKillCalls = 0;
+  let cleanupStarted = false;
+
+  const { spawnProcess } = createMockSpawn(({ proc }) => {
+    proc.setKillHandler((sig) => {
+      if (sig === 'SIGKILL') {
+        fallbackKillCalls += 1;
+        proc.emit('close', null, 'SIGKILL');
+      }
+      return true;
+    });
+  });
+
+  const runner = createDockerSandboxRunner({
+    spawnProcess,
+    limits: { wallTimeLimitSeconds: 0.02 },
+    fallbackKillDelayMs: 30,
+    cleanupTimeoutMs: 90,
+    killContainer: () => {
+      cleanupStarted = true;
+      return new Promise(() => {});
+    },
+  });
+
+  const startedAt = Date.now();
+  await assert.rejects(
+    () =>
+      runner.runBinary(Buffer.from('ELF'), {
+        id: 'hung-cleanup',
+        input: '',
+        expectedOutput: '',
+      }),
+    /Docker sandbox infrastructure error: container cleanup timed out after 90ms/,
+  );
+  const elapsedMs = Date.now() - startedAt;
+
+  assert.equal(cleanupStarted, true);
+  assert.equal(fallbackKillCalls, 1);
+  assert.ok(
+    elapsedMs < 1000,
+    `Expected bounded completion, got ${elapsedMs}ms`,
+  );
+});
+
+test('runner settles within bounded deadline even when killContainer hangs and process ignores SIGKILL', async () => {
+  let fallbackKillCalls = 0;
+
+  const { spawnProcess } = createMockSpawn(({ proc }) => {
+    proc.setKillHandler((sig) => {
+      if (sig === 'SIGKILL') {
+        fallbackKillCalls += 1;
+      }
+      return true;
+    });
+  });
+
+  const runner = createDockerSandboxRunner({
+    spawnProcess,
+    limits: { wallTimeLimitSeconds: 0.02 },
+    fallbackKillDelayMs: 25,
+    cleanupTimeoutMs: 70,
+    killContainer: () => new Promise(() => {}),
+  });
+
+  const startedAt = Date.now();
+  await assert.rejects(
+    () =>
+      runner.runBinary(Buffer.from('ELF'), {
+        id: 'hung-cleanup-and-proc',
+        input: '',
+        expectedOutput: '',
+      }),
+    /Docker sandbox infrastructure error/,
+  );
+  const elapsedMs = Date.now() - startedAt;
+
+  assert.equal(fallbackKillCalls, 1);
+  assert.ok(
+    elapsedMs < 1000,
+    `Expected bounded completion, got ${elapsedMs}ms`,
+  );
+});
+
+test('rejected killContainer does not hang or leak rejection and triggers fallback SIGKILL', async () => {
+  let fallbackKillCalls = 0;
+
+  const { spawnProcess } = createMockSpawn(({ proc }) => {
+    proc.setKillHandler((sig) => {
+      if (sig === 'SIGKILL') {
+        fallbackKillCalls += 1;
+        proc.emit('close', null, 'SIGKILL');
+      }
+      return true;
+    });
+  });
+
+  const runner = createDockerSandboxRunner({
+    spawnProcess,
+    limits: { wallTimeLimitSeconds: 0.02 },
+    fallbackKillDelayMs: 5000,
+    cleanupTimeoutMs: 5000,
+    killContainer: async () => {
+      throw new Error('docker daemon unavailable');
+    },
+  });
+
+  const startedAt = Date.now();
+  await assert.rejects(
+    () =>
+      runner.runBinary(Buffer.from('ELF'), {
+        id: 'rejected-cleanup',
+        input: '',
+        expectedOutput: '',
+      }),
+    /Docker sandbox infrastructure error: container cleanup failed: docker daemon unavailable/,
+  );
+  const elapsedMs = Date.now() - startedAt;
+
+  assert.equal(fallbackKillCalls, 1);
+  assert.ok(elapsedMs < 1000, `Expected fast rejection, got ${elapsedMs}ms`);
+});
+
+test('resolveSandboxLimits and runner timeout options reject non-positive values', () => {
   for (const invalid of [
     { cpuTimeLimitSeconds: 0.5 },
     { compileCpuTimeLimitSeconds: 1.5 },
@@ -379,4 +660,13 @@ test('resolveSandboxLimits enforces positive integers for container/ulimit integ
   ]) {
     assert.throws(() => resolveSandboxLimits(invalid), /Sandbox limit/);
   }
+
+  assert.throws(
+    () => createDockerSandboxRunner({ fallbackKillDelayMs: 0 }),
+    /Sandbox option "fallbackKillDelayMs"/,
+  );
+  assert.throws(
+    () => createDockerSandboxRunner({ cleanupTimeoutMs: -5 }),
+    /Sandbox option "cleanupTimeoutMs"/,
+  );
 });

@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type {
@@ -57,10 +57,38 @@ const EXIT_SIGXCPU = 128 + 24;
 const EXIT_SIGXFSZ = 128 + 25;
 const EXIT_SIGABRT = 128 + 6;
 const EXIT_CGROUP_OOM = 197;
-const EXIT_DOCKER_ERROR = 125;
+const STATUS_FRAME_PREFIX = '\n__LEETKOB_STATUS__:';
+const STATUS_FRAME_MAX_BYTES = 512;
+const DEFAULT_FALLBACK_KILL_DELAY_MS = 1500;
+const DEFAULT_CLEANUP_TIMEOUT_MS = 5000;
+const FORCED_CLOSE_GRACE_MS = 500;
 const DEFAULT_DOCKER_DIR = fileURLToPath(
   new URL('../../docker', import.meta.url),
 );
+
+type HelperStatusOutcome =
+  | 'exited'
+  | 'signaled'
+  | 'cpu_time_limit'
+  | 'memory_limit'
+  | 'output_size_limit'
+  | 'infra_error';
+
+interface ParsedHelperStatusFrame {
+  readonly outcome: HelperStatusOutcome;
+  readonly exitCode: number;
+  readonly signal: number;
+  readonly cpuUsec: number;
+}
+
+const VALID_HELPER_OUTCOMES = new Set<HelperStatusOutcome>([
+  'exited',
+  'signaled',
+  'cpu_time_limit',
+  'memory_limit',
+  'output_size_limit',
+  'infra_error',
+]);
 
 export interface SpawnedSandboxProcess {
   stdin: NodeJS.WritableStream;
@@ -85,6 +113,7 @@ export interface BuildSandboxDockerArgsOptions {
   readonly containerName: string;
   readonly imageTag?: string;
   readonly limits?: Partial<SandboxLimits>;
+  readonly statusToken?: string;
 }
 
 export interface DockerSandboxRunnerOptions {
@@ -95,6 +124,8 @@ export interface DockerSandboxRunnerOptions {
   readonly spawnProcess?: SpawnSandboxProcess;
   readonly killContainer?: (containerName: string) => Promise<void>;
   readonly containerNamePrefix?: string;
+  readonly fallbackKillDelayMs?: number;
+  readonly cleanupTimeoutMs?: number;
 }
 
 export interface EnsureSandboxImageOptions {
@@ -202,7 +233,7 @@ export function buildSandboxDockerArgs(
       ? MAX_COMPILE_BINARY_BYTES
       : limits.outputLimitBytes;
 
-  const args: readonly string[] = [
+  const args: string[] = [
     'run',
     '--rm',
     '-i',
@@ -239,6 +270,10 @@ export function buildSandboxDockerArgs(
     String(limits.outputLimitBytes),
   ];
 
+  if (options.statusToken && options.statusToken.length > 0) {
+    args.push(options.statusToken);
+  }
+
   assertSafeSandboxDockerArgs(args);
   return args;
 }
@@ -250,6 +285,22 @@ export function normalizeJudgeOutput(text: string): string {
     .map((line) => line.replace(/[ \t]+$/g, ''))
     .join('\n')
     .replace(/\n+$/g, '');
+}
+
+function resolvePositiveDurationMs(
+  value: number | undefined,
+  fallback: number,
+  name: string,
+): number {
+  if (value === undefined) {
+    return fallback;
+  }
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error(
+      `Sandbox option "${name}" must be a positive finite number`,
+    );
+  }
+  return value;
 }
 
 function defaultSpawnSandboxProcess(
@@ -268,15 +319,69 @@ async function defaultKillContainer(
   dockerCommand: string,
   containerName: string,
   hostEnv: NodeJS.ProcessEnv,
+  cleanupTimeoutMs: number,
 ): Promise<void> {
-  await new Promise<void>((resolve) => {
+  await new Promise<void>((resolve, reject) => {
+    let settled = false;
     const killer = spawn(dockerCommand, ['rm', '-f', containerName], {
-      stdio: ['ignore', 'ignore', 'ignore'],
+      stdio: ['ignore', 'ignore', 'pipe'],
       env: sanitizeDockerHostEnv(hostEnv),
       windowsHide: true,
     });
-    killer.on('close', () => resolve());
-    killer.on('error', () => resolve());
+
+    const stderrChunks: Buffer[] = [];
+    let stderrBytes = 0;
+    killer.stderr.on('data', (chunk: Buffer) => {
+      if (stderrBytes < 4096) {
+        const slice = chunk.subarray(0, 4096 - stderrBytes);
+        stderrChunks.push(slice);
+        stderrBytes += slice.length;
+      }
+    });
+
+    const timer = setTimeout(() => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      killer.kill('SIGKILL');
+      reject(
+        new Error(
+          `docker rm -f timed out after ${cleanupTimeoutMs}ms for container "${containerName}"`,
+        ),
+      );
+    }, cleanupTimeoutMs);
+    timer.unref();
+
+    killer.on('error', (error) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timer);
+      reject(error);
+    });
+
+    killer.on('close', (code) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timer);
+      const stderrText = Buffer.concat(stderrChunks).toString('utf8');
+      if (
+        code === 0 ||
+        /no such container|already in progress|is not running/i.test(stderrText)
+      ) {
+        resolve();
+        return;
+      }
+      reject(
+        new Error(
+          `docker rm -f failed with exit code ${String(code)} for container "${containerName}": ${stderrText.trim() || 'unknown error'}`,
+        ),
+      );
+    });
   });
 }
 
@@ -357,6 +462,87 @@ function createStreamCollector(limitBytes: number): StreamLimitCollector {
   };
 }
 
+function parseHelperStatusFrame(
+  stderrBuf: Buffer,
+  expectedToken: string,
+): {
+  readonly frame: ParsedHelperStatusFrame | null;
+  readonly userStderr: Buffer;
+} {
+  if (
+    stderrBuf.length === 0 ||
+    stderrBuf[stderrBuf.length - 1] !== 0x0a ||
+    expectedToken.length === 0
+  ) {
+    return { frame: null, userStderr: stderrBuf };
+  }
+
+  const marker = Buffer.from(
+    `${STATUS_FRAME_PREFIX}${expectedToken}:`,
+    'ascii',
+  );
+  const idx = stderrBuf.lastIndexOf(marker);
+  if (idx < 0) {
+    return { frame: null, userStderr: stderrBuf };
+  }
+
+  const payloadBuf = stderrBuf.subarray(
+    idx + marker.length,
+    stderrBuf.length - 1,
+  );
+  if (payloadBuf.indexOf(0x0a) !== -1) {
+    return { frame: null, userStderr: stderrBuf };
+  }
+
+  const parts = payloadBuf.toString('ascii').split(':');
+  if (parts.length !== 4) {
+    return { frame: null, userStderr: stderrBuf };
+  }
+
+  const [outcomeRaw, exitCodeRaw, signalRaw, cpuUsecRaw] = parts;
+  if (
+    !outcomeRaw ||
+    !exitCodeRaw ||
+    !signalRaw ||
+    !cpuUsecRaw ||
+    !VALID_HELPER_OUTCOMES.has(outcomeRaw as HelperStatusOutcome) ||
+    !/^-?\d+$/.test(exitCodeRaw) ||
+    !/^-?\d+$/.test(signalRaw) ||
+    !/^\d+$/.test(cpuUsecRaw)
+  ) {
+    return { frame: null, userStderr: stderrBuf };
+  }
+
+  const exitCode = Number(exitCodeRaw);
+  const signal = Number(signalRaw);
+  const cpuUsec = Number(cpuUsecRaw);
+  if (
+    !Number.isInteger(exitCode) ||
+    !Number.isInteger(signal) ||
+    !Number.isSafeInteger(cpuUsec)
+  ) {
+    return { frame: null, userStderr: stderrBuf };
+  }
+
+  return {
+    frame: {
+      outcome: outcomeRaw as HelperStatusOutcome,
+      exitCode,
+      signal,
+      cpuUsec,
+    },
+    userStderr: stderrBuf.subarray(0, idx),
+  };
+}
+
+type CleanupOutcome =
+  | { readonly ok: true }
+  | {
+      readonly ok: false;
+      readonly reason: 'timeout' | 'rejected';
+      readonly message: string;
+    };
+
 interface RawExecutionResult {
   readonly exitCode: number | null;
   readonly signal: NodeJS.Signals | null;
@@ -379,6 +565,8 @@ async function executeContainer(params: {
   hostEnv: NodeJS.ProcessEnv;
   spawnProcess: SpawnSandboxProcess;
   killContainer: (containerName: string) => Promise<void>;
+  fallbackKillDelayMs: number;
+  cleanupTimeoutMs: number;
 }): Promise<RawExecutionResult> {
   const startedAt = Date.now();
   const proc = params.spawnProcess(params.dockerCommand, params.args, {
@@ -390,25 +578,120 @@ async function executeContainer(params: {
 
   let wallClockTimedOut = false;
   let containerKilled = false;
-  let killPromise: Promise<void> | null = null;
+  let fallbackKillSent = false;
+  let forcedClose = false;
+  let closed = false;
+  const cleanupState: { promise: Promise<CleanupOutcome> | null } = {
+    promise: null,
+  };
   let wallTimer: NodeJS.Timeout | null = null;
   let fallbackKillTimer: NodeJS.Timeout | null = null;
-  let closed = false;
+  let cleanupTimer: NodeJS.Timeout | null = null;
+  let closeGraceTimer: NodeJS.Timeout | null = null;
+  let forceCloseCallback: (() => void) | null = null;
+
+  const clearRunTimers = (): void => {
+    if (wallTimer) {
+      clearTimeout(wallTimer);
+      wallTimer = null;
+    }
+    if (fallbackKillTimer) {
+      clearTimeout(fallbackKillTimer);
+      fallbackKillTimer = null;
+    }
+    if (closeGraceTimer) {
+      clearTimeout(closeGraceTimer);
+      closeGraceTimer = null;
+    }
+  };
+
+  const scheduleForceClose = (delayMs: number): void => {
+    if (closed || closeGraceTimer) {
+      return;
+    }
+    closeGraceTimer = setTimeout(() => {
+      closeGraceTimer = null;
+      if (!closed && forceCloseCallback) {
+        forceCloseCallback();
+      }
+    }, delayMs);
+    closeGraceTimer.unref();
+  };
+
+  const sendFallbackKill = (): void => {
+    if (closed || fallbackKillSent) {
+      return;
+    }
+    fallbackKillSent = true;
+    try {
+      proc.kill('SIGKILL');
+    } catch {
+      // Ignore synchronously thrown errors on an already-exited handle.
+    }
+  };
 
   const triggerContainerKill = (): void => {
     if (containerKilled) {
       return;
     }
     containerKilled = true;
-    killPromise = params.killContainer(params.containerName).finally(() => {
+
+    const effectiveFallbackDelayMs = Math.min(
+      params.fallbackKillDelayMs,
+      params.cleanupTimeoutMs,
+    );
+    fallbackKillTimer = setTimeout(() => {
+      fallbackKillTimer = null;
       if (!closed) {
-        fallbackKillTimer = setTimeout(() => {
-          if (!closed) {
-            proc.kill('SIGKILL');
-          }
-        }, 1500);
-        fallbackKillTimer.unref();
+        sendFallbackKill();
+        scheduleForceClose(
+          Math.min(FORCED_CLOSE_GRACE_MS, params.cleanupTimeoutMs),
+        );
       }
+    }, effectiveFallbackDelayMs);
+    fallbackKillTimer.unref();
+
+    cleanupState.promise = new Promise<CleanupOutcome>((resolve) => {
+      let settled = false;
+      const finish = (outcome: CleanupOutcome): void => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        if (cleanupTimer) {
+          clearTimeout(cleanupTimer);
+          cleanupTimer = null;
+        }
+        if (!outcome.ok) {
+          sendFallbackKill();
+          scheduleForceClose(Math.min(200, params.cleanupTimeoutMs));
+        }
+        resolve(outcome);
+      };
+
+      cleanupTimer = setTimeout(() => {
+        finish({
+          ok: false,
+          reason: 'timeout',
+          message: `container cleanup timed out after ${params.cleanupTimeoutMs}ms`,
+        });
+      }, params.cleanupTimeoutMs);
+      cleanupTimer.unref();
+
+      Promise.resolve()
+        .then(() => params.killContainer(params.containerName))
+        .then(
+          () => finish({ ok: true }),
+          (error: unknown) => {
+            const detail =
+              error instanceof Error ? error.message : String(error);
+            finish({
+              ok: false,
+              reason: 'rejected',
+              message: `container cleanup failed: ${detail}`,
+            });
+          },
+        );
     });
   };
 
@@ -433,17 +716,31 @@ async function executeContainer(params: {
     exitCode: number | null;
     signal: NodeJS.Signals | null;
   }>((resolve, reject) => {
-    proc.on('error', (error) => {
+    forceCloseCallback = () => {
+      if (closed) {
+        return;
+      }
       closed = true;
-      if (wallTimer) clearTimeout(wallTimer);
-      if (fallbackKillTimer) clearTimeout(fallbackKillTimer);
+      forcedClose = true;
+      clearRunTimers();
+      resolve({ exitCode: null, signal: 'SIGKILL' });
+    };
+
+    proc.on('error', (error) => {
+      if (closed) {
+        return;
+      }
+      closed = true;
+      clearRunTimers();
       reject(error);
     });
 
     proc.on('close', (code, signal) => {
+      if (closed) {
+        return;
+      }
       closed = true;
-      if (wallTimer) clearTimeout(wallTimer);
-      if (fallbackKillTimer) clearTimeout(fallbackKillTimer);
+      clearRunTimers();
       resolve({ exitCode: code, signal });
     });
 
@@ -456,8 +753,18 @@ async function executeContainer(params: {
     proc.stdin.end(params.stdinPayload);
   });
 
-  if (killPromise) {
-    await killPromise;
+  const cleanupOutcome = cleanupState.promise
+    ? await cleanupState.promise
+    : null;
+  if (cleanupOutcome && !cleanupOutcome.ok) {
+    throw new Error(
+      `Docker sandbox infrastructure error: ${cleanupOutcome.message} (container "${params.containerName}")`,
+    );
+  }
+  if (forcedClose) {
+    throw new Error(
+      `Docker sandbox infrastructure error: sandbox process did not exit after fallback SIGKILL (container "${params.containerName}")`,
+    );
   }
 
   return {
@@ -472,22 +779,29 @@ async function executeContainer(params: {
   };
 }
 
-function throwIfDockerInfraError(
-  raw: RawExecutionResult,
-  stderrText: string,
-): void {
-  if (
-    !raw.wallClockTimedOut &&
-    !raw.outputTruncated &&
-    raw.exitCode === EXIT_DOCKER_ERROR
-  ) {
+function throwIfDockerInfraError(params: {
+  raw: RawExecutionResult;
+  frame: ParsedHelperStatusFrame | null;
+  userStderrText: string;
+  outputTruncated: boolean;
+}): void {
+  if (params.raw.wallClockTimedOut || params.outputTruncated) {
+    return;
+  }
+  if (params.frame === null) {
     throw new Error(
-      `Docker sandbox infrastructure error (exit 125): ${stderrText.trim() || 'docker run failed'}`,
+      `Docker sandbox infrastructure error (exit ${String(params.raw.exitCode)}): ${params.userStderrText.trim() || 'sandbox helper did not report status'}`,
+    );
+  }
+  if (params.frame.outcome === 'infra_error') {
+    throw new Error(
+      `Docker sandbox helper infrastructure error (exit ${String(params.frame.exitCode)}): ${params.userStderrText.trim() || 'helper failed'}`,
     );
   }
 }
 
 function classifyExecutionFailure(raw: {
+  frame: ParsedHelperStatusFrame | null;
   exitCode: number | null;
   stderrText: string;
   outputTruncated: boolean;
@@ -496,7 +810,11 @@ function classifyExecutionFailure(raw: {
   status: Exclude<SandboxTestCaseStatus, 'accepted' | 'wrong_answer'>;
   terminationReason: Exclude<SandboxTerminationReason, 'normal'>;
 } | null {
-  if (raw.outputTruncated || raw.exitCode === EXIT_SIGXFSZ) {
+  if (
+    raw.outputTruncated ||
+    raw.frame?.outcome === 'output_size_limit' ||
+    (raw.frame === null && raw.exitCode === EXIT_SIGXFSZ)
+  ) {
     return {
       status: 'output_limit_exceeded',
       terminationReason: 'output_size_limit',
@@ -508,15 +826,20 @@ function classifyExecutionFailure(raw: {
       terminationReason: 'wall_clock_timeout',
     };
   }
-  if (raw.exitCode === EXIT_SIGXCPU) {
+  if (
+    raw.frame?.outcome === 'cpu_time_limit' ||
+    (raw.frame === null && raw.exitCode === EXIT_SIGXCPU)
+  ) {
     return {
       status: 'time_limit_exceeded',
       terminationReason: 'cpu_time_limit',
     };
   }
   if (
-    raw.exitCode === EXIT_CGROUP_OOM ||
-    (raw.exitCode === EXIT_SIGABRT &&
+    raw.frame?.outcome === 'memory_limit' ||
+    (raw.frame === null && raw.exitCode === EXIT_CGROUP_OOM) ||
+    (((raw.frame?.outcome === 'signaled' && raw.frame.signal === 6) ||
+      (raw.frame === null && raw.exitCode === EXIT_SIGABRT)) &&
       /bad_alloc|cannot allocate memory/i.test(raw.stderrText))
   ) {
     return {
@@ -524,7 +847,11 @@ function classifyExecutionFailure(raw: {
       terminationReason: 'memory_limit',
     };
   }
-  if (raw.exitCode !== 0) {
+  if (
+    raw.frame?.outcome === 'signaled' ||
+    (raw.frame?.outcome === 'exited' && raw.frame.exitCode !== 0) ||
+    (raw.frame === null && raw.exitCode !== 0)
+  ) {
     return {
       status: 'runtime_error',
       terminationReason: 'runtime_error',
@@ -576,22 +903,39 @@ export function createDockerSandboxRunner(
   const imageTag = options.imageTag ?? DEFAULT_SANDBOX_IMAGE;
   const containerNamePrefix = options.containerNamePrefix ?? 'leetkob-sbx';
   const hostEnv = options.hostEnv ?? process.env;
+  const fallbackKillDelayMs = resolvePositiveDurationMs(
+    options.fallbackKillDelayMs,
+    DEFAULT_FALLBACK_KILL_DELAY_MS,
+    'fallbackKillDelayMs',
+  );
+  const cleanupTimeoutMs = resolvePositiveDurationMs(
+    options.cleanupTimeoutMs,
+    DEFAULT_CLEANUP_TIMEOUT_MS,
+    'cleanupTimeoutMs',
+  );
   const spawnProcess = options.spawnProcess ?? defaultSpawnSandboxProcess;
   const killContainer =
     options.killContainer ??
     ((containerName: string) =>
-      defaultKillContainer(dockerCommand, containerName, hostEnv));
+      defaultKillContainer(
+        dockerCommand,
+        containerName,
+        hostEnv,
+        cleanupTimeoutMs,
+      ));
 
   const nextContainerName = (phase: 'compile' | 'run'): string =>
     `${containerNamePrefix}-${phase}-${randomUUID().slice(0, 12)}`;
 
   const compile = async (sourceCode: string): Promise<SandboxCompileResult> => {
     const containerName = nextContainerName('compile');
+    const statusToken = randomBytes(16).toString('hex');
     const commandArgs = buildSandboxDockerArgs({
       mode: 'compile',
       containerName,
       imageTag,
       limits,
+      statusToken,
     });
 
     const raw = await executeContainer({
@@ -601,19 +945,41 @@ export function createDockerSandboxRunner(
       stdinPayload: Buffer.from(sourceCode, 'utf8'),
       wallTimeLimitSeconds: limits.compileWallTimeLimitSeconds,
       maxStdoutBytes: MAX_COMPILE_BINARY_BYTES,
-      maxStderrBytes: limits.outputLimitBytes,
+      maxStderrBytes: limits.outputLimitBytes + STATUS_FRAME_MAX_BYTES,
       hostEnv,
       spawnProcess,
       killContainer,
+      fallbackKillDelayMs,
+      cleanupTimeoutMs,
     });
 
-    const stderrText = raw.stderr.toString('utf8');
-    throwIfDockerInfraError(raw, stderrText);
+    const parsed = parseHelperStatusFrame(raw.stderr, statusToken);
+    const userStderrExceeded =
+      parsed.userStderr.length > limits.outputLimitBytes;
+    const boundedUserStderr = userStderrExceeded
+      ? parsed.userStderr.subarray(0, limits.outputLimitBytes)
+      : parsed.userStderr;
+    const stderrText = boundedUserStderr.toString('utf8');
+    const outputTruncated =
+      raw.outputTruncated ||
+      userStderrExceeded ||
+      parsed.frame?.outcome === 'output_size_limit';
 
+    throwIfDockerInfraError({
+      raw,
+      frame: parsed.frame,
+      userStderrText: stderrText,
+      outputTruncated,
+    });
+
+    const reportedExitCode = parsed.frame
+      ? parsed.frame.exitCode
+      : raw.exitCode;
     const failure = classifyExecutionFailure({
-      exitCode: raw.exitCode,
+      frame: parsed.frame,
+      exitCode: reportedExitCode,
       stderrText,
-      outputTruncated: raw.outputTruncated,
+      outputTruncated,
       wallClockTimedOut: raw.wallClockTimedOut,
     });
 
@@ -621,9 +987,9 @@ export function createDockerSandboxRunner(
     return {
       success,
       binary: success ? raw.stdout : null,
-      exitCode: raw.exitCode,
+      exitCode: reportedExitCode,
       stderr: stderrText,
-      outputTruncated: raw.outputTruncated || raw.exitCode === EXIT_SIGXFSZ,
+      outputTruncated,
       terminationReason: failure ? failure.terminationReason : 'normal',
       containerKilled: raw.containerKilled,
       containerName,
@@ -637,11 +1003,13 @@ export function createDockerSandboxRunner(
     testCase: SandboxTestCase,
   ): Promise<SandboxTestCaseResult> => {
     const containerName = nextContainerName('run');
+    const statusToken = randomBytes(16).toString('hex');
     const commandArgs = buildSandboxDockerArgs({
       mode: 'run',
       containerName,
       imageTag,
       limits,
+      statusToken,
     });
 
     const raw = await executeContainer({
@@ -651,20 +1019,42 @@ export function createDockerSandboxRunner(
       stdinPayload: encodeRunStdin(binary, testCase.input),
       wallTimeLimitSeconds: limits.wallTimeLimitSeconds,
       maxStdoutBytes: limits.outputLimitBytes,
-      maxStderrBytes: limits.outputLimitBytes,
+      maxStderrBytes: limits.outputLimitBytes + STATUS_FRAME_MAX_BYTES,
       hostEnv,
       spawnProcess,
       killContainer,
+      fallbackKillDelayMs,
+      cleanupTimeoutMs,
     });
 
+    const parsed = parseHelperStatusFrame(raw.stderr, statusToken);
+    const userStderrExceeded =
+      parsed.userStderr.length > limits.outputLimitBytes;
+    const boundedUserStderr = userStderrExceeded
+      ? parsed.userStderr.subarray(0, limits.outputLimitBytes)
+      : parsed.userStderr;
     const stdoutText = raw.stdout.toString('utf8');
-    const stderrText = raw.stderr.toString('utf8');
-    throwIfDockerInfraError(raw, stderrText);
+    const stderrText = boundedUserStderr.toString('utf8');
+    const outputTruncated =
+      raw.outputTruncated ||
+      userStderrExceeded ||
+      parsed.frame?.outcome === 'output_size_limit';
 
+    throwIfDockerInfraError({
+      raw,
+      frame: parsed.frame,
+      userStderrText: stderrText,
+      outputTruncated,
+    });
+
+    const reportedExitCode = parsed.frame
+      ? parsed.frame.exitCode
+      : raw.exitCode;
     const failure = classifyExecutionFailure({
-      exitCode: raw.exitCode,
+      frame: parsed.frame,
+      exitCode: reportedExitCode,
       stderrText,
-      outputTruncated: raw.outputTruncated,
+      outputTruncated,
       wallClockTimedOut: raw.wallClockTimedOut,
     });
 
@@ -686,11 +1076,11 @@ export function createDockerSandboxRunner(
       testCaseId: testCase.id,
       status,
       terminationReason,
-      exitCode: raw.exitCode,
+      exitCode: reportedExitCode,
       signal: raw.signal,
       stdout: stdoutText,
       stderr: stderrText,
-      outputTruncated: raw.outputTruncated || raw.exitCode === EXIT_SIGXFSZ,
+      outputTruncated,
       containerKilled: raw.containerKilled,
       containerName,
       durationMs: raw.durationMs,

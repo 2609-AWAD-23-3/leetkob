@@ -23,4 +23,21 @@
 - Không mount thư mục code tạm từ host vào container (`-v`) vì làm tăng bề mặt mount cần bảo vệ; dùng `stdin`/`stdout` binary framing để container chạy với `--read-only` hoàn toàn.
 - Không gộp `tests/sandbox/sandbox-attacks.mjs` vào pattern `*.test.mjs` của `npm test` vì container chấm bài của giảng viên tắt network và không có Docker daemon.
 
-**Phần làm tay (By hand):** Phúc yêu cầu triển khai T05 và rà soát lại các lỗ hổng thực tế trước khi cho phép commit/push/tạo PR. Assistant thực hiện code/tests/CI/evidence và chạy lại kiểm chứng qua Docker trên VM Ubuntu 24.04 của nhóm.
+## 2026-11-22 — Xử lý 3 findings review của `@vinny2707` và sync `origin/develop` (`c660d7e`)
+
+**Công cụ (Tool):** Antigravity assistant (Planner + Execution), Node 24.22.1, Docker Engine 29.10.0 (Ubuntu 24.04 cgroup v2 qua SSH tunnel tạm thời).
+
+**Yêu cầu (Asked for):** Merge `origin/develop` giải quyết conflict của PR #46 và xử lý toàn bộ 3 điểm review (`[P1]` giới hạn CPU toàn cây process, `[P2]` tách nhận diện lỗi Docker khỏi exit code `125` của solution, `[P2]` lên lịch fallback kill độc lập và chặn thời gian cleanup).
+
+**Phần điều chỉnh (Changed):**
+- Giám sát tổng CPU container/cây process trong `docker/leetkob-runner.c` qua `/sys/fs/cgroup/cpu.stat` (`usage_usec`, có fallback cgroup v1 `cpuacct.usage` và `getrusage(RUSAGE_CHILDREN)`), dừng toàn cây tiến trình (`kill(-1, SIGKILL)` khi runner là PID 1) ngay khi đạt `cpu_limit_sec`, không để các process con `fork()` thoát `waitpid` vượt tổng budget `1s`.
+- Triển khai status frame có nonce theo từng lượt chạy (`__LEETKOB_STATUS__:<token>:<outcome>:<exitCode>:<signal>:<cpuUsec>`) giữa `docker/leetkob-runner.c` (xóa trắng token khỏi `argv[4]` trước `fork()`) và `src/sandbox/runner.ts` (`parseHelperStatusFrame` khớp neo cuối `stderr`), để bài nộp `return 125` trả `RuntimeError` (`exitCode: 125`), còn trường hợp Docker/CLI lỗi thật thiếu frame mới ném `Docker sandbox infrastructure error`.
+- Lên lịch `fallbackKillTimer` (`proc.kill('SIGKILL')`) ngay trong `triggerContainerKill()` độc lập với `killContainer`, bổ sung `cleanupTimeoutMs` và grace timeout đóng process cho cả `defaultKillContainer` lẫn `executeContainer` để runner không treo vô hạn hoặc rơi unhandled rejection khi `docker rm -f` treo hoặc reject.
+- Khi chạy thực nghiệm stress M4 sau sửa, phát hiện `fopen` trong vòng `poll()` cấp phát bộ nhớ động lúc cgroup chạm sát `256 MB` làm phát sinh sự kiện OOM thứ cấp vào PID 1 (`exit 137`); đã đổi sang mở sẵn file descriptor `/sys/fs/cgroup/cpu.stat` và `/sys/fs/cgroup/memory.events` từ trước `fork()` cùng `pread()` vào buffer tĩnh đã chạm trang (`0 malloc` sau `fork()`), xác nhận 25/25 lần M4 đều trả đúng `197` (`memory_limit_exceeded`).
+- Đồng bộ `origin/develop` (`c660d7e`), giữ cả scripts/dependencies T03 (`pg`, `@types/pg`, `db:migrate`, `test:db`) và CI jobs `quality-gate`, `postgres-store`, `sandbox-attacks`.
+
+**Phần không chọn (Rejected):**
+- Không truyền status token qua biến môi trường để giữ đúng quy tắc sạch môi trường container; truyền qua `argv` và xóa in-place trước `fork()`.
+- Không ép mọi `exit 137` thiếu frame thành `MemoryLimitExceeded` để tránh che lấp lỗi hạ tầng thật (ví dụ `docker kill` từ bên ngoài).
+
+**Phần làm tay (By hand):** Phúc yêu cầu rà soát review PR #46, phê duyệt kế hoạch sửa 3 điểm và yêu cầu giải thích rõ những gì T05 giải quyết trước khi cho phép commit/push. Assistant thực hiện code, merge local, chạy offline quality gate và Docker thật (`14/14`), và dừng lại trước khi commit/push.
