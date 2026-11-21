@@ -1,6 +1,6 @@
 # PA03-T03 — Dữ liệu dùng chung, `Store` và `Queue`
 
-**Trạng thái:** giai đoạn 1 (kiểu dữ liệu, interface, bản fake in-memory) và giai đoạn 2 (Postgres) đã code, chờ review trong cùng một PR. Người thực hiện: @vinny2707. Reviewer: @BHVPhuc. Issue: [#32](https://github.com/2609-AWAD-23-3/leetkob/issues/32).
+**Trạng thái:** giai đoạn 1 và 2 đã được Phúc/Vỹ APPROVED và merge qua [PR #47](https://github.com/2609-AWAD-23-3/leetkob/pull/47) ngày 21/11/2026, merge SHA `b5a6619313ee00805cd8f005d43dc699301575b6`. Người thực hiện: @vinny2707. Reviewer chính: @BHVPhuc. Issue: [#32](https://github.com/2609-AWAD-23-3/leetkob/issues/32); còn đồng bộ hồ sơ trước khi đóng. Phúc đã chấp thuận bàn giao việc nối HTTP Publish sang Store async cho T09.
 
 Tài liệu này mở rộng [data model PA02](data-model.md) cho pipeline PA03, để PA03-T04, T06, T08, T09 làm song song trên cùng một interface. Code là nguồn chính xác nhất; bảng dưới tóm tắt và ghi lý do.
 
