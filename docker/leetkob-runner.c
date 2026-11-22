@@ -161,6 +161,61 @@ static unsigned long parse_positive_ulong(const char* raw, unsigned long fallbac
   return value;
 }
 
+static uint64_t parse_cpu_limit_usec(const char* raw, uint64_t fallback_usec) {
+  if (raw == NULL || raw[0] == '\0') {
+    return fallback_usec;
+  }
+
+  uint64_t whole_sec = 0;
+  uint64_t frac_usec = 0;
+  size_t i = 0;
+  int has_digits = 0;
+
+  while (raw[i] >= '0' && raw[i] <= '9') {
+    has_digits = 1;
+    if (whole_sec > 3600ull) {
+      return fallback_usec;
+    }
+    whole_sec = whole_sec * 10ull + (uint64_t)(raw[i] - '0');
+    i++;
+  }
+
+  if (!has_digits) {
+    return fallback_usec;
+  }
+
+  if (raw[i] == '.') {
+    i++;
+    uint64_t place = 100000ull;
+    int frac_digits = 0;
+    while (raw[i] >= '0' && raw[i] <= '9') {
+      frac_digits = 1;
+      if (place > 0) {
+        frac_usec += (uint64_t)(raw[i] - '0') * place;
+        place /= 10ull;
+      }
+      i++;
+    }
+    if (!frac_digits) {
+      return fallback_usec;
+    }
+  }
+
+  if (raw[i] != '\0') {
+    return fallback_usec;
+  }
+
+  uint64_t total = whole_sec * 1000000ull + frac_usec;
+  return total > 0 ? total : fallback_usec;
+}
+
+static unsigned long ceil_sec_from_usec(uint64_t cpu_limit_usec) {
+  if (cpu_limit_usec == 0) {
+    return 1ul;
+  }
+  return (unsigned long)((cpu_limit_usec + 999999ull) / 1000000ull);
+}
+
 static void emit_status_frame(const char* outcome, int exit_code, int sig, uint64_t cpu_usec) {
   (void)fflush(stderr);
   if (g_status_token[0] == '\0') {
@@ -287,14 +342,12 @@ static uint64_t compute_aggregate_cpu_usec(const struct rusage* main_usage,
 
 static void classify_child_result(int status,
                                   uint64_t cpu_usec,
-                                  unsigned long cpu_limit_sec,
+                                  uint64_t cpu_limit_usec,
                                   int output_exceeded,
                                   int cpu_exceeded,
                                   const char** out_outcome,
                                   int* out_exit_code,
                                   int* out_sig) {
-  uint64_t cpu_limit_usec = (uint64_t)cpu_limit_sec * 1000000ull;
-
   if (output_exceeded) {
     *out_outcome = "output_size_limit";
     *out_exit_code = 128 + SIGXFSZ;
@@ -311,7 +364,7 @@ static void classify_child_result(int status,
 
   if (WIFSIGNALED(status)) {
     int sig = WTERMSIG(status);
-    if (sig == SIGXCPU || (sig == SIGKILL && cpu_usec >= (uint64_t)cpu_limit_sec * 900000ull)) {
+    if (sig == SIGXCPU || (sig == SIGKILL && cpu_usec >= (cpu_limit_usec * 9ull) / 10ull)) {
       *out_outcome = "cpu_time_limit";
       *out_exit_code = 128 + SIGXCPU;
       *out_sig = SIGXCPU;
@@ -353,7 +406,7 @@ static void classify_child_result(int status,
   *out_sig = 0;
 }
 
-static int run_compile_mode(unsigned long cpu_limit_sec, unsigned long output_limit_bytes) {
+static int run_compile_mode(uint64_t cpu_limit_usec, unsigned long output_limit_bytes) {
   uint8_t* src_buf = malloc(MAX_SOURCE_BYTES + 1u);
   if (src_buf == NULL) {
     fprintf(stderr, "runner: out of memory allocating source buffer\n");
@@ -400,7 +453,7 @@ static int run_compile_mode(unsigned long cpu_limit_sec, unsigned long output_li
 
   uint64_t start_cgroup_usec = 0;
   int has_start_cgroup = read_cgroup_cpu_usec(&start_cgroup_usec);
-  uint64_t cpu_limit_usec = (uint64_t)cpu_limit_sec * 1000000ull;
+  unsigned long rlimit_cpu_sec = ceil_sec_from_usec(cpu_limit_usec);
 
   pid_t pid = fork();
   if (pid < 0) {
@@ -414,7 +467,7 @@ static int run_compile_mode(unsigned long cpu_limit_sec, unsigned long output_li
     if (dup2(STDERR_FILENO, STDOUT_FILENO) < 0) {
       _exit(127);
     }
-    if (set_child_rlimits(cpu_limit_sec, 32ul * 1024ul * 1024ul) != 0) {
+    if (set_child_rlimits(rlimit_cpu_sec, 32ul * 1024ul * 1024ul) != 0) {
       _exit(127);
     }
     (void)setpgid(0, 0);
@@ -483,7 +536,7 @@ static int run_compile_mode(unsigned long cpu_limit_sec, unsigned long output_li
   int result_code = 1;
   int result_sig = 0;
   if (child_reaped) {
-    classify_child_result(status, final_cpu_usec, cpu_limit_sec, 0, cpu_exceeded, &outcome,
+    classify_child_result(status, final_cpu_usec, cpu_limit_usec, 0, cpu_exceeded, &outcome,
                           &result_code, &result_sig);
   }
 
@@ -574,7 +627,7 @@ static int drain_pipe(int pipe_fd, int out_fd, unsigned long* total_bytes,
   }
 }
 
-static int run_execute_mode(unsigned long cpu_limit_sec, unsigned long output_limit_bytes) {
+static int run_execute_mode(uint64_t cpu_limit_usec, unsigned long output_limit_bytes) {
   uint8_t header[HEADER_LEN + 1u];
   if (read_exact(STDIN_FILENO, header, HEADER_LEN) != 0) {
     fprintf(stderr, "runner: failed to read binary header\n");
@@ -640,7 +693,7 @@ static int run_execute_mode(unsigned long cpu_limit_sec, unsigned long output_li
 
   uint64_t start_cgroup_usec = 0;
   int has_start_cgroup = read_cgroup_cpu_usec(&start_cgroup_usec);
-  uint64_t cpu_limit_usec = (uint64_t)cpu_limit_sec * 1000000ull;
+  unsigned long rlimit_cpu_sec = ceil_sec_from_usec(cpu_limit_usec);
 
   pid_t pid = fork();
   if (pid < 0) {
@@ -663,7 +716,7 @@ static int run_execute_mode(unsigned long cpu_limit_sec, unsigned long output_li
     close(err_pipe[0]);
     close(err_pipe[1]);
 
-    if (set_child_rlimits(cpu_limit_sec, output_limit_bytes) != 0) {
+    if (set_child_rlimits(rlimit_cpu_sec, output_limit_bytes) != 0) {
       _exit(127);
     }
     (void)setpgid(0, 0);
@@ -705,7 +758,7 @@ static int run_execute_mode(unsigned long cpu_limit_sec, unsigned long output_li
     }
 
     if (nfds > 0) {
-      int prc = poll(fds, nfds, 20);
+      int prc = poll(fds, nfds, 10);
       if (prc < 0 && errno != EINTR) {
         break;
       }
@@ -728,7 +781,7 @@ static int run_execute_mode(unsigned long cpu_limit_sec, unsigned long output_li
         }
       }
     } else if (!child_reaped) {
-      (void)usleep(20000u);
+      (void)usleep(10000u);
     }
 
     if (!child_reaped) {
@@ -798,7 +851,7 @@ static int run_execute_mode(unsigned long cpu_limit_sec, unsigned long output_li
   int result_code = 1;
   int result_sig = 0;
   if (child_reaped || output_exceeded || cpu_exceeded) {
-    classify_child_result(status, final_cpu_usec, cpu_limit_sec, output_exceeded, cpu_exceeded,
+    classify_child_result(status, final_cpu_usec, cpu_limit_usec, output_exceeded, cpu_exceeded,
                           &outcome, &result_code, &result_sig);
   }
 
@@ -846,14 +899,14 @@ int main(int argc, char** argv) {
 
   init_cgroup_fds();
 
-  unsigned long cpu_limit_sec = parse_positive_ulong(argv[2], 1ul);
+  uint64_t cpu_limit_usec = parse_cpu_limit_usec(argv[2], 1000000ull);
   unsigned long output_limit_bytes = parse_positive_ulong(argv[3], 1048576ul);
 
   if (strcmp(argv[1], "compile") == 0) {
-    return run_compile_mode(cpu_limit_sec, output_limit_bytes);
+    return run_compile_mode(cpu_limit_usec, output_limit_bytes);
   }
   if (strcmp(argv[1], "run") == 0) {
-    return run_execute_mode(cpu_limit_sec, output_limit_bytes);
+    return run_execute_mode(cpu_limit_usec, output_limit_bytes);
   }
 
   fprintf(stderr, "runner: unknown mode %s\n", argv[1]);

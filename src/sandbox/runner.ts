@@ -155,8 +155,30 @@ export function resolveSandboxLimits(
   if (!overrides) {
     return FAQ05_SANDBOX_LIMITS;
   }
-  const cpuTimeLimitSeconds =
-    overrides.cpuTimeLimitSeconds ?? FAQ05_SANDBOX_LIMITS.cpuTimeLimitSeconds;
+  const normalizeCpuSeconds = (value: number, key: string): number => {
+    if (!Number.isFinite(value) || value <= 0) {
+      throw new Error(
+        `Sandbox limit "${key}" must be a positive finite number (>= 0.001s)`,
+      );
+    }
+    const ms = Math.round(value * 1000);
+    if (ms < 1) {
+      throw new Error(
+        `Sandbox limit "${key}" must be a positive finite number (>= 0.001s)`,
+      );
+    }
+    return ms / 1000;
+  };
+
+  const cpuTimeLimitSeconds = normalizeCpuSeconds(
+    overrides.cpuTimeLimitSeconds ?? FAQ05_SANDBOX_LIMITS.cpuTimeLimitSeconds,
+    'cpuTimeLimitSeconds',
+  );
+  const compileCpuTimeLimitSeconds = normalizeCpuSeconds(
+    overrides.compileCpuTimeLimitSeconds ??
+      FAQ05_SANDBOX_LIMITS.compileCpuTimeLimitSeconds,
+    'compileCpuTimeLimitSeconds',
+  );
   const wallTimeLimitSeconds =
     overrides.wallTimeLimitSeconds ??
     Math.max(
@@ -172,17 +194,13 @@ export function resolveSandboxLimits(
     maxProcesses: overrides.maxProcesses ?? FAQ05_SANDBOX_LIMITS.maxProcesses,
     outputLimitBytes:
       overrides.outputLimitBytes ?? FAQ05_SANDBOX_LIMITS.outputLimitBytes,
-    compileCpuTimeLimitSeconds:
-      overrides.compileCpuTimeLimitSeconds ??
-      FAQ05_SANDBOX_LIMITS.compileCpuTimeLimitSeconds,
+    compileCpuTimeLimitSeconds,
     compileWallTimeLimitSeconds:
       overrides.compileWallTimeLimitSeconds ??
       FAQ05_SANDBOX_LIMITS.compileWallTimeLimitSeconds,
   };
 
   const integerLimitKeys = [
-    'cpuTimeLimitSeconds',
-    'compileCpuTimeLimitSeconds',
     'memoryLimitMb',
     'maxProcesses',
     'outputLimitBytes',
@@ -228,6 +246,7 @@ export function buildSandboxDockerArgs(
     options.mode === 'compile'
       ? limits.compileCpuTimeLimitSeconds
       : limits.cpuTimeLimitSeconds;
+  const ulimitCpuSec = Math.max(1, Math.ceil(cpuLimitSec));
   const fsizeLimitBytes =
     options.mode === 'compile'
       ? MAX_COMPILE_BINARY_BYTES
@@ -250,7 +269,7 @@ export function buildSandboxDockerArgs(
     '--pids-limit',
     String(limits.maxProcesses),
     '--ulimit',
-    `cpu=${cpuLimitSec}:${cpuLimitSec + 1}`,
+    `cpu=${ulimitCpuSec}:${ulimitCpuSec + 1}`,
     '--ulimit',
     `fsize=${fsizeLimitBytes}:${fsizeLimitBytes}`,
     '--ulimit',

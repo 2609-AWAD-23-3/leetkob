@@ -649,10 +649,29 @@ test('rejected killContainer does not hang or leak rejection and triggers fallba
   assert.ok(elapsedMs < 1000, `Expected fast rejection, got ${elapsedMs}ms`);
 });
 
-test('resolveSandboxLimits and runner timeout options reject non-positive values', () => {
+test('resolveSandboxLimits supports millisecond-precision CPU limits and rejects invalid values', () => {
+  const fractional = resolveSandboxLimits({
+    cpuTimeLimitSeconds: 1.5,
+    compileCpuTimeLimitSeconds: 2.5,
+  });
+  assert.equal(fractional.cpuTimeLimitSeconds, 1.5);
+  assert.equal(fractional.compileCpuTimeLimitSeconds, 2.5);
+  assert.equal(fractional.wallTimeLimitSeconds, 4.5);
+
+  const args = buildSandboxDockerArgs({
+    mode: 'run',
+    containerName: 'leetkob-sbx-ms',
+    limits: { cpuTimeLimitSeconds: 1.5 },
+    statusToken: 'tok-ms',
+  });
+  assert.equal(args.includes('cpu=2:3'), true);
+  assert.equal(args[args.length - 3], '1.5');
+
   for (const invalid of [
-    { cpuTimeLimitSeconds: 0.5 },
-    { compileCpuTimeLimitSeconds: 1.5 },
+    { cpuTimeLimitSeconds: 0 },
+    { cpuTimeLimitSeconds: -1 },
+    { cpuTimeLimitSeconds: 0.0001 },
+    { compileCpuTimeLimitSeconds: Number.NaN },
     { memoryLimitMb: 128.5 },
     { maxProcesses: 0 },
     { outputLimitBytes: 1024.2 },

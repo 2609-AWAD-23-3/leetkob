@@ -41,3 +41,19 @@
 - Không ép mọi `exit 137` thiếu frame thành `MemoryLimitExceeded` để tránh che lấp lỗi hạ tầng thật (ví dụ `docker kill` từ bên ngoài).
 
 **Phần làm tay (By hand):** Phúc yêu cầu rà soát review PR #46, phê duyệt kế hoạch sửa 3 điểm và yêu cầu giải thích rõ những gì T05 giải quyết trước khi cho phép commit/push. Assistant thực hiện code, merge local, chạy offline quality gate và Docker thật (`14/14`), và dừng lại trước khi commit/push.
+
+## 2026-11-22 — Sync `origin/develop` (`f2a4f04`) và hỗ trợ giới hạn CPU theo millisecond (`1500 ms`)
+
+**Công cụ (Tool):** Antigravity assistant (Planner + Execution), Node 24.22.1, Docker Engine 29.10.0 (Ubuntu 24.04 cgroup v2 qua SSH tunnel tạm thời).
+
+**Yêu cầu (Asked for):** Đồng bộ `origin/develop` sau khi PR #51 (T04) merge để xử lý conflict PR #46, đồng thời sửa nhận xét bổ sung `[P2]` của `@vinny2707`: hỗ trợ cấu hình `cpuTimeLimitSeconds` theo độ chính xác millisecond (ví dụ `1500 ms` = `1.5s`) thay vì ép số nguyên.
+
+**Phần điều chỉnh (Changed):**
+- Cập nhật `resolveSandboxLimits` trong `src/sandbox/runner.ts` để chấp nhận số thực dương với độ phân giải >= `1 ms` cho `cpuTimeLimitSeconds` và `compileCpuTimeLimitSeconds` (chuẩn hóa về bội số millisecond); `buildSandboxDockerArgs` truyền `Math.ceil(...)` cho cờ `--ulimit cpu` của Docker và giữ nguyên giá trị thập phân (ví dụ `"1.5"`) cho helper `leetkob-runner`.
+- Cập nhật `docker/leetkob-runner.c` với `parse_cpu_limit_usec()` bằng số học nguyên (không phụ thuộc làm tròn float) để giám sát chính xác ngưỡng microsecond trong vòng `poll()` và phân loại kết quả, đặt bước `poll`/`usleep` xuống `10 ms`.
+- Bổ sung unit test cho `1.5s` / `2.5s` trong `tests/unit/sandbox-runner.test.mjs` và test Docker thật `1500 ms` (cho qua `1150 ms`, ngắt `1700 ms` trước trần `--ulimit cpu=2:3`) trong `tests/sandbox/sandbox-attacks.mjs`.
+
+**Phần không chọn (Rejected):**
+- Không làm tròn xuống 1s hay làm tròn lên 2s ở tầng sandbox vì sẽ làm sai lệch giới hạn TA đã đặt trong lab T03/T04 (`1000–5000 ms`).
+
+**Phần làm tay (By hand):** Phúc yêu cầu xử lý dứt điểm PR #46 trước PR #50. Assistant chạy kiểm chứng offline (`npm test` `375` pass / `1` skip) và Docker thật (`15/15` pass).

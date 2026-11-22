@@ -183,6 +183,58 @@ int main() {
   assert.equal(tc.exitCode, 152);
 });
 
+test('M2 regression: 1500 ms (1.5s) fractional lab CPU limit accepts 1.15s and rejects 1.70s before 2s ulimit', async () => {
+  const runner = createDockerSandboxRunner({
+    limits: { cpuTimeLimitSeconds: 1.5 },
+  });
+  const makeCpuBurnSource = (targetMs, tag) => `
+#include <cstdint>
+#include <iostream>
+#include <time.h>
+
+int main() {
+  struct timespec start;
+  struct timespec now;
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);
+  volatile uint64_t sink = 0;
+  for (;;) {
+    for (int i = 0; i < 100000; ++i) {
+      sink += static_cast<uint64_t>(i);
+    }
+    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &now);
+    long elapsed_ms = (now.tv_sec - start.tv_sec) * 1000L +
+                      (now.tv_nsec - start.tv_nsec) / 1000000L;
+    if (elapsed_ms >= ${targetMs}L) {
+      break;
+    }
+  }
+  std::cout << ${JSON.stringify(tag)} << "\\n";
+  return 0;
+}
+`;
+
+  const accepted = await runner.compileAndRun(
+    makeCpuBurnSource(1150, 'OK_1150'),
+    [{ id: 'cpu-1150ms', input: '', expectedOutput: 'OK_1150' }],
+  );
+  assert.equal(accepted.compileResult.success, true);
+  assert.equal(accepted.verdict, 'Accepted');
+  assert.equal(accepted.testResults[0]?.status, 'accepted');
+
+  const exceeded = await runner.compileAndRun(
+    makeCpuBurnSource(1700, 'OK_1700'),
+    [{ id: 'cpu-1700ms', input: '', expectedOutput: 'OK_1700' }],
+  );
+  assert.equal(exceeded.compileResult.success, true);
+  assert.equal(exceeded.verdict, 'TimeLimitExceeded');
+  const tc = exceeded.testResults[0];
+  assert.ok(tc);
+  assert.equal(tc.status, 'time_limit_exceeded');
+  assert.equal(tc.terminationReason, 'cpu_time_limit');
+  assert.equal(tc.exitCode, 152);
+  assert.doesNotMatch(tc.stdout, /OK_1700/);
+});
+
 test('M3: wall-clock limit kills the container, not only the process', async () => {
   const runner = createDockerSandboxRunner();
   const source = await readAttack('m3-wall-clock.cpp');
