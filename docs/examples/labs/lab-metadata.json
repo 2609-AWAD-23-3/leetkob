@@ -1,0 +1,5 @@
+{
+  "title": "Sum two integers",
+  "statement": "Read two integers from standard input and print their sum followed by a newline.",
+  "deadline": "2027-01-01T00:00:00.000Z"
+}

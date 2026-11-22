@@ -1,112 +1,221 @@
-# T04 — phase 1: auth and demo seed
+# PA03-T04 — Bằng chứng triển khai và kiểm chứng
 
-Implementation branch: `feat/pa03-t04-auth-lab-submissions`. Base/source SHA: `f37b5b314dd9b1bc2150efd4e1019943f139e37c`; changes are uncommitted on top of that base. Implementation and tests were assisted by Codex. No remote publication, real model call, sandbox execution or reviewer approval is claimed.
+Tài liệu này tập hợp kết quả của cả ba giai đoạn: xác thực và tài khoản mẫu; tạo/xem lab; tiếp nhận/xem bài nộp. Các hướng dẫn chạy bên dưới mô tả phiên bản hiện tại. Số liệu cũ được giữ trong phần lịch sử, không thay thế kết quả kiểm chứng mới nhất.
 
-Contract: [auth](../../../contract/auth.md). Lab/submission APIs and T09 Publish runtime integration remain outstanding; T04 as a whole is not complete.
+## 1. Phạm vi, mã nguồn và trạng thái
 
-## Run locally (PowerShell)
+- Nhánh: `feat/pa03-t04-auth-lab-submissions`.
+- Giai đoạn 1 được triển khai từ mã nguồn gốc `f37b5b314dd9b1bc2150efd4e1019943f139e37c`, sau đó có commit `9812a520b48d85f0f9ac1c30e482b51d43d64e94`.
+- Giai đoạn 2–3 được kiểm chứng trên các thay đổi **chưa commit** tiếp nối `9812a520b48d85f0f9ac1c30e482b51d43d64e94`. Không gán kết quả này cho một SHA triển khai mới.
+- Môi trường kiểm chứng: Windows/PowerShell, Node v24.22.3, npm 11.19.1, PostgreSQL 17 qua Docker Compose local. Ngày ghi nhận mới nhất: **22/11/2026**, múi giờ Asia/Bangkok.
+- Đã có API xác thực, tạo/xem lab và tiếp nhận/xem bài nộp. Runtime dùng PostgreSQL; kiểm thử mặc định dùng fake qua cùng interface.
+- **T04 chưa hoàn thành toàn bộ:** còn tích hợp T06 để xác nhận luồng nộp → chấm → kết quả thật và review độc lập của Vỹ. Publish runtime thuộc T09.
 
-Migration source lives in `src/db/migrations/`: one file per migration plus an explicit ordered registry in `index.ts`. IDs and SQL remain unchanged when reorganizing files, so existing databases do not rerun migrations. Demo account seed code lives in `src/db/seeds/demo-accounts.ts`; `scripts/seed-demo.mjs` is only the CLI entry point. The current dev seed uses the public credential declared in source and does not require a private JSON file. T03's in-memory seed remains a test fixture rather than a runtime seed.
+Nguồn contract: [xác thực](../../../contract/auth.md), [lab](../../../contract/labs.md), [bài nộp](../../../contract/submissions.md).
 
-Node 24.x >=24.22.1, npm 11.x; install using `npm.cmd ci --ignore-scripts`. Start local PostgreSQL:
+Khai báo sử dụng AI: [AI-log T04 gồm sáu mục](AI-LOG.md).
+
+## 2. Hướng dẫn chạy phiên bản hiện tại
+
+Yêu cầu Node 24.x từ 24.22.1 và npm 11.x. Chạy từ root repository:
 
 ```powershell
+npm.cmd ci --ignore-scripts
+# Chỉ cần nếu Docker Desktop chưa chạy:
+docker desktop start --detach
 docker compose -f docker/compose.postgres.yml up -d --wait
-# First time only, if .env does not exist:
-Copy-Item .env.example .env
+# Chỉ copy lần đầu nếu chưa có .env:
+# Copy-Item .env.example .env
+npm.cmd run db:migrate
+# Chỉ khi cần tạo/cập nhật tài khoản mẫu dev:
 npm.cmd run db:seed
+npm.cmd run build
 npm.cmd start
 ```
 
-Compose credentials above are the repository's public local-only defaults, not deployment credentials. The seed command builds first. The fictional demo account list and common public password `password123` live in `src/db/seeds/demo-accounts.ts`; no private JSON file or `--init` step is required. Passwords are still scrypt-hashed with independent salts before storage. Registration keeps its separate 15–128 code point policy.
+`npm run dev` chạy chế độ theo dõi mã nguồn. Sau khi thay `.env`, cần khởi động lại backend. Các lệnh dev/start/db:migrate/db:seed đọc `.env` tùy chọn tại root bằng Node CLI; biến môi trường đã đặt được ưu tiên. Chạy trực tiếp `node dist/api/server.js` không tự đọc `.env` nếu thiếu cờ tương ứng. Tests không đọc `.env`; suite database cần `TEST_DATABASE_URL` riêng.
 
-`npm run db:seed` applies migrations and then transactionally adds missing demo records. For existing matching demo IDs/usernames/roles, it resets a different password to the public demo password and revokes that user's sessions; an already-matching password/hash/session is preserved. Unrelated users, classes, labs and submissions are retained. ID/username/role collisions roll back. This dev seed is not a provisioning mechanism for real users or deployment administrators; T12 must supply a separate deployment seed/configuration. The old ignored `.local/seed-accounts.json`, if present, is obsolete and is neither read nor deleted.
+API yêu cầu `DATABASE_URL`, đợi khởi tạo Store và migrations xong mới listen, đóng kết nối khi dừng hoặc khởi động lỗi; không tự chuyển sang fake/fixture tokens khi database lỗi. Runtime tự áp dụng migration còn thiếu, nên `db:migrate` là bước kiểm tra tường minh, không cần chạy lại thủ công trước mọi lần start. API không tự seed và không cần seed lại để có route mới. `/health` chỉ phản ánh tiến trình còn hoạt động, không phải phép kiểm tra database trực tiếp.
 
-| Accounts | Membership |
+Migrations nằm trong `src/db/migrations/`, mỗi migration có file riêng và đăng ký theo thứ tự trong `index.ts`. Việc tách thư mục giữ nguyên ID/SQL cũ, không làm database chạy lại migration đã áp dụng. Mã seed ở `src/db/seeds/demo-accounts.ts`; `scripts/seed-demo.mjs` là lối vào CLI. Các fixture fake T03 chỉ dành cho test, không dùng làm tài khoản đăng nhập runtime.
+
+### Tài khoản mẫu và chính sách seed dev
+
+Mật khẩu chung hiện tại là **`password123`**, dữ liệu dev công khai. Vẫn băm bằng scrypt với salt riêng trước khi lưu. Tài khoản tự đăng ký giữ yêu cầu password riêng: 15–128 Unicode code point.
+
+| Nhóm tài khoản | Membership |
 | --- | --- |
-| admin.vuong, admin.phuc, admin.vy | No automatic class membership |
-| ta01–ta05 / ta06–ta10 | Class 1 / class 2 |
-| student001–student060 | Both classes |
-| student061–student080 | Class 1 only |
-| student081–student100 | Class 2 only |
+| `admin.vuong`, `admin.phuc`, `admin.vy` | Không tự có membership lớp |
+| `ta01`–`ta05` / `ta06`–`ta10` | Lớp 1 / lớp 2 |
+| `student001`–`student060` | Cả hai lớp |
+| `student061`–`student080` | Chỉ lớp 1 |
+| `student081`–`student100` | Chỉ lớp 2 |
 
-Totals: 113 users, 2 demo classes, 170 memberships; 80 students and 5 TAs per class. Labs, submissions and verdicts are not seeded. Existing T03 fake fixtures remain test-only with placeholder hashes and are not suitable for login.
+Tổng cộng **113 tài khoản, 2 lớp và 170 membership**; mỗi lớp có 80 student và 5 TA. Không seed lab, bài nộp hoặc kết quả chấm.
 
-The server requires DATABASE_URL, waits for Store initialization/migrations, and only then listens. It never falls back to fake identity. HOST/PORT retain their existing defaults. The npm commands dev/start/db:migrate/db:seed load optional root `.env` with Node CLI; existing environment variables take precedence. Direct `node dist/api/server.js` does not load `.env` unless the flag is supplied. Restart after changing `.env`. Tests do not load `.env`; test:db requires explicit TEST_DATABASE_URL. Store connections close on normal shutdown or initialization failure. `/health` is a liveness response, not a live database readiness probe. Production URLs/passwords must be configured privately by T12.
+`db:seed` chạy migration rồi thêm dữ liệu còn thiếu trong transaction. Với tài khoản demo khớp ID/username/role, password khác sẽ được đặt lại về password dev và thu hồi session của tài khoản đó; nếu password đã khớp thì giữ hash/session. Dữ liệu không thuộc bộ seed được giữ nguyên; xung đột ID/username/role làm rollback. Đây không phải cơ chế cấp tài khoản thật trên VPS; T12 phải có cấu hình/credential triển khai riêng.
 
-### Test in the browser
+Không cần bước `--init` hoặc file JSON private ở phiên bản hiện tại. File cũ `.local/seed-accounts.json`, nếu còn, đã lỗi thời: CLI không đọc và không tự xóa file này.
 
-To inspect database rows instead of HTTP APIs, run `npm.cmd run db:studio` in another terminal and open `http://localhost:5555`. PostgreSQL must be running and `.env` configured; the backend may be stopped. Studio uses the pinned Prisma 7 CLI as a dev-only viewer/editor and introspects the existing database through `scripts/prisma-studio.config.ts`; it does not own migrations, generate a Prisma Client, seed data or create tables. Edits write directly to the dev database. Stop with Ctrl+C. Optional alternate port: `npm.cmd run db:studio -- --port 5556`.
+### Swagger và giao diện database
 
-After starting/restarting the API, open `http://127.0.0.1:3000/docs/` (adjust HOST/PORT if configured). Expand an endpoint and click **Try it out**. Start with login using a seeded username and the public demo password `password123`; copy the returned `accessToken` into **Authorize** without the `Bearer` prefix. `/auth/me` shows current user/classes; logout returns 204 and a subsequent `/auth/me` returns 401. A newly registered student has no class memberships. Test accounts made through registration persist in the database.
+- API docs: `http://127.0.0.1:3000/docs/`, đổi cổng theo cấu hình hoặc dùng link trong startup log. OpenAPI JSON tại `/docs/json`; chỉ mô tả các route thực sự được mount.
+- Bấm **Try it out** để gọi API. Sau login, copy `accessToken` vào **Authorize**, không thêm `Bearer`. Khi đổi tài khoản, dùng Logout trong hộp Authorize rồi nhập token mới. Swagger dùng origin hiện tại, phục vụ tài nguyên UI local và không giữ authorization sau khi tải lại trang.
+- Xem/sửa dữ liệu bằng `npm.cmd run db:studio`, mở `http://localhost:5555`; PostgreSQL và `.env` phải sẵn sàng, backend có thể dừng. Studio dùng Prisma CLI dev để đọc schema hiện có, không thay quyền quản lý migration, không sinh Prisma Client/seed/tables. Thao tác sửa ghi trực tiếp vào database dev. Dừng bằng Ctrl+C; có thể đổi cổng với `-- --port 5556`.
 
-`/docs/json` can be imported into an API client as OpenAPI. Only the four mounted auth endpoints are documented; future lab/submission operations will be added when implemented. The docs use the page's origin, serve bundled UI assets and do not persist authorization across page reloads. There are no real credentials in examples. Versions are pinned in package.json/lockfile; plugin registration compatibility is checked against Fastify 5 and exercised by the docs tests.
+<a id="phase-1"></a>
 
-## Verification
+## 3. Giai đoạn 1 — Xác thực và tài khoản mẫu
 
-Default tests discover auth unit/contract/runtime tests recursively. Real database tests are in the existing postgres-store suite, so the `test:db` command and its CI discovery remain intact. Every fixture owns an isolated schema and deterministic clock where time matters. Test-only password strings are fictional, not credentials for the generated local seed.
+### Phần đã triển khai
 
-Migration 0003 adds normalized username uniqueness without modifying migrations 0001/0002. It preserves existing accounts; normalization collisions fail before index creation and require an explicit operator decision. No account is renamed or removed automatically.
+- Đăng ký student, login bằng password thật, session phía server, `/auth/me` và logout phiên hiện tại. Student mới đăng ký chưa có membership.
+- Runtime dùng PostgreSQL, không dùng fixture tokens; không thêm JWT, cookie hoặc refresh token.
+- Seed 113 tài khoản và chính sách password dev như phần trên; không bổ sung email/MSSV trong giai đoạn này. Đối chiếu [FAQ-01](https://github.com/tkob-team/LeeTKOB-FAQ/blob/main/FAQ.md#faq-01): không bắt buộc dùng email/MSSV làm định danh đăng nhập; yêu cầu bỏ định danh trước khi đưa code tới model không đồng nghĩa phải lưu các trường đó trên tài khoản.
+- Migration 0003 tạo ràng buộc username sau chuẩn hóa mà không sửa migration 0001/0002. Nếu dữ liệu cũ xung đột thì dừng, yêu cầu xử lý tường minh; không tự đổi tên/xóa tài khoản.
+- Thêm `.env` tùy chọn qua Node CLI, Swagger với ví dụ tài khoản nhất quán và link docs trong startup log.
+- Thêm Prisma Studio chỉ cho môi trường dev. Phiên bản đã pin: Swagger 9.9.5, Swagger UI 6.1.5, Prisma 7.10.1; override Effect 3.22.1 cho `@prisma/config` vì bản upstream khi đó bị ảnh hưởng bởi [GHSA-7589-6fvf-x4pw](https://github.com/advisories/GHSA-7589-6fvf-x4pw). Các lần cài dùng `--ignore-scripts`; lần audit được ghi nhận khi cài không báo lỗ hổng đã biết, không phải cam kết cho tương lai.
 
-## Results — 2026-11-21
+### Sửa lỗi sau review
 
-Environment: Node v24.22.3, npm 11.19.1, Windows/PowerShell; PostgreSQL 17 from the repository's local Compose. Source is the uncommitted implementation on the base SHA above, not a published commit.
+Đã sửa ba lỗi tái hiện được: lỗi kết nối pool đang rảnh có thể làm tiến trình thoát vì sự kiện không được xử lý; password chứa surrogate đơn bị đổi thành cùng byte thay thế khi mã hóa UTF-8; tên hiển thị chứa NUL được fake nhận nhưng PostgreSQL trả lỗi. Đã thêm xử lý lỗi pool có che chi tiết, từ chối Unicode lỗi ở biên HTTP/dịch vụ password và dùng chung validation tên hiển thị. Tiếng Việt/emoji hợp lệ vẫn được hỗ trợ.
 
-| Command/check | Exit | Observed result |
+Kiểm thử dùng tiến trình con để xác minh mất kết nối idle không làm API chết và có thể kết nối lại; chỉ ngắt backend PostgreSQL của chính phép kiểm tra. Có kiểm thử Unicode ở fake/PG và luồng signup/login PostgreSQL thật.
+
+**Giới hạn đã được người dùng chấp nhận:** một login đã xác minh password cũ trước khi seed dev đồng thời đặt lại password có thể tạo session sau bước thu hồi của seed. Chưa sửa race này; chưa có API reset password công khai. Phải xem lại tính nguyên tử khi phát triển API đó.
+
+### Bằng chứng và lịch sử kiểm chứng — 21/11/2026
+
+| Mốc kiểm chứng | Lệnh/phép kiểm tra | Mã thoát | Kết quả ghi nhận |
+| --- | --- | --- | --- |
+| Sau bổ sung Swagger ban đầu | `npm test` | 0 | 171 đạt, 1 suite PostgreSQL bỏ qua |
+| Database giai đoạn đầu | `TEST_DATABASE_URL=<database local dành cho kiểm thử>; npm run test:db` | 0 | 74/74 đạt: auth thật, seed đồng thời, migration username và hồi quy T03 |
+| Ví dụ Swagger và link startup | `npm test` | 0 | 172 đạt, 1 suite bỏ qua; probe xác nhận link docs theo cổng và địa chỉ listen thực tế |
+| Công cụ Studio | `npm run db:studio` và kiểm tra trình duyệt | 0 | Đọc được bảng và hai lớp demo tại thời điểm kiểm tra; không sửa hàng dữ liệu |
+| Sau ba bản sửa review | `npm test` | 0 | 175 đạt, 1 suite PostgreSQL bỏ qua |
+| Sau ba bản sửa review | `TEST_DATABASE_URL=<database local dành cho kiểm thử>; npm run test:db` | 0 | 77/77 đạt, gồm mất kết nối idle và dữ liệu văn bản không hợp lệ |
+| Các mốc chốt trên | lint, format-check, type-check, diff-check | 0 | Các kiểm tra tương ứng đều đạt |
+
+Các probe bổ sung đã xác nhận `.env` được đọc khi child process không có DATABASE_URL; db:migrate/db:seed/start và loader dev hoạt động. Đăng nhập admin/TA/student, membership hiện tại, logout và từ chối token bị thu hồi đã được kiểm tra qua HTTP. Tài khoản đăng ký được lưu bền vững.
+
+**Lịch sử seed, không phải hướng dẫn hiện tại:** phiên bản trước từng dùng `db:seed -- --init` tạo file password private, rồi seed lần đầu thêm 113 tài khoản; chạy lại bỏ qua 113. Kiểm tra không ghi đè file cũ đạt (assertion thoát 0, subprocess seed bị từ chối thoát 1, digest không đổi). Sau khi người dùng đổi chính sách sang password công khai, lần seed chuyển đổi cập nhật 113 password, không thêm tài khoản; HTTP login/me/logout đã đạt với password dev. Các kết quả này thuộc thời điểm chuyển đổi, không hứa rằng mọi lần seed hiện tại đều cập nhật 113 tài khoản.
+
+Ở bước Swagger ban đầu, chỉ kiểm tra HTML/tài nguyên/spec và HTTP bằng chương trình, chưa kiểm tra trực quan UI. Sau đó có kiểm tra Studio qua trình duyệt. Các lượt UI cho lab/bài nộp được ghi riêng bên dưới. Không suy ra trạng thái tiến trình Studio hiện tại từ một lần kiểm chứng cũ.
+
+<a id="phase-2"></a>
+
+## 4. Giai đoạn 2 — Tạo và xem lab
+
+### Phần đã triển khai
+
+- Ba API tạo lab, danh sách lab theo lớp và chi tiết theo role; session bất đồng bộ, danh tính lấy từ server và membership hiện tại.
+- TA tạo lab trong lớp phụ trách. Student không thấy draft; vẫn xem được open/closed. DTO student không có test/createdBy/dữ liệu review; danh sách chỉ đọc metadata, sắp xếp ổn định.
+- Nhập JSON trực tiếp hoặc một trường JSON `lab` cùng file `testsFile`/`constraintsFile`; mỗi nhóm chỉ có một nguồn, thứ tự part không ảnh hưởng.
+- UTF-8 strict/BOM, kiểm tra Unicode/NUL, bảo toàn nội dung chuỗi; giới hạn tổng body 20 MiB, đề 256 KiB, tổng test đã giải mã 16 MiB và các giới hạn trong contract. Bộ đếm áp dụng cả multipart framing và chunked request.
+- Idempotency UUID v4 theo TA/lớp, fingerprint ổn định, TTL 24 giờ; cùng nội dung trả lại lab cũ, khác nội dung trả 409, replay kiểm tra lại quyền và vẫn hợp lệ sau deadline nếu key còn hạn.
+- Fake và PostgreSQL cùng hành vi; advisory lock và transaction ghi lab/tests/constraints/key; migration 0004 và reset fixtures. Không sửa SQL/ID của migration cũ.
+
+### Kiểm tra qua Swagger
+
+1. Login `ta01`, Authorize, POST `/classes/{classId}/labs` với `demo-class-1`. Dùng JSON mẫu, deadline tương lai và UUID v4 mới (`[guid]::NewGuid().ToString()`). Kỳ vọng 201 và Location.
+2. Execute lại cùng key/payload: cùng ID, `Idempotent-Replayed: true`; đổi payload nhưng giữ key: 409.
+3. Chọn multipart: dán [lab-metadata.json](../../../examples/labs/lab-metadata.json) vào ô `lab`, chọn [tests.json](../../../examples/labs/tests.json) và [constraints.json](../../../examples/labs/constraints.json). Dùng key mới. File mẫu là dữ liệu stdin/stdout cho C++, không phải mã nguồn từ dev set.
+4. Nếu không chọn một file, **bỏ tick Send empty value** của file đó và cung cấp nhóm tương ứng trong JSON `lab`.
+5. Login `student001`: chi tiết không có tests/createdBy/review, danh sách chỉ có metadata; draft bị ẩn. Login `ta06`: truy cập lab/lớp 1 trả 404. Student/admin tạo lab trả 403; thiếu token trả 401.
+
+Đã quan sát các bước JSON tạo 201, replay cùng ID/header, upload cả hai file tạo 201, student đọc 200 với DTO đúng và TA lớp khác nhận 404 qua trình duyệt với PostgreSQL thật. Server/schema tạm đã dọn; không sửa schema ứng dụng. Ảnh cục bộ: `.local/t04-phase2-student.jpg`.
+
+Kiểm tra UI phát hiện khai báo encoding `text/plain` cho trường `lab` khiến Swagger gửi thành file/Blob. Đã bỏ khai báo đó, thêm assertion hồi quy cho OpenAPI và xác nhận upload lại thành công. Kiểm tra stream gốc cũng chặn UTF-8 lỗi trước khi busboy có thể thay byte bằng ký tự thay thế.
+
+### Kết quả kiểm chứng — 22/11/2026
+
+| Lệnh/phép kiểm tra | Mã thoát | Kết quả |
 | --- | --- | --- |
-| `npm run lint` | 0 | No warnings/errors |
-| `npm run format-check` | 0 | All matched files formatted |
-| `npm run type-check` | 0 | Strict TypeScript passed |
-| `npm test` (after Swagger UI addition) | 0 | 171 pass, 1 PostgreSQL suite skipped without TEST_DATABASE_URL |
-| `TEST_DATABASE_URL=<local disposable database>; npm run test:db` | 0 | 74/74 pass, including real auth, seed concurrency, normalized migration and existing T03 regression tests |
-| `npm run db:seed -- --init` | 0 | Private seed file generated, not printed |
-| `npm run db:seed` on local database | 0 | 113 accounts added, 0 skipped |
-| Repeat `npm run db:seed` | 0 | 0 added, 113 unchanged |
-| Repeat `--init` overwrite check | 0 for assertion; seed subprocess 1 | Existing file refused, digest unchanged |
-| Real runtime HTTP probe with local seed | 0 | Admin/TA/student login, current memberships, logout and rejected revoked token |
-| `git diff --check` | 0 | No whitespace errors |
+| `npm install --save-exact @fastify/multipart@10.1.9 --ignore-scripts` | 0 | Pin multipart/busboy; audit khi cài không báo lỗ hổng; lockfile chỉ thêm phần liên quan |
+| `npm run lint` | 0 | Không lỗi/cảnh báo |
+| `npm run format-check` | 0 | Đạt Prettier theo lockfile |
+| `npm run type-check` | 0 | Đạt TypeScript strict |
+| `npm test` | 0 | 192 đạt, 1 suite PostgreSQL bỏ qua khi không có TEST_DATABASE_URL |
+| `TEST_DATABASE_URL=<database local dành cho kiểm thử>; npm run test:db` | 0 | 81/81 đạt |
+| `node --test tests/unit/lab-creation.test.mjs tests/integration/labs-upload.test.mjs` | 0 | 8/8 đạt: các biên dung lượng và UTF-8 của trường multipart |
+| `TEST_DATABASE_URL=<database local dành cho kiểm thử>; node --test --test-reporter=tap --test-name-pattern='upgrading an existing initial schema' tests/integration/postgres-store.test.mjs` | 0 | 1/1 đạt sau bổ sung so sánh nguyên hàng lab/test/constraint trước và sau nâng cấp |
+| `git diff --check` | 0 | Không lỗi whitespace |
 
-Raw local test/probe logs are under `.local/` and excluded from Git. Initial default/sandbox runs hit socket restrictions (HTTP loopback and PostgreSQL EACCES); the successful network checks were rerun outside that sandbox. No checks were bypassed or expectations weakened to address those environment failures. Migration-count expectations changed because migration 0003 was added.
+Lượt database 81/81 có trước lần tăng assertion bảo toàn nguyên hàng; sau đó đã chạy riêng test nâng cấp 1/1, không đổi mã database. Lượt mặc định 192 đạt có cả kiểm tra quyền trước parser và phân biệt lỗi database với lỗi validation.
 
-Password parameters have not been benchmarked on the deployment VPS. No distributed limiter test or 80-user load test is claimed. Reviewer checklist remains for Vỹ; this evidence does not claim approval.
+Phạm vi kiểm thử: quyền/DTO, mốc opensAt/deadline, JSON/file tương đương, đảo part, thiếu/trùng nguồn, dữ liệu lỗi, giữ newline/whitespace, đúng/vượt giới hạn, tổng multipart trên 20 MiB dù từng part hợp lệ, chunked/truncation/abort, scope và TTL, đồng thời cùng key, rollback, mở lại Store, reset và truy vấn summary không tải bảng test. Các hồi quy giai đoạn 1/T03/Publish cùng chạy.
 
-### Swagger UI follow-up verification
+<a id="phase-3"></a>
 
-- Pinned `@fastify/swagger` 9.9.5 and `@fastify/swagger-ui` 6.1.5. The older UI 5.x candidate reported vulnerable transitive packages; the selected UI declares Fastify `5.x` compatibility and installs/audits with zero known vulnerabilities. `npm ci --ignore-scripts` exited 0. Existing dependency entries in the base lockfile were unchanged; additions are Swagger-related.
-- New contract tests verify `/docs/`, bundled JS/CSS, disabled external validator, nonpersistent authorization, `/docs/json`, request/response schemas and Bearer security for exactly the four mounted endpoints. No docs/spec are mounted in the app factory without an AuthStore.
-- Full default suite: 171 passed, 1 skipped. Lint, format-check, type-check and diff-check exited 0. The targeted real PostgreSQL HTTP auth test passed (1/1) after adding Swagger. The earlier full 74/74 PostgreSQL run above preceded this docs addition; database logic was not changed by it.
-- UI HTML/assets/spec and HTTP behavior were verified programmatically; no visual browser inspection is claimed. Markdown and the typed OpenAPI document must be updated together when future endpoints change.
+## 5. Giai đoạn 3 — Tiếp nhận và xem bài nộp
 
-### Local .env follow-up
+### Phần đã triển khai
 
-The npm commands dev/start/db:migrate/db:seed now use Node's `--env-file-if-exists=.env`; dev combines the built-in watcher with the tsx import loader. No dotenv dependency was added. `.env.example` provides the public Compose defaults; a private `.env` was created locally without overwriting any existing file, and `git check-ignore .env` confirmed exclusion. Existing process variables override file values. Missing `.env` remains valid when the deployment supplies DATABASE_URL. Tests intentionally do not load this local file.
+| API | Quyền và chức năng |
+| --- | --- |
+| POST `/labs/:labId/submissions` | Student thuộc lớp nộp JSON code hoặc một `.cpp` |
+| GET `/labs/:labId/submissions/mine` | Student xem lịch sử của chính mình |
+| GET `/labs/:labId/submissions` | TA cùng lớp xem danh sách, lọc và phân trang |
+| GET `/submissions/:submissionId` | Chủ bài còn membership hoặc TA cùng lớp xem chi tiết |
 
-Verification with DATABASE_URL removed from the child environment: `npm run db:migrate` exited 0 (up to date); `npm run db:seed` exited 0 (0 added, 113 unchanged); the start entry loaded `.env` and served `/docs/json` on an overridden PORT. The dev TypeScript loader/config probe passed. Lint, format-check, type-check, diff-check and full tests exited 0 (171 passed, 1 PostgreSQL suite skipped). These probes did not print passwords or connection strings.
+Code tối đa 64 KiB, body tối đa 1 MiB, UTF-8 strict/BOM; giữ nguyên code và lưu vào `submissions.code TEXT`, không lưu file gốc. Tách bộ đọc JSON/file khỏi nghiệp vụ để sau này mở rộng. Bài mới có `status: queued`, `judgeResult: null`; chưa chạy compiler, sandbox hoặc model.
 
-### Development seed policy revision
+Server ghi thời gian nhận bài sau khi body đã đầy đủ/hợp lệ và trước chờ database; dùng cùng mốc để kiểm tra hạn và lưu. Giữ tất cả lần nộp; bài cuối trong hạn được tính bất kể kết quả, sequence phân định khi timestamp trùng. Replay không biến bài cũ thành lần nộp mới.
 
-The user requested a simple public dev seed instead of private random credentials. Historical verification rows above describe the previous behavior. The current CLI reads only the tracked account template and resets matching demo passwords to `password123`; no --init/private JSON is needed. Generic seed helpers preserve credentials unless explicitly called with resetPasswords, as the dev CLI does. Reset tests check revocation of the changed demo session and preservation of an unrelated account. Email/MSSV fields were not added: the checked [FAQ-01](https://github.com/tkob-team/LeeTKOB-FAQ/blob/main/FAQ.md#faq-01) does not mandate either login identifier. FAQ-06 requires removing personal identifiers from model input, which does not itself mandate storing them on accounts.
+Idempotency UUID v4 theo student/lab, TTL 24 giờ, JSON/file cùng code có cùng fingerprint. Transaction ghi submission/job/key nguyên tử; replay sau hạn còn được nhận nếu key còn hiệu lực và quyền hiện tại hợp lệ. Key hết hạn chỉ tạo lần mới nếu còn trong hạn. Migration 0005 thêm bảng key/index và reset tương ứng; không thay hành vi `submit` cũ hoặc vòng đời queue của T06.
 
-Verification after this revision: `npm run db:seed` exited 0 with 0 added, 113 passwords updated, 0 unchanged in the local dev database. HTTP login/me/logout passed for an admin, TA and two-class student using the public dev password. Full default suite exited 0 (171 passed, 1 skipped); PostgreSQL suite exited 0 (74/74), including password-reset/session-revocation and unrelated-account preservation checks. Lint, format-check, type-check and diff-check exited 0. Existing private seed JSON is obsolete and was left untouched, not imported into source or read by the seed CLI.
+Danh sách chỉ tải metadata, mặc định 20/tối đa 100, thứ tự submittedAt rồi sequence giảm dần. Cursor gắn lab/filter, không cấp quyền. Student không lọc sang bài người khác; TA không vượt lớp. Sau deadline vẫn đọc được, thu hồi membership thì mất quyền. Limiter POST theo student/app: 10 request/phút, gồm replay/body lỗi, có Retry-After; tối đa 10.000 bucket, hết chỗ trả 503. Thông báo soát được đưa vào Swagger/response.
 
-### Swagger examples and startup link
+### Kiểm tra qua Swagger
 
-Request examples now cover seeded student/TA/admin login and a consistent registration/login pair (`student.demo`, with a separate valid registration password). Success responses show realistic user IDs, memberships and timestamps; the response token is explicitly illustrative. Named validation/malformed-JSON examples and conflict responses were compared against real handlers. The additional contract test executes the documented request payloads, rather than only checking their shape.
+1. TA `ta01` tạo lab lớp 1 với deadline tương lai như giai đoạn 2.
+2. Login `student001`, thay token trong Authorize. POST bài nộp bằng JSON code, lab ID vừa tạo và key UUID v4 mới; nhận 201, Location, queued/null và thông báo soát.
+3. Execute lại cùng code/key: cùng ID, `Idempotent-Replayed: true`, không thêm job. Đổi code cùng key: 409; nộp lại có chủ đích dùng key mới.
+4. Chọn multipart, upload [sum.cpp](../../../examples/submissions/sum.cpp) vào `codeFile` với key mới; nhận 201 và đọc lại đúng nội dung. Không gửi ZIP/nhiều file.
+5. Student gọi `/mine` và detail; summary không có code/test data. TA `ta01` gọi danh sách, lọc `studentId=demo-student001`, thử `limit=1` và cursor trang tiếp theo.
+6. TA `ta06` đọc bài lớp 1 nhận 404. Student không gọi danh sách TA/đọc bài người khác. Khi lab đóng, đọc vẫn được, nộp mới trả 409; replay key còn hạn vẫn thành công.
 
-After listen succeeds, the server logs `API docs: <actual-listening-origin>/docs/` plus the structured docsUrl field. Live process probes verified the log and HTTP docs on custom ports with both the .env host and wildcard 0.0.0.0 (shown as local loopback). No credentials are included in this startup log. Final default tests exited 0: 172 passed, 1 skipped. Lint, format-check, type-check and diff-check exited 0. No database logic changed in this follow-up; the full 74/74 database result above remains the preceding database verification.
+### Kết quả kiểm chứng — 22/11/2026
 
-### Prisma Studio tooling
+| Lệnh/phép kiểm tra | Mã thoát | Kết quả |
+| --- | --- | --- |
+| `npm run lint` | 0 | Không lỗi/cảnh báo |
+| `npm run format-check` | 0 | Đạt Prettier local |
+| `npm run type-check` | 0 | Đạt TypeScript strict |
+| `npm test` | 0 | **207 đạt, 1 suite PostgreSQL bỏ qua** khi không có TEST_DATABASE_URL |
+| `TEST_DATABASE_URL=<database local dành cho kiểm thử>; npm run test:db` | 0 | **86/86 đạt** |
+| `TEST_DATABASE_URL=<database local dành cho kiểm thử>; node --test --test-reporter=tap --test-name-pattern='postgres submissions' tests/integration/postgres-store.test.mjs` | 0 | 5/5 đạt, sau đó chạy lại trong lượt đầy đủ 86/86 |
+| `node --env-file=.env .local/t04-phase3-ui.mjs` | 0 | 13 bước qua Swagger trên trình duyệt; 2 submission/2 job, không chạy worker |
+| `git diff --check` | 0 | Không lỗi whitespace |
 
-Added exact dev dependency prisma 7.10.1 and `db:studio`, with optional root .env loaded by Node CLI and a config-only datasource. No Prisma Client, schema.prisma or Prisma migration directory is introduced. A scoped override updates @prisma/config's Effect dependency to 3.22.1 because the pinned upstream 3.20.0 was affected by [GHSA-7589-6fvf-x4pw](https://github.com/advisories/GHSA-7589-6fvf-x4pw). The install used --ignore-scripts and npm audit reported zero known vulnerabilities after the override. CLI/config loading and live browser introspection succeeded: Studio listed existing tables and displayed both demo classes. No database rows were changed during UI verification. Studio is a development-only tool and is not part of API startup or production dependencies.
+Các lệnh dùng `TEST_DATABASE_URL=<...>;` trong bảng biểu diễn điều kiện môi trường, không phải lệnh PowerShell để copy nguyên văn. Cách chạy suite database với giá trị local công khai:
 
-Final tooling verification: Studio listened on 127.0.0.1:5555. Lint, format-check, type-check, npm test and diff-check exited 0; tests remained 172 passed and 1 skipped. Studio was left running with the verified classes view open for the user. No full PostgreSQL suite rerun was needed for this tooling-only addition; no Store/schema/seed behavior changed.
+```powershell
+$env:TEST_DATABASE_URL = 'postgres://leetkob:leetkob_local@127.0.0.1:5433/leetkob'
+npm.cmd run test:db
+```
 
-### Phase 1 review fixes
+Phạm vi kiểm thử: quyền/chủ bài và quyền trước parser, membership bị thu hồi, draft/closed, đúng/vượt 64 KiB và 1 MiB, UTF-8/BOM/Unicode/newline, multipart trùng/thiếu, chunked/truncated/aborted, JSON/file replay, limiter/capacity, cursor/filter và truy vấn metadata. PostgreSQL kiểm tra mở lại Store, chờ advisory lock thực sự qua deadline (quan sát bằng `pg_locks`), caller sửa input khi đang chờ, ranh giới TTL, lỗi ghi job/key làm rollback mọi hàng, nâng cấp giữ nguyên dữ liệu và hồi quy submit/worker/Publish cũ.
 
-The follow-up review reproduced three issues now addressed: idle pool connection errors previously caused an unhandled EventEmitter error/process exit; unpaired surrogate passwords were converted to the same replacement bytes during UTF-8 encoding; a NUL display name succeeded in the fake but failed with PostgreSQL 500. The pool now has a sanitized error listener and lets pg discard failed idle clients/reconnect on demand. Password validation rejects malformed Unicode at HTTP and password-service boundaries. Shared display-name validation rejects NUL and malformed Unicode before either Store persists it. Vietnamese and valid emoji remain supported; no Unicode repair/normalization is performed.
+**Kiểm tra trình duyệt:** dùng Microsoft Edge headless riêng và Playwright 1.65.1 tạm cài với `--ignore-scripts` trong `.local/browser-review/` bị Git ignore; không thêm dependency tracked hoặc profile trình duyệt người dùng. Đây là tự động hóa UI, không phải review thủ công độc lập.
 
-New regression tests exercise actual child-process survival/reconnection after terminating only that probe's idle PostgreSQL backend, malformed-password rejection, consistent invalid-name behavior in both Stores and real PostgreSQL HTTP signup/login with valid Unicode.
+13 bước gồm login TA/tạo lab, login student/nộp JSON/replay/upload `.cpp`/lịch sử/detail, TA lọc và phân trang, TA khác lớp nhận 404. Truy vấn database xác nhận đúng 2 bài và 2 job, mọi bài vẫn queued. Browser/server/schema riêng được dọn trong `finally`; không reset/reseed schema ứng dụng. Ảnh `.local/t04-phase3-swagger.jpg` và bản tóm tắt `.local/t04-phase3-swagger-evidence.json` chỉ lưu local, không commit bearer token.
 
-**Accepted development limitation:** the user explicitly deferred the fourth finding: a login that verified an old password before a concurrent dev-seed password reset can create a session after the reset's revocation. That race is unchanged. There is no public password-reset API in phase 1; revisit atomic credential checking before implementing one. This acceptance does not claim that the race is fixed.
+Probe UI ban đầu chưa đợi trạng thái Try it out nên thất bại; đã sửa cách chờ rồi chạy lại đạt, không cần sửa hành vi API. Không cài hoặc dựa vào Postman CLI; bộ test Node và OpenAPI local là nguồn kiểm chứng tái sử dụng.
 
-Verification after the three fixes: npm test exited 0 (175 passed, 1 PostgreSQL suite skipped without TEST_DATABASE_URL); full PostgreSQL suite exited 0 (77/77), including idle-client termination/reconnection and the invalid-text regressions. Lint, format-check, type-check and diff-check exited 0. The tests used isolated schemas and terminated only their own probe connection; no application database reset or reseed was performed. No migration, dependency, seed-reset semantics or public password-reset endpoint was added by this fix.
+## 6. Checklist, giới hạn và sự hỗ trợ của AI
+
+- [x] Giai đoạn 1: auth/session thật, seed, runtime/env, Swagger và ba bản sửa review.
+- [x] Giai đoạn 2: tạo/list/detail lab, JSON/file, quyền/DTO, idempotency và migration 0004.
+- [x] Giai đoạn 3: bốn API nhận/đọc bài, thông báo soát, thời gian nhận, limiter, phân trang, transaction/idempotency và migration 0005.
+- [x] Viết test quyền/chống trùng trước implementation. Giai đoạn 2 quan sát route/method chưa có; giai đoạn 3 quan sát 404 thay vì 201 trong `.local/t04-phase3-red.tap`.
+- [x] Fake/PostgreSQL có kiểm thử conformance; nâng cấp/reset/rollback/mở lại Store; hồi quy auth/lab/Publish/T03.
+- [x] Contract, file mẫu, hướng dẫn chạy và bằng chứng kiểm chứng được cập nhật.
+- [ ] Review độc lập của Vỹ; không tick thay reviewer.
+- [ ] Tích hợp T06 và xác nhận luồng nộp → chấm → kết quả thật của toàn T04.
+
+Tests mặc định không cần PostgreSQL; suite database dùng schema riêng và clock xác định khi kiểm tra thời gian. Các log `.local/t04-phase2-*.tap` và `.local/t04-phase3-*.tap` bị Git ignore. Đã gặp EACCES khi sandbox chặn socket local; một số lượt bị chặn/treo được dừng rồi chạy lại với quyền phù hợp. Ở giai đoạn 3 còn gặp ECONNREFUSED do Docker Desktop tắt; đã khởi động lại Docker/Compose trước khi chạy lại. Không nới assertion hoặc bypass checks để xử lý lỗi môi trường. Kỳ vọng số migration được tăng tương ứng khi thêm 0003/0004/0005.
+
+Codex hỗ trợ contract, implementation, ví dụ và kiểm thử. Không gọi model thật, không thực thi mã nguồn mẫu trong sandbox, không chỉnh/dùng dữ liệu dev set làm prompt hoặc ví dụ. Kết quả giả lập trong fixture không được gọi là kết quả chấm thật. File mẫu được tự viết. Không commit/push/cập nhật issue/PR trong các lượt triển khai được ghi ở đây.
+
+Chưa đo tải 80 người đồng thời, chưa benchmark password trên VPS, chưa có limiter phân tán hoặc GET polling riêng; giữ `trustProxy: false`. Phân trang không phải snapshot cố định. Hai ý định dùng hai key khác nhau vẫn có thể tạo hai tài nguyên. Quyền được kiểm tra trên từng request; chưa gộp transaction thay đổi membership với upload đang xử lý. Race seed dev/password đã chấp nhận ở giai đoạn 1 vẫn còn. ZIP/nhiều file, sửa/xóa bài, API reset password và chấm thật không được suy ra là đã triển khai từ bằng chứng này.

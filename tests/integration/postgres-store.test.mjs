@@ -16,6 +16,10 @@ import {
 } from '../../dist/db/seeds/demo-accounts.js';
 import { createPool, migrate } from '../../dist/db/postgres/client.js';
 import { createApp } from '../../dist/api/app.js';
+import { defineSubmissionConformance } from '../support/submission-conformance.mjs';
+import { randomUUID } from 'node:crypto';
+import { defineLabConformance } from '../support/lab-conformance.mjs';
+import { newLab, LAB_KEY, LAB_NOW } from '../support/labs.mjs';
 
 // Runs only when TEST_DATABASE_URL points at a disposable Postgres, for
 // example the one from docker/compose.postgres.yml. `npm test` stays free of
@@ -57,6 +61,241 @@ if (!url) {
   });
 
   defineStoreConformance('postgres store', (options) => makeFixture(options));
+  defineLabConformance('postgres labs', (options) => makeFixture(options));
+  defineSubmissionConformance('postgres submissions', (options) =>
+    makeFixture(options),
+  );
+
+  test('postgres submissions: restart preserves replay and projection excludes source', async () => {
+    const schema = `${run}_intake_reopen`;
+    const options = { seed: createStoreSeed(), clock: () => new Date(LAB_NOW) };
+    const first = makeFixture(options, schema);
+    const lab = await first.store.createLab(newLab());
+    const input = {
+      labId: lab.id,
+      studentId: 'student-1',
+      code: 'int main(){}',
+    };
+    const created = await first.store.submitIdempotently(input, LAB_KEY);
+    assert.equal(created.kind, 'created');
+    await first.store.close();
+    const second = makeFixture({ clock: options.clock }, schema);
+    await second.ready;
+    const replay = await second.store.submitIdempotently(input, LAB_KEY);
+    assert.equal(replay.kind, 'replayed');
+    assert.equal(replay.submission.id, created.submission.id);
+    const db = new pg.Client({
+      connectionString: url,
+      options: `-c search_path=${schema}`,
+    });
+    await db.connect();
+    try {
+      await db.query(
+        'ALTER TABLE submissions RENAME COLUMN code TO code_unavailable',
+      );
+      const page = await second.store.listSubmissionSummaries({
+        labId: lab.id,
+        limit: 20,
+      });
+      assert.equal(page.submissions.length, 1);
+      assert.equal('code' in page.submissions[0], false);
+      await db.query("DELETE FROM class_memberships WHERE user_id='student-1'");
+      assert.equal(
+        (await second.store.submitIdempotently(input, LAB_KEY)).kind,
+        'not-found',
+      );
+    } finally {
+      await db.query(
+        'ALTER TABLE submissions RENAME COLUMN code_unavailable TO code',
+      );
+      await db.end();
+    }
+  });
+
+  test('postgres submissions: job/key write failures roll back every intake row', async () => {
+    const schema = `${run}_intake_rollback`;
+    const f = makeFixture(
+      { seed: createStoreSeed(), clock: () => new Date(LAB_NOW) },
+      schema,
+    );
+    const lab = await f.store.createLab(newLab());
+    const input = {
+      labId: lab.id,
+      studentId: 'student-1',
+      code: 'int main(){}',
+    };
+    const db = new pg.Client({
+      connectionString: url,
+      options: `-c search_path=${schema}`,
+    });
+    await db.connect();
+    try {
+      await db.query(
+        "CREATE FUNCTION reject_intake() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'test injection'; END $$",
+      );
+      for (const table of ['jobs', 'submission_intake_requests']) {
+        await db.query(
+          `CREATE TRIGGER fail_intake BEFORE INSERT ON ${table} FOR EACH ROW EXECUTE FUNCTION reject_intake()`,
+        );
+        await assert.rejects(
+          f.store.submitIdempotently(input, LAB_KEY),
+          /test injection/,
+        );
+        for (const name of [
+          'submissions',
+          'jobs',
+          'submission_intake_requests',
+        ])
+          assert.equal(
+            (await db.query(`SELECT count(*)::int AS n FROM ${name}`)).rows[0]
+              .n,
+            0,
+          );
+        await db.query(`DROP TRIGGER fail_intake ON ${table}`);
+      }
+      assert.equal(
+        (await f.store.submitIdempotently(input, LAB_KEY)).kind,
+        'created',
+      );
+      assert.equal(
+        (await db.query('SELECT count(*)::int AS n FROM jobs')).rows[0].n,
+        1,
+      );
+    } finally {
+      await db.end();
+    }
+  });
+
+  test('postgres submissions: receipt time survives scope lock waiting past deadline', async () => {
+    let now = Date.parse(LAB_NOW);
+    const schema = `${run}_intake_wait`;
+    const f = makeFixture(
+      { seed: createStoreSeed(), clock: () => new Date(now) },
+      schema,
+    );
+    const lab = await f.store.createLab(
+      newLab({ deadline: '2026-11-22T00:00:01.000Z' }),
+    );
+    const db = new pg.Client({
+      connectionString: url,
+      options: `-c search_path=${schema}`,
+    });
+    await db.connect();
+    try {
+      await db.query('BEGIN');
+      const scope = JSON.stringify([
+        't04-submission',
+        'student-1',
+        lab.id,
+        LAB_KEY,
+      ]);
+      await db.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))', [
+        scope,
+      ]);
+      const intake = { labId: lab.id, studentId: 'student-1', code: 'x' };
+      const pending = f.store.submitIdempotently(intake, LAB_KEY);
+      intake.code = 'caller mutation while waiting';
+      let waiting = false;
+      for (let attempt = 0; attempt < 100; attempt++) {
+        waiting = (
+          await db.query(`SELECT EXISTS (
+          SELECT 1 FROM pg_locks held JOIN pg_locks waiter
+            ON held.locktype=waiter.locktype AND held.database=waiter.database
+              AND held.classid=waiter.classid AND held.objid=waiter.objid
+              AND held.objsubid=waiter.objsubid
+          WHERE held.pid=pg_backend_pid() AND held.locktype='advisory'
+            AND held.granted AND NOT waiter.granted) AS waiting`)
+        ).rows[0].waiting;
+        if (waiting) break;
+        await new Promise((resolve) => setTimeout(resolve, 5));
+      }
+      assert.equal(
+        waiting,
+        true,
+        'Intake must actually wait on this test scope lock',
+      );
+      now += 1000;
+      await db.query('COMMIT');
+      const result = await pending;
+      assert.equal(result.kind, 'created');
+      assert.equal(result.submission.submittedAt, LAB_NOW);
+      assert.equal(result.submission.code, 'x');
+      assert.equal(
+        (
+          await f.store.submitIdempotently(
+            { labId: lab.id, studentId: 'student-1', code: 'other' },
+            randomUUID(),
+          )
+        ).kind,
+        'not-open',
+      );
+    } finally {
+      await db.query('ROLLBACK');
+      await db.end();
+    }
+  });
+
+  test('postgres labs: idempotency survives reopening and summary never loads test tables', async (t) => {
+    const schema = `${run}_lab_reopen`;
+    const options = { seed: createStoreSeed(), clock: () => new Date(LAB_NOW) };
+    const first = makeFixture(options, schema);
+    const created = await first.store.createLabIdempotently(newLab(), LAB_KEY);
+    assert.equal(created.kind, 'created');
+    await first.store.close();
+    const second = makeFixture({ clock: options.clock }, schema);
+    const replay = await second.store.createLabIdempotently(newLab(), LAB_KEY);
+    assert.equal(replay.kind, 'replayed');
+    assert.equal(replay.lab.id, created.lab.id);
+    const db = createPool(url, schema);
+    t.after(() => db.end());
+    await db.query('ALTER TABLE lab_tests RENAME TO hidden_lab_tests');
+    try {
+      const summaries = await second.store.listLabSummariesForClass('class-1');
+      assert.equal(summaries[0].id, created.lab.id);
+      assert.equal('tests' in summaries[0], false);
+    } finally {
+      await db.query('ALTER TABLE hidden_lab_tests RENAME TO lab_tests');
+    }
+  });
+
+  test('postgres labs: failure persisting idempotency rolls back all lab data', async (t) => {
+    const fixture = makeFixture({
+      seed: createStoreSeed(),
+      clock: () => new Date(LAB_NOW),
+    });
+    await fixture.ready;
+    const db = createPool(url, schemas.at(-1));
+    t.after(() => db.end());
+    const before = (await db.query('SELECT count(*)::int AS n FROM labs'))
+      .rows[0].n;
+    await db.query(
+      `CREATE FUNCTION reject_lab_request() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'test-only idempotency failure'; END; $$`,
+    );
+    await db.query(
+      'CREATE TRIGGER fail_lab_request BEFORE INSERT ON lab_creation_requests FOR EACH ROW EXECUTE FUNCTION reject_lab_request()',
+    );
+    const input = newLab({
+      constraints: [{ id: 'c1', text: 'Use local variables.', deduction: 1 }],
+    });
+    await assert.rejects(
+      fixture.store.createLabIdempotently(input, LAB_KEY),
+      /test-only idempotency failure/,
+    );
+    assert.equal(
+      (await db.query('SELECT count(*)::int AS n FROM labs')).rows[0].n,
+      before,
+    );
+    assert.equal(
+      (await db.query('SELECT count(*)::int AS n FROM lab_creation_requests'))
+        .rows[0].n,
+      0,
+    );
+    await db.query('DROP TRIGGER fail_lab_request ON lab_creation_requests');
+    assert.equal(
+      (await fixture.store.createLabIdempotently(input, LAB_KEY)).kind,
+      'created',
+    );
+  });
 
   test('postgres auth: invalid text returns 400 and valid Unicode still logs in', async (t) => {
     const fixture = makeFixture({});
@@ -99,8 +338,8 @@ if (!url) {
     );
     const valid = {
       ...input,
-      displayName: 'Nguyễn Văn 😀',
-      password: 'Mật khẩu 😀 dành cho test',
+      displayName: 'Nguyá»…n VÄƒn ðŸ˜€',
+      password: 'Máº­t kháº©u ðŸ˜€ dÃ nh cho test',
     };
     assert.equal(
       (
@@ -361,6 +600,8 @@ if (!url) {
         '0001_init',
         '0002_model_call_metrics',
         '0003_normalized_username',
+        '0004_lab_creation_idempotency',
+        '0005_submission_intake',
       ];
       const applied = await db.query(
         'SELECT id FROM schema_migrations ORDER BY id',
@@ -373,7 +614,7 @@ if (!url) {
       await reopened.ready;
       assert.equal(
         (await db.query('SELECT * FROM schema_migrations')).rowCount,
-        3,
+        5,
       );
     } finally {
       await db.end();
@@ -397,18 +638,46 @@ if (!url) {
       await db.query("INSERT INTO schema_migrations (id) VALUES ('0001_init')");
       await db.query(`INSERT INTO users (id, username, display_name, role, password_hash)
         VALUES ('existing-user', 'existing', 'Existing User', 'student', 'fake-hash')`);
+      await db.query(
+        "INSERT INTO classes (id,name) VALUES ('existing-class','Existing Class')",
+      );
+      await db.query(`INSERT INTO labs
+        (id,class_id,title,statement,opens_at,deadline,cpu_time_ms,memory_mb,created_by,created_at)
+        VALUES ('existing-lab','existing-class','Old lab','Preserve this statement',
+          '2026-01-01T00:00:00Z','2026-02-01T00:00:00Z',1000,256,'existing-user','2026-01-01T00:00:00Z')`);
+      await db.query(
+        "INSERT INTO lab_tests VALUES ('existing-lab','t1',0,'2 3','5')",
+      );
+      await db.query(
+        "INSERT INTO lab_constraints VALUES ('existing-lab','c1',0,'No globals',2)",
+      );
+      const readOldRows = async () => {
+        const rows = [];
+        for (const table of ['labs', 'lab_tests', 'lab_constraints'])
+          rows.push((await db.query(`SELECT * FROM ${table}`)).rows);
+        return rows;
+      };
+      const before = await readOldRows();
       const fixture = makeFixture({}, schema);
       await fixture.ready;
       assert.equal(
         (await fixture.store.getUser('existing-user')).username,
         'existing',
       );
+      const after = await readOldRows();
+      assert.deepEqual(after, before);
       const applied = await db.query(
         'SELECT id FROM schema_migrations ORDER BY id',
       );
       assert.deepEqual(
         applied.rows.map((row) => row.id),
-        ['0001_init', '0002_model_call_metrics', '0003_normalized_username'],
+        [
+          '0001_init',
+          '0002_model_call_metrics',
+          '0003_normalized_username',
+          '0004_lab_creation_idempotency',
+          '0005_submission_intake',
+        ],
       );
     } finally {
       await db.end();

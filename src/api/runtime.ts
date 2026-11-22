@@ -11,7 +11,12 @@ export async function createRuntimeApp(
   const fixture = factory({ connectionString: loadDatabaseUrl(env) });
   try {
     await fixture.ready;
-    const app = createApp({ logger: true, auth: { store: fixture.store } });
+    const app = createApp({
+      logger: true,
+      auth: { store: fixture.store },
+      labs: { store: fixture.store },
+      submissions: { store: fixture.store },
+    });
     app.addHook('onClose', () => fixture.store.close());
     return app;
   } catch {

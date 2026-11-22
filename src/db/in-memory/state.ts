@@ -57,7 +57,15 @@ export interface State {
   memberships: Map<string, ClassMembership>;
   sessions: Map<string, { userId: string; expiresAt: string }>;
   labs: Map<string, Lab>;
+  labCreationRequests: Map<
+    string,
+    { fingerprint: string; labId: string; expiresAt: number }
+  >;
   submissions: Map<string, StoredSubmission>;
+  submissionRequests: Map<
+    string,
+    { fingerprint: string; submissionId: string; expiresAt: number }
+  >;
   jobs: Map<string, StoredJob>;
   verdicts: Map<string, StoredVerdict>;
   verdictIdsByPair: Map<string, string>;
@@ -115,7 +123,9 @@ export function emptyState(): State {
     memberships: new Map(),
     sessions: new Map(),
     labs: new Map(),
+    labCreationRequests: new Map(),
     submissions: new Map(),
+    submissionRequests: new Map(),
     jobs: new Map(),
     verdicts: new Map(),
     verdictIdsByPair: new Map(),
