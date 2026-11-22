@@ -54,7 +54,7 @@ export type EvaluateSemanticConstraintsFn = (
 ) => Promise<SemanticEvaluationOutput>;
 
 export interface DefaultEvaluatorOptions {
-  readonly judgeSubmission?: JudgeSubmissionFn | undefined;
+  readonly judgeSubmission: JudgeSubmissionFn;
   readonly evaluateSemanticConstraints?:
     EvaluateSemanticConstraintsFn | undefined;
 }
@@ -70,6 +70,8 @@ export interface QueueWorkerOptions {
   readonly judgeSubmission?: JudgeSubmissionFn | undefined;
   readonly evaluateSemanticConstraints?:
     EvaluateSemanticConstraintsFn | undefined;
+  readonly modelCallJournalPath?: string | undefined;
+  readonly modelCallRetryAttempts?: number | undefined;
   readonly onError?: ((error: unknown) => void) | undefined;
 }
 
@@ -83,6 +85,7 @@ export type WorkerStepResult =
       readonly outcome: 'completed' | 'failed' | 'stale_lease';
       readonly judgeVerdict?: JudgeVerdict | undefined;
       readonly verdictCount?: number | undefined;
+      readonly pendingModelCallCount?: number | undefined;
       readonly error?: string | undefined;
     };
 
@@ -94,6 +97,11 @@ export interface QueueWorker {
   drain(options?: {
     readonly maxJobs?: number | undefined;
   }): Promise<WorkerStepResult[]>;
+  flushPendingModelCalls(): Promise<{
+    readonly flushed: number;
+    readonly remaining: number;
+  }>;
+  pendingModelCallCount(): number;
   start(): void;
   stop(): Promise<void>;
   isRunning(): boolean;

@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
 import {
   createInMemoryStore,
@@ -6,9 +9,9 @@ import {
   STORE_FIXTURE_OPENS_AT,
 } from '../../dist/db/index.js';
 import {
-  createDefaultJudgeSubmission,
   createDefaultSubmissionEvaluator,
   createQueueWorker,
+  createSimulatedJudgeSubmission,
 } from '../../dist/worker/index.js';
 
 const OPEN_MS = Date.parse(STORE_FIXTURE_OPENS_AT) + 60_000;
@@ -64,6 +67,34 @@ function makePassSemanticEvaluator(reason = 'semantic ok') {
   };
 }
 
+test('fail-closed: default worker and evaluator reject missing judge adapter and never write simulated AC', async () => {
+  const { clock } = makeClock();
+  const { store } = createInMemoryStore({
+    seed: createStoreSeed(),
+    clock,
+  });
+
+  const invalidSubmission = await store.submit({
+    labId: 'lab-sort',
+    studentId: 'student-1',
+    code: 'this is deliberately not valid C++',
+  });
+
+  assert.throws(
+    () => createQueueWorker({ store }),
+    /requires an explicit evaluator or judgeSubmission/,
+  );
+  assert.throws(
+    () => createDefaultSubmissionEvaluator({}),
+    /requires an explicit judgeSubmission/,
+  );
+
+  const saved = await store.getSubmission(invalidSubmission.id);
+  assert.equal(saved?.status, 'queued');
+  assert.equal(saved?.judgeResult, null);
+  assert.equal((await store.listVerdicts(invalidSubmission.id)).length, 0);
+});
+
 test('Rule Q1: stop worker, submit, start worker and restart worker stores exactly one verdict set', async () => {
   const { clock, advance } = makeClock();
   const { store } = createInMemoryStore({
@@ -76,6 +107,7 @@ test('Rule Q1: stop worker, submit, start worker and restart worker stores exact
     store,
     workerId: 'worker-stop',
     pollIntervalMs: 10,
+    judgeSubmission: createSimulatedJudgeSubmission('AC'),
   });
   worker1.start();
   await worker1.stop();
@@ -95,6 +127,7 @@ test('Rule Q1: stop worker, submit, start worker and restart worker stores exact
   const worker2 = createQueueWorker({
     store,
     workerId: 'worker-start',
+    judgeSubmission: createSimulatedJudgeSubmission('AC'),
   });
   const drained = await worker2.drain();
   assert.equal(drained.length, 1);
@@ -131,6 +164,7 @@ test('Rule Q1: stop worker, submit, start worker and restart worker stores exact
   const worker3 = createQueueWorker({
     store,
     workerId: 'worker-restart',
+    judgeSubmission: createSimulatedJudgeSubmission('AC'),
   });
   assert.deepEqual(await worker3.drain(), []);
   assert.equal((await store.listVerdicts(submission.id)).length, 2);
@@ -219,6 +253,7 @@ test('lease expiry lets a new worker recover cleanly and blocks stale worker com
     store,
     workerId: 'worker-recovery',
     leaseMs: 5_000,
+    judgeSubmission: createSimulatedJudgeSubmission('AC'),
     ...makePassSemanticEvaluator('recovered-pass'),
   });
   assert.deepEqual(await recoveryWorker.runOnce(), { processed: false });
@@ -261,6 +296,10 @@ test('transient failure retries via fail() until maxAttempts and requeue recover
     code: 'int main() { return 0; }\n',
   });
 
+  const simulatedEvaluator = createDefaultSubmissionEvaluator({
+    judgeSubmission: createSimulatedJudgeSubmission('AC'),
+  });
+
   let callCount = 0;
   const retryingWorker = createQueueWorker({
     store,
@@ -271,7 +310,7 @@ test('transient failure retries via fail() until maxAttempts and requeue recover
       if (callCount <= 2) {
         throw new Error(`transient failure #${callCount}`);
       }
-      return createDefaultSubmissionEvaluator()(ctx);
+      return simulatedEvaluator(ctx);
     },
   });
 
@@ -310,7 +349,7 @@ test('transient failure retries via fail() until maxAttempts and requeue recover
       if (shouldFail) {
         throw new Error('sandbox down');
       }
-      return createDefaultSubmissionEvaluator()(ctx);
+      return simulatedEvaluator(ctx);
     },
   });
 
@@ -345,6 +384,11 @@ test('lease renewal keeps long-running jobs alive past initial leaseMs and signa
     store,
     workerId: 'worker-peer',
     leaseMs: 5_000,
+    judgeSubmission: createSimulatedJudgeSubmission('AC'),
+  });
+
+  const simulatedEvaluator = createDefaultSubmissionEvaluator({
+    judgeSubmission: createSimulatedJudgeSubmission('AC'),
   });
 
   const longWorker = createQueueWorker({
@@ -360,7 +404,7 @@ test('lease renewal keeps long-running jobs alive past initial leaseMs and signa
         // Even after 12,000ms total (> 5,000ms initial lease), peer cannot claim the job.
         assert.deepEqual(await peer.runOnce(), { processed: false });
       }
-      return createDefaultSubmissionEvaluator()(ctx);
+      return simulatedEvaluator(ctx);
     },
   });
 
@@ -428,6 +472,7 @@ test('hard rules resolve ban-list before semantic evaluator and non-AC skips rev
   const worker = createQueueWorker({
     store,
     workerId: 'worker-rules',
+    judgeSubmission: createSimulatedJudgeSubmission('AC'),
     evaluateSemanticConstraints: semantic.evaluateSemanticConstraints,
   });
 
@@ -456,7 +501,7 @@ test('hard rules resolve ban-list before semantic evaluator and non-AC skips rev
   const waWorker = createQueueWorker({
     store,
     workerId: 'worker-wa',
-    judgeSubmission: createDefaultJudgeSubmission('WA'),
+    judgeSubmission: createSimulatedJudgeSubmission('WA'),
     evaluateSemanticConstraints: waSemantic.evaluateSemanticConstraints,
   });
   const resWa = await waWorker.runOnce();
@@ -491,6 +536,7 @@ test('hard rules resolve ban-list before semantic evaluator and non-AC skips rev
   const acWorker = createQueueWorker({
     store,
     workerId: 'worker-ban-only',
+    judgeSubmission: createSimulatedJudgeSubmission('AC'),
     evaluateSemanticConstraints: acNoModel.evaluateSemanticConstraints,
   });
   const resBanAc = await acWorker.runOnce();
@@ -498,6 +544,107 @@ test('hard rules resolve ban-list before semantic evaluator and non-AC skips rev
   assert.equal(resBanAc.judgeVerdict, 'AC');
   assert.equal(acNoModel.calls.length, 0);
   assert.equal((await store.listVerdicts(subBanOnly.id)).length, 1);
+});
+
+test('transient recordModelCall failure after complete never calls fail/stale_lease and flushes without re-judging', async () => {
+  const { clock } = makeClock();
+  const { store } = createInMemoryStore({
+    seed: createStoreSeed(),
+    clock,
+  });
+  const submission = await store.submit({
+    labId: 'lab-sort',
+    studentId: 'student-1',
+    code: 'int main() { return 0; }\n',
+  });
+
+  let failCalls = 0;
+  let recordAttempts = 0;
+  let recordFailuresRemaining = 2;
+  const wrappedStore = {
+    claim: store.claim.bind(store),
+    extendLease: store.extendLease.bind(store),
+    complete: store.complete.bind(store),
+    getSubmission: store.getSubmission.bind(store),
+    getLab: store.getLab.bind(store),
+    fail: async (input) => {
+      failCalls += 1;
+      return store.fail(input);
+    },
+    recordModelCall: async (log) => {
+      recordAttempts += 1;
+      if (recordFailuresRemaining > 0) {
+        recordFailuresRemaining -= 1;
+        throw new Error('temporary model_calls write failure');
+      }
+      return store.recordModelCall(log);
+    },
+  };
+
+  let evaluationRuns = 0;
+  const errors = [];
+  const tempDir = mkdtempSync(path.join(os.tmpdir(), 'leetkob-t06-journal-'));
+  const journalPath = path.join(tempDir, 'pending-model-calls.json');
+
+  try {
+    const semantic = makePassSemanticEvaluator('merge sort implemented');
+    const simulated = createSimulatedJudgeSubmission('AC');
+    const worker1 = createQueueWorker({
+      store: wrappedStore,
+      workerId: 'worker-log-retry',
+      modelCallJournalPath: journalPath,
+      modelCallRetryAttempts: 1,
+      judgeSubmission: async (ctx) => {
+        evaluationRuns += 1;
+        return simulated(ctx);
+      },
+      evaluateSemanticConstraints: semantic.evaluateSemanticConstraints,
+      onError: (err) => errors.push(err),
+    });
+
+    const step1 = await worker1.runOnce();
+    assert.equal(step1.processed, true);
+    assert.equal(step1.outcome, 'completed');
+    assert.equal(step1.judgeVerdict, 'AC');
+    assert.equal(step1.verdictCount, 2);
+    assert.equal(step1.pendingModelCallCount, 1);
+    assert.equal(failCalls, 0);
+    assert.equal(evaluationRuns, 1);
+    assert.equal((await store.getSubmission(submission.id))?.status, 'judged');
+    assert.equal((await store.listVerdicts(submission.id)).length, 2);
+    assert.equal((await store.listModelCalls(submission.id)).length, 0);
+    assert.equal(existsSync(journalPath), true);
+
+    // Second failure still keeps pending entry in journal without re-running evaluation.
+    const step2 = await worker1.runOnce();
+    assert.deepEqual(step2, { processed: false });
+    assert.equal(worker1.pendingModelCallCount(), 1);
+    assert.equal(evaluationRuns, 1);
+    assert.equal(failCalls, 0);
+    assert.equal(existsSync(journalPath), true);
+
+    // New worker instance picks up durable journal and flushes cleanly once DB write recovers.
+    const worker2 = createQueueWorker({
+      store: wrappedStore,
+      workerId: 'worker-log-recover',
+      modelCallJournalPath: journalPath,
+      judgeSubmission: createSimulatedJudgeSubmission('AC'),
+    });
+    assert.equal(worker2.pendingModelCallCount(), 1);
+    const flushRes = await worker2.flushPendingModelCalls();
+    assert.deepEqual(flushRes, { flushed: 1, remaining: 0 });
+    assert.equal(recordAttempts, 3);
+    assert.equal(errors.length, 2);
+    assert.equal(evaluationRuns, 1);
+    assert.equal(failCalls, 0);
+    assert.equal(existsSync(journalPath), false);
+
+    const savedLogs = await store.listModelCalls(submission.id);
+    assert.equal(savedLogs.length, 1);
+    assert.equal(savedLogs[0]?.requestId, `req-${submission.id}`);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
 });
 
 test('background start/stop workers drain concurrent submissions without duplicate verdicts', async () => {
@@ -521,11 +668,13 @@ test('background start/stop workers drain concurrent submissions without duplica
     store,
     workerId: 'bg-1',
     pollIntervalMs: 10,
+    judgeSubmission: createSimulatedJudgeSubmission('AC'),
   });
   const w2 = createQueueWorker({
     store,
     workerId: 'bg-2',
     pollIntervalMs: 10,
+    judgeSubmission: createSimulatedJudgeSubmission('AC'),
   });
 
   w1.start();
@@ -555,24 +704,52 @@ test('background start/stop workers drain concurrent submissions without duplica
 
 test('createQueueWorker and drain validate invalid options', async () => {
   const { store } = createInMemoryStore({ seed: createStoreSeed() });
+  const judgeSubmission = createSimulatedJudgeSubmission('AC');
   assert.throws(
-    () => createQueueWorker({ store, workerId: 'bad worker!' }),
+    () =>
+      createQueueWorker({
+        store,
+        workerId: 'bad worker!',
+        judgeSubmission,
+      }),
     /workerId/,
   );
-  assert.throws(() => createQueueWorker({ store, leaseMs: 0 }), /leaseMs/);
   assert.throws(
-    () => createQueueWorker({ store, maxAttempts: 1.5 }),
+    () => createQueueWorker({ store, leaseMs: 0, judgeSubmission }),
+    /leaseMs/,
+  );
+  assert.throws(
+    () => createQueueWorker({ store, maxAttempts: 1.5, judgeSubmission }),
     /maxAttempts/,
   );
   assert.throws(
-    () => createQueueWorker({ store, pollIntervalMs: 0 }),
+    () => createQueueWorker({ store, pollIntervalMs: 0, judgeSubmission }),
     /pollIntervalMs/,
   );
   assert.throws(
-    () => createQueueWorker({ store, heartbeatIntervalMs: -1 }),
+    () =>
+      createQueueWorker({ store, heartbeatIntervalMs: -1, judgeSubmission }),
     /heartbeatIntervalMs/,
   );
+  assert.throws(
+    () =>
+      createQueueWorker({
+        store,
+        modelCallRetryAttempts: 0,
+        judgeSubmission,
+      }),
+    /modelCallRetryAttempts/,
+  );
+  assert.throws(
+    () =>
+      createQueueWorker({
+        store,
+        modelCallJournalPath: '   ',
+        judgeSubmission,
+      }),
+    /modelCallJournalPath/,
+  );
 
-  const worker = createQueueWorker({ store });
+  const worker = createQueueWorker({ store, judgeSubmission });
   await assert.rejects(() => worker.drain({ maxJobs: 0 }), /maxJobs/);
 });

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { after, test } from 'node:test';
 import pg from 'pg';
 import { createStoreSeed } from '../../dist/db/index.js';
@@ -44,13 +44,15 @@ if (!url) {
     await admin.end();
   });
 
-  function spawnWorkerProcess(extraEnv) {
+  function getWorkerScriptPath() {
     // Use file path resolved from URL on all platforms (strip leading slash before drive letter on Windows).
-    const scriptPath =
-      process.platform === 'win32' && /^\/[A-Za-z]:/.test(workerEntry)
-        ? workerEntry.slice(1)
-        : workerEntry;
-    return spawnSync(process.execPath, [scriptPath], {
+    return process.platform === 'win32' && /^\/[A-Za-z]:/.test(workerEntry)
+      ? workerEntry.slice(1)
+      : workerEntry;
+  }
+
+  function spawnWorkerProcess(extraEnv) {
+    return spawnSync(process.execPath, [getWorkerScriptPath()], {
       env: {
         ...process.env,
         DATABASE_URL: url,
@@ -61,8 +63,41 @@ if (!url) {
     });
   }
 
+  const SIMULATED_AC_ENV = {
+    WORKER_ALLOW_SIMULATED_JUDGE: '1',
+    WORKER_SIMULATE_JUDGE_VERDICT: 'AC',
+  };
+
   const OPEN = '2026-11-09T10:00:00.000Z';
   const at = (iso) => () => new Date(iso);
+
+  test('fail-closed: default runtime worker process refuses to run without judge adapter and leaves submission queued', async () => {
+    const { schema, fixture } = makeFixture({
+      seed: createStoreSeed(),
+      clock: at(OPEN),
+    });
+    await fixture.ready;
+
+    const invalidSub = await fixture.store.submit({
+      labId: 'lab-sort',
+      studentId: 'student-1',
+      code: 'this is deliberately not valid C++',
+    });
+
+    const proc = spawnWorkerProcess({
+      DATABASE_SCHEMA: schema,
+      WORKER_ID: 'proc-fail-closed',
+      WORKER_EXIT_WHEN_IDLE: '1',
+      WORKER_CLOCK_ISO: OPEN,
+    });
+    assert.notEqual(proc.status, 0);
+    assert.match(proc.stderr, /requires a real judge adapter/i);
+
+    const saved = await fixture.store.getSubmission(invalidSub.id);
+    assert.equal(saved?.status, 'queued');
+    assert.equal(saved?.judgeResult, null);
+    assert.equal((await fixture.store.listVerdicts(invalidSub.id)).length, 0);
+  });
 
   test('separate worker process: stop, submit, start and restart stores exactly one verdict set in Postgres', async () => {
     const { schema, fixture } = makeFixture({
@@ -77,6 +112,7 @@ if (!url) {
       WORKER_ID: 'proc-stop',
       WORKER_EXIT_WHEN_IDLE: '1',
       WORKER_CLOCK_ISO: OPEN,
+      ...SIMULATED_AC_ENV,
     });
     assert.equal(w1.status, 0, w1.stderr);
 
@@ -106,6 +142,7 @@ if (!url) {
       WORKER_ID: 'proc-start',
       WORKER_EXIT_WHEN_IDLE: '1',
       WORKER_CLOCK_ISO: '2026-11-09T10:00:05.000Z',
+      ...SIMULATED_AC_ENV,
     });
     assert.equal(w2.status, 0, w2.stderr);
 
@@ -137,6 +174,7 @@ if (!url) {
         WORKER_ID: 'proc-restart',
         WORKER_EXIT_WHEN_IDLE: '1',
         WORKER_CLOCK_ISO: '2026-11-09T10:00:10.000Z',
+        ...SIMULATED_AC_ENV,
       });
       assert.equal(w3.status, 0, w3.stderr);
 
@@ -154,6 +192,82 @@ if (!url) {
       assert.equal(jobsRes.rows[0]?.attempts, 1);
     } finally {
       await db.end();
+    }
+  });
+
+  test('separate worker process stays alive across empty-queue idle timeout and processes later submission', async () => {
+    const { schema, fixture } = makeFixture({
+      seed: createStoreSeed(),
+      clock: at(OPEN),
+    });
+    await fixture.ready;
+
+    // Poll interval (1800ms) is longer than pg.Pool's idleTimeoutMillis (1000ms).
+    const daemon = spawn(process.execPath, [getWorkerScriptPath()], {
+      env: {
+        ...process.env,
+        DATABASE_URL: url,
+        DATABASE_SCHEMA: schema,
+        WORKER_ID: 'proc-daemon',
+        WORKER_POLL_INTERVAL_MS: '1800',
+        WORKER_EXIT_WHEN_IDLE: '0',
+        WORKER_CLOCK_ISO: OPEN,
+        ...SIMULATED_AC_ENV,
+      },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    const stderrChunks = [];
+    daemon.stderr.on('data', (chunk) => stderrChunks.push(chunk));
+
+    try {
+      // Wait well past Postgres pool idleTimeoutMillis (1000ms) and one full poll cycle (1800ms).
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+      assert.equal(
+        daemon.exitCode,
+        null,
+        `Worker exited unexpectedly: ${Buffer.concat(stderrChunks).toString('utf8')}`,
+      );
+
+      // Submit a new job while the background daemon worker is idling.
+      const submission = await fixture.store.submit({
+        labId: 'lab-sort',
+        studentId: 'student-1',
+        code: 'int main() { return 0; }\n',
+      });
+
+      let saved;
+      for (let i = 0; i < 60; i += 1) {
+        saved = await fixture.store.getSubmission(submission.id);
+        if (saved?.status === 'judged') {
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 150));
+      }
+
+      assert.equal(
+        saved?.status,
+        'judged',
+        `Background worker did not claim submission within timeout; stderr=${Buffer.concat(stderrChunks).toString('utf8')}`,
+      );
+      assert.equal((await fixture.store.listVerdicts(submission.id)).length, 2);
+      assert.equal(daemon.exitCode, null);
+    } finally {
+      if (daemon.exitCode === null) {
+        const closed = new Promise((resolve) => {
+          daemon.once('close', resolve);
+        });
+        daemon.kill('SIGTERM');
+        const timeout = new Promise((resolve) => {
+          setTimeout(() => {
+            if (daemon.exitCode === null) {
+              daemon.kill('SIGKILL');
+            }
+            resolve();
+          }, 1500);
+        });
+        await Promise.race([closed, timeout]);
+      }
     }
   });
 
@@ -199,6 +313,7 @@ if (!url) {
       WORKER_MAX_ATTEMPTS: '3',
       WORKER_EXIT_WHEN_IDLE: '1',
       WORKER_CLOCK_ISO: '2026-11-09T10:00:15.000Z',
+      ...SIMULATED_AC_ENV,
     });
     assert.equal(early.status, 0, early.stderr);
     assert.equal(
@@ -214,6 +329,7 @@ if (!url) {
       WORKER_MAX_ATTEMPTS: '3',
       WORKER_EXIT_WHEN_IDLE: '1',
       WORKER_CLOCK_ISO: '2026-11-09T10:00:31.000Z',
+      ...SIMULATED_AC_ENV,
     });
     assert.equal(recovered.status, 0, recovered.stderr);
     assert.equal(
@@ -292,6 +408,7 @@ if (!url) {
       WORKER_MAX_ATTEMPTS: '3',
       WORKER_EXIT_WHEN_IDLE: '1',
       WORKER_CLOCK_ISO: '2026-11-09T10:00:05.000Z',
+      ...SIMULATED_AC_ENV,
     });
     assert.equal(wRecover.status, 0, wRecover.stderr);
     assert.equal(
@@ -311,6 +428,7 @@ if (!url) {
       WORKER_ID: 'proc-wa',
       WORKER_EXIT_WHEN_IDLE: '1',
       WORKER_CLOCK_ISO: '2026-11-09T10:00:10.000Z',
+      WORKER_ALLOW_SIMULATED_JUDGE: '1',
       WORKER_SIMULATE_JUDGE_VERDICT: 'WA',
     });
     assert.equal(wWa.status, 0, wWa.stderr);

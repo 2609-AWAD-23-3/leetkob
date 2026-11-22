@@ -2,9 +2,9 @@ import { writeSync } from 'node:fs';
 import { createPostgresStore } from '../db/postgres/index.js';
 import type { JudgeVerdict } from '../shared/domain/index.js';
 import {
-  createDefaultJudgeSubmission,
   createDefaultSubmissionEvaluator,
   createQueueWorker,
+  createSimulatedJudgeSubmission,
   DEFAULT_WORKER_LEASE_MS,
   DEFAULT_WORKER_MAX_ATTEMPTS,
   DEFAULT_WORKER_POLL_INTERVAL_MS,
@@ -30,10 +30,12 @@ export interface WorkerProcessConfig {
   readonly maxJobs?: number | undefined;
   readonly exitWhenIdle: boolean;
   readonly clockIso?: string | undefined;
+  readonly allowSimulatedJudge: boolean;
   readonly simulateCrashAfterClaim: boolean;
   readonly simulateFailError?: string | undefined;
-  readonly simulateJudgeVerdict: JudgeVerdict;
+  readonly simulateJudgeVerdict?: JudgeVerdict | undefined;
   readonly simulateEvalDelayMs?: number | undefined;
+  readonly modelCallJournalPath?: string | undefined;
 }
 
 export interface WorkerProcessRunResult {
@@ -93,21 +95,47 @@ export function loadWorkerProcessConfig(
     throw new TypeError('WORKER_CLOCK_ISO must be a valid ISO timestamp');
   }
 
+  const allowSimulatedJudge =
+    env.WORKER_ALLOW_SIMULATED_JUDGE === '1' ||
+    env.WORKER_ALLOW_SIMULATED_JUDGE === 'true';
   const simulateCrashAfterClaim =
     env.WORKER_SIMULATE_CRASH_AFTER_CLAIM === '1' ||
     env.WORKER_SIMULATE_CRASH_AFTER_CLAIM === 'true';
   const simulateFailError = env.WORKER_SIMULATE_FAIL_ERROR?.trim() || undefined;
-  const simulateJudgeVerdictRaw = (env.WORKER_SIMULATE_JUDGE_VERDICT?.trim() ||
-    'AC') as JudgeVerdict;
-  if (!SUPPORTED_VERDICTS.has(simulateJudgeVerdictRaw)) {
-    throw new TypeError(
-      'WORKER_SIMULATE_JUDGE_VERDICT must be one of AC, WA, TLE, MLE, RE, CE',
+
+  const rawSimulateVerdict = env.WORKER_SIMULATE_JUDGE_VERDICT?.trim();
+  let simulateJudgeVerdict: JudgeVerdict | undefined;
+  if (rawSimulateVerdict !== undefined && rawSimulateVerdict !== '') {
+    const candidate = rawSimulateVerdict as JudgeVerdict;
+    if (!SUPPORTED_VERDICTS.has(candidate)) {
+      throw new TypeError(
+        'WORKER_SIMULATE_JUDGE_VERDICT must be one of AC, WA, TLE, MLE, RE, CE',
+      );
+    }
+    if (!allowSimulatedJudge) {
+      throw new Error(
+        'WORKER_SIMULATE_JUDGE_VERDICT requires WORKER_ALLOW_SIMULATED_JUDGE=1 (explicit test simulation mode)',
+      );
+    }
+    simulateJudgeVerdict = candidate;
+  }
+
+  if (
+    !simulateCrashAfterClaim &&
+    simulateFailError === undefined &&
+    (!allowSimulatedJudge || simulateJudgeVerdict === undefined)
+  ) {
+    throw new Error(
+      'Queue worker requires a real judge adapter (wired in PA03-T11); refusing to start with simulated AC. For tests, set WORKER_ALLOW_SIMULATED_JUDGE=1 and WORKER_SIMULATE_JUDGE_VERDICT=<AC|WA|TLE|MLE|RE|CE>.',
     );
   }
+
   const simulateEvalDelayMs = parseOptionalPositiveInt(
     env.WORKER_SIMULATE_EVAL_DELAY_MS,
     'WORKER_SIMULATE_EVAL_DELAY_MS',
   );
+  const modelCallJournalPath =
+    env.WORKER_MODEL_CALL_JOURNAL_PATH?.trim() || undefined;
 
   return {
     connectionString,
@@ -119,19 +147,26 @@ export function loadWorkerProcessConfig(
     maxJobs,
     exitWhenIdle,
     clockIso,
+    allowSimulatedJudge,
     simulateCrashAfterClaim,
     simulateFailError,
-    simulateJudgeVerdict: simulateJudgeVerdictRaw,
+    simulateJudgeVerdict,
     simulateEvalDelayMs,
+    modelCallJournalPath,
   };
 }
 
 function buildProcessEvaluator(
   config: WorkerProcessConfig,
 ): SubmissionEvaluator {
-  const defaultEvaluator = createDefaultSubmissionEvaluator({
-    judgeSubmission: createDefaultJudgeSubmission(config.simulateJudgeVerdict),
-  });
+  const defaultEvaluator =
+    config.allowSimulatedJudge && config.simulateJudgeVerdict !== undefined
+      ? createDefaultSubmissionEvaluator({
+          judgeSubmission: createSimulatedJudgeSubmission(
+            config.simulateJudgeVerdict,
+          ),
+        })
+      : null;
 
   return async (context) => {
     if (config.simulateEvalDelayMs !== undefined) {
@@ -157,6 +192,12 @@ function buildProcessEvaluator(
 
     if (config.simulateFailError !== undefined) {
       throw new Error(config.simulateFailError);
+    }
+
+    if (!defaultEvaluator) {
+      throw new Error(
+        'Queue worker requires a real judge adapter; simulated judging is disabled',
+      );
     }
 
     return defaultEvaluator(context);
@@ -188,6 +229,7 @@ export async function runWorkerProcess(
       leaseMs: config.leaseMs,
       maxAttempts: config.maxAttempts,
       pollIntervalMs: config.pollIntervalMs,
+      modelCallJournalPath: config.modelCallJournalPath,
       evaluator: buildProcessEvaluator(config),
       onError: (error) => {
         console.error('[worker] error:', error);
