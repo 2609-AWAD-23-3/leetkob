@@ -3,6 +3,7 @@ export {
   DEFAULT_MAX_OUTPUT_TOKENS,
   DEFAULT_MODEL_TIMEOUT_MS,
   MAX_MODEL_TIMEOUT_MS,
+  MODEL_MAX_RETRIES,
   readModelConfig,
 } from './client.js';
 export type { AnthropicModelClientOptions, ModelConfig } from './client.js';
@@ -15,6 +16,7 @@ export {
 } from './cost.js';
 export type { LabCostAssumptions } from './cost.js';
 export {
+  isRetryableStatus,
   ModelConfigError,
   ModelProviderError,
   ModelTimeoutError,
@@ -25,6 +27,7 @@ export type { SemanticEvaluatorDeps } from './evaluate.js';
 export { buildPrompt, numberLines, SYSTEM_PROMPT } from './prompt.js';
 export type { BuiltPrompt, PromptInput } from './prompt.js';
 export {
+  hasUsableIdentity,
   IDENTITY_PLACEHOLDER,
   MIN_IDENTITY_LENGTH,
   redactIdentity,

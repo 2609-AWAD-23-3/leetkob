@@ -6,14 +6,18 @@ import type {
   UnsureCause,
 } from '../../shared/domain/index.js';
 import { computeCostUsd } from './cost.js';
-import { ModelProviderError, ModelTimeoutError } from './errors.js';
+import {
+  ModelConfigError,
+  ModelProviderError,
+  ModelTimeoutError,
+} from './errors.js';
 import { buildPrompt } from './prompt.js';
 import {
   buildResultSchema,
   parseModelOutput,
   type ParsedConstraintResult,
 } from './schema.js';
-import { sanitizeCode, splitLines } from './sanitize.js';
+import { hasUsableIdentity, sanitizeCode, splitLines } from './sanitize.js';
 import type {
   ModelClient,
   ModelCompletion,
@@ -128,6 +132,12 @@ export const createSemanticEvaluator = (
     if (context.signal.aborted) throw abortReason(context.signal);
 
     const identity = await deps.getIdentity(context.submission);
+    // Fail-closed: không che được danh tính thì không gửi prompt (tên thật sẽ lọt vào model).
+    if (!hasUsableIdentity(identity)) {
+      throw new ModelConfigError(
+        'getIdentity returned no usable student identity (an empty list or only strings shorter than the minimum length); refusing to build a prompt that cannot hide who wrote the code',
+      );
+    }
     const originalLines = splitLines(context.submission.code);
     const sanitized = sanitizeCode(context.submission.code, identity);
     const sanitizedLines = splitLines(sanitized);

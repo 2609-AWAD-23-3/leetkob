@@ -155,7 +155,13 @@ const stripMarks = (value: string): string =>
     .replaceAll('đ', 'd')
     .replaceAll('Đ', 'D');
 
-/** Các dạng viết của một chuỗi danh tính: nguyên bản, NFC/NFD, bỏ dấu, và bỏ khoảng trắng. */
+/** Cách nối các phần tên khi viết thành một identifier: `nguyenvanan`, `nguyen_van_an`, ... */
+const JOINERS = ['', '_', '-', '.'] as const;
+
+/**
+ * Các dạng viết của một chuỗi danh tính: nguyên bản, NFC/NFD, bỏ dấu, và nối các phần
+ * bằng "", "_", "-", ".".
+ */
 const identityVariants = (raw: string): string[] => {
   const base = raw.trim();
   if (base === '' || /[\r\n]/.test(base)) return [];
@@ -168,7 +174,7 @@ const identityVariants = (raw: string): string[] => {
   const variants = new Set<string>();
   for (const form of forms) {
     variants.add(form);
-    variants.add(form.replace(/\s+/g, ''));
+    for (const joiner of JOINERS) variants.add(form.replace(/\s+/g, joiner));
   }
   return [...variants].filter((v) => v.length >= MIN_IDENTITY_LENGTH);
 };
@@ -294,6 +300,13 @@ const buildPattern = (variants: readonly string[]): RegExp =>
       .join('|'),
     'giu',
   );
+
+/**
+ * Có ít nhất một chuỗi danh tính dùng được (một dòng, từ `MIN_IDENTITY_LENGTH` ký tự).
+ * Evaluator dùng hàm này để không gửi prompt khi chưa che được danh tính (fail-closed).
+ */
+export const hasUsableIdentity = (identity: readonly string[]): boolean =>
+  identity.some((raw) => identityVariants(raw).length > 0);
 
 /** Thay mọi lần xuất hiện của danh tính (không phân biệt hoa thường) bằng placeholder trung tính. */
 export const redactIdentity = (

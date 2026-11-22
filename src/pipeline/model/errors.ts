@@ -10,6 +10,17 @@ export class ModelTimeoutError extends Error {
   override readonly name = 'ModelTimeoutError';
 }
 
+/**
+ * True cho lỗi kết nối (không có status), 408, 409, 429 và 5xx; false cho 400, 401, 403,
+ * 404 và các 4xx còn lại (retry cùng request vô ích).
+ */
+export const isRetryableStatus = (status: number | null): boolean =>
+  status === null ||
+  status === 408 ||
+  status === 409 ||
+  status === 429 ||
+  status >= 500;
+
 export interface ModelProviderErrorOptions {
   readonly status?: number | null | undefined;
   readonly retryable?: boolean | undefined;
@@ -32,9 +43,7 @@ export class ModelProviderError extends Error {
   constructor(message: string, options: ModelProviderErrorOptions = {}) {
     super(message);
     this.status = options.status ?? null;
-    this.retryable =
-      options.retryable ??
-      (this.status === null || this.status === 429 || this.status >= 500);
+    this.retryable = options.retryable ?? isRetryableStatus(this.status);
     this.requestId = options.requestId ?? null;
     this.modelCall = options.modelCall;
   }

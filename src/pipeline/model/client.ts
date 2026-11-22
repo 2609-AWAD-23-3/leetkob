@@ -16,6 +16,11 @@ import type {
 } from './types.js';
 
 export const DEFAULT_MODEL_TIMEOUT_MS = 30_000;
+/**
+ * SDK tự retry 429, 5xx, 408, 409 và lỗi kết nối tối đa chừng này lần. Tổng thời gian vẫn bị
+ * chặn bởi `timeoutMs` vì `AbortController` của client bao cả các lần retry.
+ */
+export const MODEL_MAX_RETRIES = 2;
 export const MAX_MODEL_TIMEOUT_MS = 300_000;
 /** Chỗ cho thinking (effort low) và JSON kết quả. */
 export const DEFAULT_MAX_OUTPUT_TOKENS = 4_000;
@@ -84,8 +89,9 @@ const joinText = (
  * `output_config.effort = "low"`, kết quả theo JSON schema. Không gửi `temperature`,
  * `top_p`, `top_k`, `thinking` hay assistant prefill (Haiku 5.5 trả lỗi 400 cho các tham số đó).
  *
- * Hạn cứng: timeout của SDK cộng `AbortController` riêng, `maxRetries: 0` để thời gian chờ
- * thực tế không bị nhân lên. Retry là việc của worker (job), không phải của client.
+ * Hạn cứng: `AbortController` và timer riêng của client bao toàn bộ cuộc gọi, kể cả các lần
+ * SDK retry (`maxRetries: 2`) và thời gian chờ giữa các lần; hết hạn là `ModelTimeoutError`.
+ * Lỗi còn lại sau retry được ném (`ModelProviderError.retryable`) để worker quyết định.
  */
 export const createAnthropicModelClient = (
   options: AnthropicModelClientOptions,
@@ -106,7 +112,7 @@ export const createAnthropicModelClient = (
   const sdk = new Anthropic({
     apiKey,
     baseURL: ANTHROPIC_BASE_URL,
-    maxRetries: 0,
+    maxRetries: MODEL_MAX_RETRIES,
     timeout: defaultTimeoutMs,
     ...(options.fetch === undefined ? {} : { fetch: options.fetch }),
   });
@@ -130,7 +136,16 @@ export const createAnthropicModelClient = (
       const started = Date.now();
 
       try {
-        const message = await sdk.messages.create(
+        // Hạn cứng ở mức client: dù SDK đang ngủ giữa hai lần retry, abort vẫn cắt được ngay.
+        const aborted = new Promise<never>((_resolve, reject) => {
+          controller.signal.addEventListener(
+            'abort',
+            () => reject(controller.signal.reason ?? new Error('aborted')),
+            { once: true },
+          );
+        });
+        aborted.catch(() => undefined);
+        const call = sdk.messages.create(
           {
             model,
             max_tokens: maxTokens,
@@ -141,8 +156,14 @@ export const createAnthropicModelClient = (
               format: { type: 'json_schema', schema: request.schema },
             },
           },
-          { signal: controller.signal, timeout: timeoutMs, maxRetries: 0 },
+          {
+            signal: controller.signal,
+            timeout: timeoutMs,
+            maxRetries: MODEL_MAX_RETRIES,
+          },
         );
+        call.catch(() => undefined);
+        const message = await Promise.race([call, aborted]);
         return {
           text: joinText(message.content),
           stopReason: message.stop_reason,
