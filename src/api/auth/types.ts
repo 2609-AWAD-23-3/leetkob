@@ -82,7 +82,7 @@ export interface ProblemDetails {
   readonly type: `https://leetkob.example/problems/${ProblemSlug}`;
   readonly title: string;
   readonly status:
-    400 | 401 | 403 | 404 | 405 | 409 | 413 | 415 | 422 | 429 | 500;
+    400 | 401 | 403 | 404 | 405 | 409 | 413 | 415 | 422 | 429 | 500 | 503;
   readonly detail: string;
   readonly errors?: readonly ValidationIssue[];
   readonly deadline?: string;

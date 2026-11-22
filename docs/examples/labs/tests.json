@@ -1,0 +1,6 @@
+{
+  "tests": [
+    { "id": "t1", "input": "2 3\n", "expectedOutput": "5\n" },
+    { "id": "t2", "input": "-5 5\n", "expectedOutput": "0\n" }
+  ]
+}

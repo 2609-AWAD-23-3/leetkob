@@ -37,6 +37,8 @@ export interface PostgresStoreFixture {
 }
 
 const TABLES = [
+  'submission_intake_requests',
+  'lab_creation_requests',
   'review_decisions',
   'model_calls',
   'verdicts',

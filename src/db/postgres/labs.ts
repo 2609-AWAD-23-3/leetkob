@@ -1,4 +1,10 @@
-import type { Lab } from '../../shared/domain/index.js';
+import type { Lab, LabSummary } from '../../shared/domain/index.js';
+import {
+  normalizeLabKey,
+  normalizeNewLab,
+  labFingerprint,
+  LAB_CREATION_TTL_MS,
+} from '../lab-creation.js';
 import type { LabStore } from '../lab-store.js';
 import {
   copyNewLab,
@@ -111,6 +117,119 @@ export async function insertLab(db: Queryable, lab: Lab): Promise<void> {
 
 export function createLabStore(ctx: PostgresContext): LabStore {
   return {
+    async getLabSummary(labId) {
+      await ctx.ready;
+      const { rows } = await ctx.pool.query<
+        Pick<
+          LabRow,
+          'id' | 'class_id' | 'title' | 'opens_at' | 'deadline' | 'created_at'
+        >
+      >(
+        'SELECT id,class_id,title,opens_at,deadline,created_at FROM labs WHERE id=$1',
+        [labId],
+      );
+      const row = rows[0];
+      return row
+        ? {
+            id: row.id,
+            classId: row.class_id,
+            title: row.title,
+            opensAt: isoRequired(row.opens_at),
+            deadline: isoRequired(row.deadline),
+            createdAt: isoRequired(row.created_at),
+          }
+        : undefined;
+    },
+    async createLabIdempotently(value, key) {
+      const input = normalizeNewLab(value);
+      const normalizedKey = normalizeLabKey(key);
+      const fingerprint = labFingerprint(input);
+      await ctx.ready;
+      return transaction(ctx.pool, async (client) => {
+        const scope = JSON.stringify([
+          't04-lab-create',
+          input.createdBy,
+          input.classId,
+          normalizedKey,
+        ]);
+        await client.query(
+          'SELECT pg_advisory_xact_lock(hashtextextended($1, 0))',
+          [scope],
+        );
+        const now = ctx.nowMs();
+        const args = [input.createdBy, input.classId, normalizedKey];
+        const { rows } = await client.query<{
+          fingerprint: string;
+          lab_id: string;
+          expires_at: Date;
+        }>(
+          'SELECT fingerprint, lab_id, expires_at FROM lab_creation_requests WHERE created_by=$1 AND class_id=$2 AND key=$3',
+          args,
+        );
+        const existing = rows[0];
+        if (existing && existing.expires_at.getTime() > now) {
+          if (existing.fingerprint !== fingerprint) return { kind: 'conflict' };
+          const lab = await getLab(client, existing.lab_id);
+          if (!lab) throw new Error('Missing idempotent lab');
+          return { kind: 'replayed', lab };
+        }
+        if (
+          Date.parse(input.deadline) <= now ||
+          Date.parse(input.opensAt ?? new Date(now).toISOString()) >=
+            Date.parse(input.deadline)
+        )
+          return { kind: 'invalid-time' };
+        const refs = await client.query(
+          'SELECT (SELECT count(*) FROM classes WHERE id=$1)::int AS classes, (SELECT count(*) FROM users WHERE id=$2)::int AS users',
+          [input.classId, input.createdBy],
+        );
+        if (!refs.rows[0].classes || !refs.rows[0].users)
+          throw new TypeError('Unknown lab class or creator');
+        const lab: Lab = {
+          id: ctx.newId(),
+          ...copyNewLab(input),
+          opensAt: input.opensAt ?? new Date(now).toISOString(),
+          createdAt: new Date(now).toISOString(),
+        };
+        if (existing)
+          await client.query(
+            'DELETE FROM lab_creation_requests WHERE created_by=$1 AND class_id=$2 AND key=$3',
+            args,
+          );
+        await insertLab(client, lab);
+        await client.query(
+          'INSERT INTO lab_creation_requests (created_by,class_id,key,fingerprint,lab_id,created_at,expires_at) VALUES ($1,$2,$3,$4,$5,$6,$7)',
+          [
+            ...args,
+            fingerprint,
+            lab.id,
+            lab.createdAt,
+            new Date(now + LAB_CREATION_TTL_MS).toISOString(),
+          ],
+        );
+        return { kind: 'created', lab };
+      });
+    },
+    async listLabSummariesForClass(classId) {
+      await ctx.ready;
+      const { rows } = await ctx.pool.query<
+        Pick<
+          LabRow,
+          'id' | 'class_id' | 'title' | 'opens_at' | 'deadline' | 'created_at'
+        >
+      >(
+        'SELECT id,class_id,title,opens_at,deadline,created_at FROM labs WHERE class_id=$1 ORDER BY created_at DESC,id COLLATE "C" ASC',
+        [classId],
+      );
+      return rows.map((row): LabSummary => ({
+        id: row.id,
+        classId: row.class_id,
+        title: row.title,
+        opensAt: isoRequired(row.opens_at),
+        deadline: isoRequired(row.deadline),
+        createdAt: isoRequired(row.created_at),
+      }));
+    },
     async createLab(input) {
       await ctx.ready;
       validateNewLab(input);

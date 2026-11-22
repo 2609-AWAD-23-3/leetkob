@@ -1,4 +1,9 @@
 import {
+  LAB_INPUT_LIMITS,
+  LabSizeError,
+  requireLabText,
+} from '../shared/lab-input.js';
+import {
   LAB_LIMIT_RANGES,
   MAX_SCORE,
   type Evidence,
@@ -258,8 +263,14 @@ export function validateNewLab(value: unknown): asserts value is NewLab {
   if (!isPlainObject(value)) throw new TypeError('lab must be an object');
   requireExactKeys(value, NEW_LAB_KEYS, 'lab', ['opensAt']);
   requireId(value.classId, 'lab.classId');
-  requireText(value.title, 'lab.title');
-  requireText(value.statement, 'lab.statement');
+  requireLabText(value.title, 'lab.title', LAB_INPUT_LIMITS.requestBytes);
+  if ([...value.title.trim()].length > LAB_INPUT_LIMITS.titleCodePoints)
+    throw new TypeError('lab.title exceeds 200 code points');
+  requireLabText(
+    value.statement,
+    'lab.statement',
+    LAB_INPUT_LIMITS.statementBytes,
+  );
   requireTimestamp(value.deadline, 'lab.deadline');
   if (value.opensAt !== undefined) {
     requireTimestamp(value.opensAt, 'lab.opensAt');
@@ -282,8 +293,13 @@ export function validateNewLab(value: unknown): asserts value is NewLab {
     'lab.limits.memoryMb',
   );
 
-  if (!Array.isArray(tests) || tests.length === 0)
+  if (
+    !Array.isArray(tests) ||
+    tests.length === 0 ||
+    tests.length > LAB_INPUT_LIMITS.tests
+  )
     throw new TypeError('lab.tests must be a nonempty array');
+  let totalTestBytes = 0;
   const testIds = new Set<string>();
   for (const test of tests as unknown[]) {
     if (!isPlainObject(test))
@@ -297,9 +313,28 @@ export function validateNewLab(value: unknown): asserts value is NewLab {
       typeof test.expectedOutput !== 'string'
     )
       throw new TypeError('test input and expectedOutput must be strings');
+    requireLabText(
+      test.input,
+      'test.input',
+      LAB_INPUT_LIMITS.testPartBytes,
+      true,
+    );
+    requireLabText(
+      test.expectedOutput,
+      'test.expectedOutput',
+      LAB_INPUT_LIMITS.testPartBytes,
+      true,
+    );
+    totalTestBytes +=
+      Buffer.byteLength(test.input) + Buffer.byteLength(test.expectedOutput);
+    if (totalTestBytes > LAB_INPUT_LIMITS.totalTestBytes)
+      throw new LabSizeError('Total test data exceeds 16 MiB');
   }
 
-  if (!Array.isArray(constraints))
+  if (
+    !Array.isArray(constraints) ||
+    constraints.length > LAB_INPUT_LIMITS.constraints
+  )
     throw new TypeError('lab.constraints must be an array');
   const constraintIds = new Set<string>();
   for (const constraint of constraints as unknown[]) {
@@ -314,7 +349,11 @@ export function validateNewLab(value: unknown): asserts value is NewLab {
     if (constraintIds.has(constraint.id))
       throw new TypeError('Duplicate constraint.id');
     constraintIds.add(constraint.id);
-    requireText(constraint.text, 'constraint.text');
+    requireLabText(
+      constraint.text,
+      'constraint.text',
+      LAB_INPUT_LIMITS.constraintBytes,
+    );
     if (
       typeof constraint.deduction !== 'number' ||
       !Number.isFinite(constraint.deduction) ||

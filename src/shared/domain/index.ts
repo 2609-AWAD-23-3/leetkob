@@ -11,6 +11,7 @@ export type {
   Lab,
   LabLimits,
   LabPhase,
+  LabSummary,
   NewLab,
   TestCase,
 } from './labs.js';
