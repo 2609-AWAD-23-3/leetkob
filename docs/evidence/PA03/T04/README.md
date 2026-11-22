@@ -15,6 +15,18 @@ Nguồn contract: [xác thực](../../../contract/auth.md), [lab](../../../contr
 
 Khai báo sử dụng AI: [AI-log T04 gồm sáu mục](AI-LOG.md).
 
+### Kiểm chứng sau review PR #51 — 22/11/2026
+
+Nguồn: `66e7e858717d0ef8d75fd2c351b116f22f3150e5` cùng bản sửa test/tài liệu chưa commit trong working tree. Codex hỗ trợ phân tích review và sửa kiểm thử; không đổi runtime, seed hoặc cấu hình proxy.
+
+Tái hiện test tổng dung lượng multipart trên Windows: 2/3 lượt bản cũ thất bại với `ECONNRESET`. Bản sửa chỉ chấp nhận reset cho request vượt giới hạn; quan sát độc lập hook `onSend` để xác nhận server tạo problem response 413 đúng loại, đồng thời giữ kiểm tra Store chỉ được gọi một lần và danh sách chỉ có lab hợp lệ ban đầu. Các lỗi socket khác vẫn làm test thất bại. Mười lượt liên tiếp đạt (exit 0), gồm bốn lượt đi qua nhánh reset; log local `.local/t04-vy-fixed-upload-*.tap` bị Git ignore.
+
+Negative control: preload tạm tăng giới hạn tổng body từ 20 lên 30 MiB trong một tiến trình test riêng, không sửa source. Test thất bại như mong đợi (exit 1, nhận 201 thay vì 413), chứng minh vẫn phát hiện request quá lớn bị nhận sai. Log `.local/t04-vy-negative-control.tap` không commit.
+
+Kiểm tra hồi quy sau sửa: `npm run lint`, `npm run type-check`, `npm test` đều exit 0; **358 đạt, 1 suite PostgreSQL bỏ qua**. Không chạy lại suite database hoặc Swagger vì thay đổi chỉ gồm test/tài liệu; kết quả database 86/86 và Swagger 13 bước bên dưới thuộc lượt trước. Kết quả format/diff được kiểm tra trước commit.
+
+Hai yêu cầu triển khai được bàn giao vào checklist T12: tách/chặn seed dev trên production và chỉ tin địa chỉ/CIDR reverse proxy thực tế, kiểm chứng bucket IP riêng cùng header giả. Chưa triển khai hai thay đổi runtime này trong T04. Vỹ đã review và yêu cầu sửa; vẫn chờ review lại, không ghi nhận approval thay reviewer.
+
 ## 2. Hướng dẫn chạy phiên bản hiện tại
 
 Yêu cầu Node 24.x từ 24.22.1 và npm 11.x. Chạy từ root repository:

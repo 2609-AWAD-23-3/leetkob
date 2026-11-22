@@ -58,6 +58,24 @@ test('labs upload: invalid UTF-8 in multipart text field is rejected before repl
 
 test('labs upload: real chunked multipart and aggregate cap, without partial writes', async (t) => {
   const h = await labsHarness(t);
+  let recordRejection;
+  const serverRejection = new Promise((resolve) => {
+    recordRejection = resolve;
+  });
+  h.app.addHook('onSend', async (request, reply, payload) => {
+    if (
+      request.method === 'POST' &&
+      request.url === '/classes/class-1/labs' &&
+      reply.statusCode === 413
+    ) {
+      recordRejection({
+        status: reply.statusCode,
+        contentType: reply.getHeader('content-type'),
+        body: payload,
+      });
+    }
+    return payload;
+  });
   const address = await h.app.listen({ host: '127.0.0.1', port: 0 });
   const { tests, ...metadata } = labBody();
   let created = 0;
@@ -99,8 +117,41 @@ test('labs upload: real chunked multipart and aggregate cap, without partial wri
     },
   ]);
   assert.ok(huge.payload.length > 20 * 1024 * 1024);
-  const rejected = await send(huge);
-  assert.equal(rejected.status, 413, rejected.body);
+  let rejected;
+  try {
+    rejected = await send(huge);
+  } catch (error) {
+    // An early 413 closes the connection while the chunked client is still
+    // writing. Windows may expose that as ECONNRESET instead of a response.
+    // Only this oversized request may reset, and the server must independently
+    // prove it produced the expected problem response below.
+    assert.equal(error.code, 'ECONNRESET');
+    t.diagnostic('Oversized upload reset by peer; checking server-side 413');
+  }
+  if (rejected) assert.equal(rejected.status, 413, rejected.body);
+  let timer;
+  let rejection;
+  try {
+    rejection = await Promise.race([
+      serverRejection,
+      new Promise((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error('Server did not produce the expected 413')),
+          2000,
+        );
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+  assert.equal(rejection.status, 413);
+  assert.match(rejection.contentType, /^application\/problem\+json/);
+  const problem = JSON.parse(rejection.body);
+  assert.equal(problem.status, 413);
+  assert.equal(
+    problem.type,
+    'https://leetkob.example/problems/payload-too-large',
+  );
   assert.equal(created, 1);
   const list = await h.app.inject({
     url: '/classes/class-1/labs',
