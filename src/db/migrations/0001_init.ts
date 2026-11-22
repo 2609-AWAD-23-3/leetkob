@@ -1,20 +1,8 @@
-// Ordered schema migrations. Each runs once, in a transaction, and is
-// recorded in schema_migrations. Never edit a migration that has been
-// merged; add a new one instead.
-//
-// Timestamps are written from the store clock (ISO strings), not now(), so
-// tests stay deterministic. CHECK constraints mirror src/db/validation.ts so
-// both Store implementations reject the same values.
+import type { Migration } from './types.js';
 
-export interface Migration {
-  id: string;
-  sql: string;
-}
-
-export const MIGRATIONS: readonly Migration[] = [
-  {
-    id: '0001_init',
-    sql: `
+export const migration0001: Migration = {
+  id: '0001_init',
+  sql: `
 CREATE TABLE users (
   id            text PRIMARY KEY,
   username      text NOT NULL UNIQUE,
@@ -162,16 +150,4 @@ CREATE TABLE publications (
   violation_decision_count integer NOT NULL
 );
 `,
-  },
-  {
-    id: '0002_model_call_metrics',
-    sql: `
-ALTER TABLE model_calls
-  ADD CONSTRAINT model_calls_input_tokens_nonnegative CHECK (input_tokens >= 0),
-  ADD CONSTRAINT model_calls_output_tokens_nonnegative CHECK (output_tokens >= 0),
-  ADD CONSTRAINT model_calls_latency_nonnegative CHECK (latency_ms >= 0),
-  ADD CONSTRAINT model_calls_cost_valid
-    CHECK (cost_usd >= 0 AND cost_usd < 'Infinity'::double precision);
-`,
-  },
-];
+};

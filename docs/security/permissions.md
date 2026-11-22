@@ -36,7 +36,10 @@ Trạng thái triển khai và kết quả kiểm chứng được ghi tại [h�
 
 ## Environment hiện tại
 
-- [.env.example](../../.env.example) chỉ liệt kê HOST và PORT đang được code đọc; giá trị trống, không có credential.
-- App không tự load .env. Nếu không đặt hai biến, code dùng 127.0.0.1:3000; nếu truyền chuỗi rỗng thì config từ chối. Không source/copy giá trị trống của example vào process env để chạy app.
-- Đối chiếu baseline 09245d7: config runtime vẫn chỉ đọc HOST/PORT. T03 nhận bảng token và identity resolver bằng cấu hình trong code, chưa có biến môi trường model/provider/auth credential. Khi implementation thay đổi, đối chiếu lại source rồi cập nhật example; không thêm biến giả rồi nhận là đã hỗ trợ.
-- .gitignore ngăn các file local phổ biến, nhưng không xóa file đã tracked hoặc secret trong lịch sử. Luôn cần scan history trước khi bàn giao.
+- API đọc HOST/PORT và yêu cầu DATABASE_URL. Các npm command dev/start/db:migrate/db:seed load `.env` tùy chọn tại root bằng Node CLI; biến môi trường có sẵn được ưu tiên. Tests không tự load file này. Xem [contract auth](../contract/auth.md) và [runbook T04](../evidence/PA03/T04/README.md).
+- `.env.example` chứa các default local công khai khớp Compose; `.env` là file private bị Git ignore. Không đưa URL triển khai hoặc password triển khai vào file tracked.
+- Auth dùng session PostgreSQL, raw Bearer token chỉ trả khi login; production không dùng fixture identity. Publish PA02 giữ boundary cũ để T09 tích hợp.
+- Bộ seed dev trong `src/db/seeds/demo-accounts.ts` dùng credential công khai `password123` cho tài khoản hư cấu. `db:seed` có thể đặt lại password và thu hồi session của đúng tài khoản demo khớp ID/username/role; không áp dụng cho user thật. Credential VPS/admin thật phải cấp riêng, không dùng seed dev.
+- Limiter theo tiến trình, trustProxy false; cần cấu hình proxy và limiter dùng chung trước khi scale nhiều instance.
+- `npm run db:studio` đọc `.env` qua Node CLI và mở Prisma Studio local trên cổng 5555 để xem/sửa DB dev. Thay đổi trên giao diện ghi trực tiếp vào database; Studio không đi qua phân quyền API và không dành cho public deployment. Cấu hình chỉ lấy DATABASE_URL từ env, không đưa URL chứa credential vào command arguments.
+- .gitignore không xóa secrets đã tracked hoặc lịch sử; evidence chỉ áp dụng cho snapshot được ghi rõ.

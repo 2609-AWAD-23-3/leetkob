@@ -1,0 +1,6 @@
+{
+  "constraints": [
+    { "id": "c1", "text": "Do not use global variables.", "deduction": 2 },
+    { "id": "c2", "text": "Read both integers from standard input.", "deduction": 1 }
+  ]
+}

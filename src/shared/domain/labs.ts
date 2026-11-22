@@ -51,6 +51,11 @@ export interface Lab {
   createdAt: string;
 }
 
+export type LabSummary = Pick<
+  Lab,
+  'id' | 'classId' | 'title' | 'opensAt' | 'deadline' | 'createdAt'
+>;
+
 // opensAt is optional when creating a lab: without it the lab opens at createdAt.
 export type NewLab = Omit<Lab, 'id' | 'createdAt' | 'opensAt'> & {
   opensAt?: string;
