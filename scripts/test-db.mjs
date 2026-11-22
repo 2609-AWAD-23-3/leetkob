@@ -17,6 +17,7 @@ const result = spawnSync(
     '--test-reporter=tap',
     '--test-concurrency=1',
     'tests/integration/postgres-store.test.mjs',
+    'tests/integration/worker-postgres.test.mjs',
   ],
   { stdio: 'inherit' },
 );
