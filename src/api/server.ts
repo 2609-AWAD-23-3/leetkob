@@ -1,10 +1,10 @@
-import { createApp } from './app.js';
+import { createRuntimeApp } from './runtime.js';
 import { loadConfig } from '../shared/config.js';
 
 // Deliberately separate executable entry point from the app factory used by tests.
 async function main(): Promise<void> {
   const config = loadConfig();
-  const app = createApp({ logger: true });
+  const app = await createRuntimeApp();
   let closing = false;
   const shutdown = async (): Promise<void> => {
     if (closing) return;
@@ -24,7 +24,11 @@ async function main(): Promise<void> {
   });
 
   try {
-    await app.listen(config);
+    const address = await app.listen(config);
+    const docsUrl = new URL('/docs/', address);
+    if (docsUrl.hostname === '0.0.0.0') docsUrl.hostname = '127.0.0.1';
+    if (docsUrl.hostname === '[::]') docsUrl.hostname = '[::1]';
+    app.log.info({ docsUrl: docsUrl.href }, `API docs: ${docsUrl.href}`);
   } catch (error) {
     await app.close();
     throw error;
@@ -32,6 +36,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(error);
+  console.error(error instanceof Error ? error.message : 'API startup failed.');
   process.exitCode = 1;
 });

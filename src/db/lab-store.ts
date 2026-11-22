@@ -1,7 +1,15 @@
-import type { Lab, NewLab } from '../shared/domain/index.js';
+import type { Lab, NewLab, LabSummary } from '../shared/domain/index.js';
+
+export type LabCreationResult =
+  | { kind: 'created' | 'replayed'; lab: Lab }
+  | { kind: 'conflict' }
+  | { kind: 'invalid-time' };
 
 // Used by PA03-T04 (create and read labs) and PA03-T09.
 export interface LabStore {
+  getLabSummary(labId: string): Promise<LabSummary | undefined>;
+  createLabIdempotently(input: NewLab, key: string): Promise<LabCreationResult>;
+  listLabSummariesForClass(classId: string): Promise<LabSummary[]>;
   // Throws TypeError for invalid input: unknown class or creator, bad limits
   // or deductions, opensAt not before deadline, or any field beyond the
   // documented ones. Without opensAt the lab opens at createdAt.

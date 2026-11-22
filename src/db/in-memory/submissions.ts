@@ -1,4 +1,12 @@
 import type { SubmissionStore } from '../submission-store.js';
+import { normalizeLabKey } from '../lab-creation.js';
+import {
+  codeFingerprint,
+  validateIntake,
+  validateSubmissionQuery,
+  submissionSummary,
+  SUBMISSION_TTL_MS,
+} from '../submission-intake.js';
 import {
   requireId,
   toSubmission,
@@ -50,6 +58,98 @@ export function enqueueJob(ctx: Context, submissionId: string): void {
 
 export function createSubmissionStore(ctx: Context): SubmissionStore {
   return {
+    async submitIdempotently(input, requestKey) {
+      const submittedAt = ctx.now();
+      validateIntake(input);
+      const scope = JSON.stringify([
+        input.studentId,
+        input.labId,
+        normalizeLabKey(requestKey),
+      ]);
+      const fingerprint = codeFingerprint(input.code);
+      const lab = ctx.state.labs.get(input.labId);
+      if (
+        !lab ||
+        ctx.state.users.get(input.studentId)?.role !== 'student' ||
+        ctx.state.memberships.get(
+          JSON.stringify([input.studentId, lab.classId]),
+        )?.role !== 'student'
+      )
+        return { kind: 'not-found' };
+      const now = ctx.nowMs();
+      const existing = ctx.state.submissionRequests.get(scope);
+      if (existing && existing.expiresAt > now) {
+        if (existing.fingerprint !== fingerprint) return { kind: 'conflict' };
+        const submission = ctx.state.submissions.get(existing.submissionId);
+        if (!submission) throw new Error('Missing idempotent submission');
+        return { kind: 'replayed', submission: toSubmission(submission) };
+      }
+      if (
+        Date.parse(submittedAt) < Date.parse(lab.opensAt) ||
+        Date.parse(submittedAt) >= Date.parse(lab.deadline)
+      )
+        return { kind: 'not-open' };
+      // Generate/check both IDs before mutating any state, including sequence.
+      const id = ctx.newId();
+      const jobId = ctx.newId();
+      if (ctx.state.submissions.has(id) || ctx.state.jobs.has(jobId))
+        throw new Error('Duplicate generated ID');
+      const submission: StoredSubmission = {
+        ...input,
+        id,
+        submittedAt,
+        status: 'queued',
+        judgeResult: null,
+        seq: ctx.state.nextSeq++,
+      };
+      ctx.state.submissions.set(id, submission);
+      ctx.state.jobs.set(jobId, {
+        id: jobId,
+        submissionId: id,
+        attempts: 0,
+        leaseOwner: null,
+        leaseToken: null,
+        leaseExpiresAt: null,
+        lastError: null,
+        done: false,
+      });
+      ctx.state.submissionRequests.set(scope, {
+        fingerprint,
+        submissionId: id,
+        expiresAt: now + SUBMISSION_TTL_MS,
+      });
+      return { kind: 'created', submission: toSubmission(submission) };
+    },
+    async listSubmissionSummaries(query) {
+      validateSubmissionQuery(query);
+      const rows = [...ctx.state.submissions.values()]
+        .filter(
+          (s) =>
+            s.labId === query.labId &&
+            (query.studentId === undefined ||
+              s.studentId === query.studentId) &&
+            (query.status === undefined || s.status === query.status) &&
+            (!query.after ||
+              Date.parse(s.submittedAt) < Date.parse(query.after.submittedAt) ||
+              (s.submittedAt === query.after.submittedAt &&
+                BigInt(s.seq) < BigInt(query.after.seq))),
+        )
+        .sort(
+          (a, b) =>
+            Date.parse(b.submittedAt) - Date.parse(a.submittedAt) ||
+            b.seq - a.seq,
+        )
+        .slice(0, query.limit + 1);
+      const page = rows.slice(0, query.limit);
+      const last = page.at(-1);
+      return {
+        submissions: page.map(submissionSummary),
+        next:
+          rows.length > query.limit && last
+            ? { submittedAt: last.submittedAt, seq: String(last.seq) }
+            : null,
+      };
+    },
     async submit({ labId, studentId, code }) {
       const submittedAt = ctx.now();
       requireId(labId, 'labId');
