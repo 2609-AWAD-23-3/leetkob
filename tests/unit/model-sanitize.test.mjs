@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  hasUsableIdentity,
   IDENTITY_PLACEHOLDER,
   sanitizeCode,
   splitLines,
@@ -125,6 +126,29 @@ test('sanitize: identity matching ignores case and diacritics', () => {
   assert.doesNotMatch(clean, /nguyen/i);
   assert.doesNotMatch(clean, /nguyễn/i);
   assert.equal(clean.split(IDENTITY_PLACEHOLDER).length - 1, 3);
+});
+
+test('sanitize: joined forms with _, - and . are masked, with and without diacritics', () => {
+  const code = [
+    'int nguyen_van_an = 1;',
+    'int nguyen-van-an = 2;',
+    'auto a = "nguyen.van.an";',
+    'auto b = "Nguyen_Van_An";',
+    'auto c = "nguyenvanan";',
+    '',
+  ].join('\n');
+  for (const identity of [['Nguyen Van An'], ['Nguyễn Văn An']]) {
+    const clean = sanitizeCode(code, identity);
+    assert.doesNotMatch(clean, /nguyen/i, JSON.stringify(identity));
+    assert.equal(lines(clean).length, lines(code).length);
+  }
+});
+
+test('hasUsableIdentity: needs at least one single-line string of 3 or more characters', () => {
+  assert.equal(hasUsableIdentity([]), false);
+  assert.equal(hasUsableIdentity(['', ' ', 'ab', 'x\ny']), false);
+  assert.equal(hasUsableIdentity(['ab', 'Ann']), true);
+  assert.equal(hasUsableIdentity(['  Le Thi Mai  ']), true);
 });
 
 test('sanitize: empty and very short identity strings are ignored', () => {

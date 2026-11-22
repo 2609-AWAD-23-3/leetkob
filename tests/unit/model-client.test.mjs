@@ -246,19 +246,75 @@ test('real client: a response without a text block gives text null; refusal is p
   assert.equal(out.requestId, null);
 });
 
-test('real client: 429 and 5xx become ModelProviderError and are not retried inside the client', async () => {
+// `retry-after-ms` ngắn để các lần SDK retry không làm test chậm.
+const errorBody = (message = 'try later') => ({
+  type: 'error',
+  error: { type: 'api_error', message },
+});
+const transient = (status) =>
+  jsonResponse(errorBody(), status, {
+    'request-id': 'req_err_1',
+    'retry-after-ms': '1',
+  });
+
+test('real client: 429, 5xx and 529 are retried by the SDK and then succeed', async () => {
   for (const status of [429, 500, 503, 529]) {
-    const fetchFn = makeFetch(() =>
-      jsonResponse(
-        { type: 'error', error: { type: 'api_error', message: 'try later' } },
-        status,
-        { 'request-id': 'req_err_1' },
-      ),
+    const fetchFn = makeFetch((_url, _init, call) =>
+      call === 1
+        ? transient(status)
+        : jsonResponse(messageBody(), 200, { 'request-id': 'req_after_retry' }),
     );
+    const out = await makeClient(fetchFn).complete(request());
+    assert.equal(fetchFn.seen.length, 2, `status ${status}`);
+    assert.equal(out.requestId, 'req_after_retry');
+    assert.equal(out.text, '{"results":[]}');
+  }
+});
+
+test('real client: a provider error that keeps failing is thrown after at most 2 retries', async () => {
+  for (const status of [429, 500, 503, 529]) {
+    const fetchFn = makeFetch(() => transient(status));
     await assert.rejects(makeClient(fetchFn).complete(request()), (error) => {
       assert.ok(error instanceof ModelProviderError, `status ${status}`);
       assert.equal(error.status, status);
       assert.equal(error.retryable, true);
+      assert.equal(error.requestId, 'req_err_1');
+      return true;
+    });
+    assert.equal(fetchFn.seen.length, 3, `status ${status}: 1 try + 2 retries`);
+  }
+});
+
+test('retryable: 408, 409, 429, 5xx and connection errors are retryable; 400, 401, 403, 404 are not', () => {
+  for (const status of [408, 409, 429, 500, 502, 503, 529, null]) {
+    assert.equal(
+      new ModelProviderError('x', { status }).retryable,
+      true,
+      `status ${status}`,
+    );
+  }
+  for (const status of [400, 401, 403, 404, 413, 422]) {
+    assert.equal(
+      new ModelProviderError('x', { status }).retryable,
+      false,
+      `status ${status}`,
+    );
+  }
+  assert.equal(
+    new ModelProviderError('x', { status: 429, retryable: false }).retryable,
+    false,
+  );
+});
+
+test('real client: 403 and 404 are not retryable and are not retried', async () => {
+  for (const status of [403, 404]) {
+    const fetchFn = makeFetch(() =>
+      jsonResponse(errorBody('nope'), status, { 'request-id': 'req_nope' }),
+    );
+    await assert.rejects(makeClient(fetchFn).complete(request()), (error) => {
+      assert.ok(error instanceof ModelProviderError);
+      assert.equal(error.status, status);
+      assert.equal(error.retryable, false);
       return true;
     });
     assert.equal(
@@ -267,6 +323,44 @@ test('real client: 429 and 5xx become ModelProviderError and are not retried ins
       `status ${status} must not be retried`,
     );
   }
+});
+
+test('real client: retries never push the call past the hard deadline', async () => {
+  // Server bảo chờ 30 giây rồi retry; deadline 150 ms vẫn phải cắt được cuộc gọi.
+  const fetchFn = makeFetch(() =>
+    jsonResponse(errorBody(), 429, { 'retry-after': '30' }),
+  );
+  const client = makeClient(fetchFn, { timeoutMs: 150 });
+  const started = Date.now();
+  await assert.rejects(
+    client.complete(request({ timeoutMs: 150 })),
+    ModelTimeoutError,
+  );
+  assert.ok(Date.now() - started < 2_000, 'must stop at the deadline');
+});
+
+test('real client: running out of time during a retry is ModelTimeoutError', async () => {
+  const fetchFn = makeFetch((_url, init, call) =>
+    call === 1
+      ? transient(529)
+      : new Promise((_resolve, reject) => {
+          init.signal.addEventListener('abort', () =>
+            reject(Object.assign(new Error('aborted'), { name: 'AbortError' })),
+          );
+        }),
+  );
+  const client = makeClient(fetchFn, { timeoutMs: 200 });
+  const started = Date.now();
+  await assert.rejects(
+    client.complete(request({ timeoutMs: 200 })),
+    ModelTimeoutError,
+  );
+  assert.ok(Date.now() - started < 2_000);
+  assert.equal(
+    fetchFn.seen.length,
+    2,
+    'the retry did start, then hit the deadline',
+  );
 });
 
 test('real client: 400 and 401 are ModelProviderError, not retryable, and never contain the key', async () => {
@@ -292,10 +386,15 @@ test('real client: 400 and 401 are ModelProviderError, not retryable, and never 
       assert.equal(String(error.stack).includes(TEST_KEY), false);
       return true;
     });
+    assert.equal(
+      fetchFn.seen.length,
+      1,
+      `status ${status} must not be retried`,
+    );
   }
 });
 
-test('real client: a connection failure is a retryable ModelProviderError', async () => {
+test('real client: a connection failure is retried, then a retryable ModelProviderError', async () => {
   const fetchFn = makeFetch(() => {
     throw new TypeError('fetch failed');
   });
@@ -305,7 +404,7 @@ test('real client: a connection failure is a retryable ModelProviderError', asyn
     assert.equal(error.retryable, true);
     return true;
   });
-  assert.equal(fetchFn.seen.length, 1);
+  assert.equal(fetchFn.seen.length, 3, '1 try + 2 retries');
 });
 
 test('real client: a hanging request is cut at the deadline with ModelTimeoutError', async () => {

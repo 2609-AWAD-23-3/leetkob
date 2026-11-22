@@ -4,6 +4,7 @@ import test from 'node:test';
 import { runHardRules } from '../../dist/pipeline/hard-rules/index.js';
 import {
   createSemanticEvaluator,
+  ModelConfigError,
   ModelProviderError,
   ModelTimeoutError,
   splitLines,
@@ -249,7 +250,7 @@ test('timeout: a model that never answers becomes unsure/timeout and the signal 
   const evaluate = createSemanticEvaluator({
     client: fake,
     timeoutMs: 40,
-    getIdentity: () => [],
+    getIdentity: () => STUDENT_IDENTITY,
   });
   const started = Date.now();
   const out = await evaluate(makeContext(), [C_SEM_1, C_SEM_2]);
@@ -287,7 +288,7 @@ test('timeout: a model that honours the abort signal is also unsure/timeout', as
   const evaluate = createSemanticEvaluator({
     client: fake,
     timeoutMs: 30,
-    getIdentity: () => [],
+    getIdentity: () => STUDENT_IDENTITY,
   });
   const out = await evaluate(makeContext(), [C_SEM_1]);
   assert.equal(out.verdicts[0].unsureCause, 'timeout');
@@ -315,7 +316,7 @@ test('timeout: a late answer after the deadline is ignored and does not crash th
   const evaluate = createSemanticEvaluator({
     client: fake,
     timeoutMs: 20,
-    getIdentity: () => [],
+    getIdentity: () => STUDENT_IDENTITY,
   });
   const out = await evaluate(makeContext(), [C_SEM_1, C_SEM_2]);
   assert.equal(out.verdicts[0].unsureCause, 'timeout');
@@ -570,6 +571,78 @@ test('integration with T07: ban-list constraints never reach the model', async (
   assert.deepEqual(none.modelCalls, []);
 });
 
+test('identity fails closed: no usable identity means no prompt and no model call', async () => {
+  const unusable = [
+    [],
+    [''],
+    ['   '],
+    ['ab'],
+    ['a', 'in', ' i '],
+    ['Nguyen\nVan An'],
+  ];
+  for (const identity of unusable) {
+    const fake = createFakeModel(bothPass);
+    const prompts = [];
+    const evaluate = createSemanticEvaluator({
+      client: fake,
+      timeoutMs: 1_000,
+      getIdentity: () => identity,
+      onPrompt: (record) => prompts.push(record),
+    });
+    await assert.rejects(
+      evaluate(makeContext(), [C_SEM_1, C_SEM_2]),
+      (error) => {
+        assert.ok(error instanceof ModelConfigError, JSON.stringify(identity));
+        assert.match(error.message, /identity/i);
+        return true;
+      },
+      JSON.stringify(identity),
+    );
+    assert.equal(fake.calls.length, 0, JSON.stringify(identity));
+    assert.equal(prompts.length, 0, JSON.stringify(identity));
+  }
+});
+
+test('identity fails closed: an async getIdentity that returns nothing usable also throws', async () => {
+  const fake = createFakeModel(bothPass);
+  const evaluate = createSemanticEvaluator({
+    client: fake,
+    timeoutMs: 1_000,
+    getIdentity: async () => [],
+  });
+  await assert.rejects(evaluate(makeContext(), [C_SEM_1]), ModelConfigError);
+  assert.equal(fake.calls.length, 0);
+});
+
+test('identity fails closed: one usable string is enough, the others may be short', async () => {
+  const fake = createFakeModel(bothPass);
+  const evaluate = createSemanticEvaluator({
+    client: fake,
+    timeoutMs: 1_000,
+    getIdentity: () => ['', 'ab', 'Nguyen Van An'],
+  });
+  await evaluate(makeContext(), [C_SEM_1]);
+  assert.equal(fake.calls.length, 1);
+});
+
+test('identity: a joined form such as nguyen_van_an is masked when only the full name is given', async () => {
+  const code = [
+    'int nguyen_van_an = 1;',
+    'int nguyen-van-an_x = 2;',
+    'auto s = "nguyen.van.an";',
+    'auto t = "Nguyen_Van_An";',
+    'auto u = "NguyenVanAn";',
+    'auto v = "nguyễn_văn_an";',
+    '',
+  ].join('\n');
+  const fake = createFakeModel(bothPass);
+  await makeEvaluator(fake, { getIdentity: () => ['Nguyễn Văn An'] })(
+    makeContext({ code }),
+    [C_SEM_1],
+  );
+  assert.doesNotMatch(fake.calls[0].user, /nguyen|nguyễn/i);
+});
+
 test('evaluator: bad configuration fails fast', () => {
   const fake = createFakeModel(bothPass);
   assert.throws(() => createSemanticEvaluator({}), TypeError);
@@ -580,7 +653,7 @@ test('evaluator: bad configuration fails fast', () => {
         createSemanticEvaluator({
           client: fake,
           timeoutMs,
-          getIdentity: () => [],
+          getIdentity: () => STUDENT_IDENTITY,
         }),
       TypeError,
     );
