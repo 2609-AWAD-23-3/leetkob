@@ -1,0 +1,13 @@
+{
+  "calls": 3,
+  "totalCostUsd": 0.0005445000000000001,
+  "allHaveRequestId": true,
+  "outcomes": [
+    "ok",
+    "ok",
+    "ok"
+  ],
+  "twoConstraintCalls": 2,
+  "meanInputTokens2c": 1223,
+  "meanOutputTokens2c": 140
+}

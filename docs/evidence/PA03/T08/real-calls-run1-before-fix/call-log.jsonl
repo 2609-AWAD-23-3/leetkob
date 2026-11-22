@@ -1,0 +1,3 @@
+{"submissionId":"real-1","constraintIds":["c1","c2"],"provider":"anthropic","model":"claude-haiku-5-5","requestId":"req_011ChJ5xU4K9t2MBHxpwDm3u","inputTokens":1201,"outputTokens":132,"latencyMs":2897,"costUsd":0.0001861,"outcome":"ok"}
+{"submissionId":"real-2","constraintIds":["c1","c2"],"provider":"anthropic","model":"claude-haiku-5-5","requestId":"req_011ChJ5xfRBJESqFKZNZPVSS","inputTokens":1250,"outputTokens":159,"latencyMs":2179,"costUsd":0.0002045,"outcome":"ok"}
+{"submissionId":"real-3","constraintIds":["c1"],"provider":"anthropic","model":"claude-haiku-5-5","requestId":"req_011ChJ5xppyAdJozCJCTi9ss","inputTokens":1154,"outputTokens":115,"latencyMs":2788,"costUsd":0.0001729,"outcome":"ok"}

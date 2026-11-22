@@ -26,6 +26,7 @@
     "test:sandbox": "npm run build && node scripts/test-sandbox.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "1.12.0",
     "@fastify/multipart": "10.1.9",
     "@fastify/swagger": "9.9.5",
     "@fastify/swagger-ui": "6.1.5",
