@@ -22,7 +22,8 @@
     "db:migrate": "npm run build && node --env-file-if-exists=.env scripts/db-migrate.mjs",
     "test:db": "npm run build && node scripts/test-db.mjs",
     "db:seed": "npm run build && node --env-file-if-exists=.env scripts/seed-demo.mjs",
-    "db:studio": "node --env-file-if-exists=.env node_modules/prisma/build/index.js studio --config scripts/prisma-studio.config.ts --browser none --port 5555"
+    "db:studio": "node --env-file-if-exists=.env node_modules/prisma/build/index.js studio --config scripts/prisma-studio.config.ts --browser none --port 5555",
+    "test:sandbox": "npm run build && node scripts/test-sandbox.mjs"
   },
   "dependencies": {
     "@fastify/multipart": "10.1.9",
