@@ -146,6 +146,9 @@ test('decision: violation needs evidence lines inside the code; the text comes f
     { decision: 'violation', evidenceLines: ['3'] },
     { decision: 'violation', evidenceLines: [3, 3] },
     { decision: 'pass', evidenceLines: [3] },
+    // Review of PR #79: only an absent field or [] means "no lines".
+    { decision: 'pass', evidenceLines: null },
+    { decision: 'violation', evidenceLines: null },
     { decision: 'unsure' },
     { decision: 'violation', evidenceLines: [3], taId: 'ta-2' },
     {},
