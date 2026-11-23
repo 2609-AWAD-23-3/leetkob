@@ -36,7 +36,7 @@ export interface ReviewItem extends ConstraintVerdict {
   constraintText: string;
   deduction: number;
   taDecision: TaDecision | null; // null = not reviewed yet
-  taEvidence: Evidence[]; // lines the TA pointed at; required for violation from PA04
+  taEvidence: Evidence[]; // lines the TA pointed at; the API requires them for violation (FAQ-09, PA03-T09)
   reviewedBy: string | null;
   reviewedAt: string | null;
 }

@@ -1,0 +1,188 @@
+# T09 review fixes: red run before changing code
+# status: historical record, kept unchanged below this line. The 403 -> 404 expectations it shows for a TA of another class were reverted by decision B (Publish keeps 403 from contract v1); see README section 4. The current implementation and its green run are in green-current.txt.
+# source: 6df715f + uncommitted T09 work; only tests changed since the green run
+# command: npm run build && node --test tests/contract/review-queue.test.mjs tests/contract/publish.test.mjs tests/integration/publish-auth-errors.test.mjs && TEST_DATABASE_URL=<local> node --test tests/integration/review-queue-postgres.test.mjs
+# date: 2026-11-23T08:06:11Z, node v24.22.3
+✔ POST /labs/{labId}/publish — 401 unauthenticated when credentials are missing, malformed, or invalid (190.2164ms)
+✔ POST /labs/{labId}/publish — 400 invalid-json for malformed JSON or prototype pollution payload (14.9166ms)
+✔ POST /labs/{labId}/publish — 400 validation for invalid labId syntax or non-object JSON body (19.7317ms)
+✔ POST /labs/{labId}/publish — 404 not-found when target lab does not exist (10.9181ms)
+✖ POST /labs/{labId}/publish — 403 forbidden for student, admin, or cross-class TA (14.6263ms)
+✔ POST /labs/{labId}/publish — 409 before-deadline when server time is before deadline (12.8496ms)
+✔ POST /labs/{labId}/publish — 409 pending-reviews with pendingCount member when reviews remain pending (16.3313ms)
+✔ POST /labs/{labId}/publish — 200 OK initial publication succeeds and returns LabPublication resource (10.1091ms)
+✔ POST /labs/{labId}/publish — 200 OK repeated call is naturally idempotent with Idempotent-Replayed: true (9.6446ms)
+✔ POST /labs/{labId}/publish — client cannot spoof caller identity, role, or state in body (8.372ms)
+✔ POST /labs/{labId}/publish — empty request body or omitted body succeeds (7.7035ms)
+✔ POST /labs/{labId}/publish — 413 payload-too-large when body exceeds 64 KB limit (8.5979ms)
+✔ POST /labs/{labId}/publish — 415 unsupported-media-type when content-type is unsupported (application/xml, text/plain) (7.4543ms)
+✔ POST /labs/{labId}/publish — precedence: unsupported content-type (text/plain) is rejected with 415 before authentication (5.9595ms)
+✔ POST /labs/{labId}/publish — precedence: malformed JSON body is rejected with 400 invalid-json before authentication (6.697ms)
+✖ POST /labs/{labId}/publish — precedence: caller role check precedes lab lookup (anti-enumeration defense) (11.2122ms)
+✔ review queue: the class TA sees every submission x constraint with verdict, evidence, deduction and unsure cause (388.0481ms)
+✔ review item: detail adds the whole submission code for the TA (FAQ-09) (27.7149ms)
+✔ review queue: unauthenticated callers get 401, students and admins 403, a TA of another class 404 (43.658ms)
+✔ review queue: unknown or malformed IDs return 404 or 400 (28.2362ms)
+✔ decision: violation needs evidence lines inside the code; the text comes from the code (FAQ-09) (44.0429ms)
+✔ decision: evidence text is read from the stored code for CRLF files too (16.4315ms)
+✔ confirm passes: bulk-confirms only the unreviewed pass verdicts (18.3108ms)
+✔ publish: refused while any verdict, a pass included, is unreviewed; then publishes once (23.3537ms)
+✔ publish: contract v1 statuses hold with session tokens (13.565ms)
+✖ publish: a TA of another class gets the same 404 for a real lab and a missing lab (11.9038ms)
+✔ review queue: a TA of another class gets the same 404 for a real and a missing lab or item (14.7637ms)
+✖ confirm passes: a Publish that commits during the call returns 409 (11.2627ms)
+✔ after publish: review decisions are locked (14.3927ms)
+✔ students never receive verdicts before publish (FAQ-08) (11.9515ms)
+✔ API docs list the review queue and Publish operations (13.1599ms)
+✔ token identity resolver authenticates valid bearer tokens and returns defensive copies (4.6164ms)
+✔ token identity resolver rejects missing header with missing_credentials (0.3699ms)
+✔ token identity resolver rejects undefined authorization with missing_credentials (0.1933ms)
+✔ token identity resolver rejects empty authorization with malformed_credentials (0.2791ms)
+✔ token identity resolver rejects whitespace authorization with malformed_credentials (0.2252ms)
+✔ token identity resolver rejects leading whitespace authorization with malformed_credentials (0.1967ms)
+✔ token identity resolver rejects wrong auth scheme with malformed_credentials (0.6027ms)
+✔ token identity resolver rejects bearer without token with malformed_credentials (0.8385ms)
+✔ token identity resolver rejects bearer with extra segments with malformed_credentials (0.2753ms)
+✔ token identity resolver rejects array authorization header with malformed_credentials (0.2887ms)
+✔ token identity resolver rejects unknown bearer token with invalid_credentials (0.1895ms)
+✔ default token resolver has no implicit credentials and rejects all requests (0.2494ms)
+✔ test-header identity injection is disabled by default and cannot become a public bypass (0.4127ms)
+✔ explicit programmatic test-header resolver validates headers when enabled in tests (0.3495ms)
+✔ authorizePublishAccess enforces role TA, lab existence and T02 class ownership (3.6111ms)
+✖ HTTP boundary rejects missing/invalid identity, wrong role and cross-class TA with RFC 9457 problem details (298.6462ms)
+✔ HTTP boundary maps parser errors, validation errors, deadline/pending conflicts and internal errors to RFC 9457 without leaking internals (117.2648ms)
+✔ problem factories validate inputs and return defensive copies (3.2291ms)
+ℹ tests 49
+ℹ suites 0
+ℹ pass 44
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1156.7469
+
+✖ failing tests:
+
+test at tests\contract\publish.test.mjs:232:1
+✖ POST /labs/{labId}/publish — 403 forbidden for student, admin, or cross-class TA (14.6263ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  403 !== 404
+  
+      at TestContext.<anonymous> (<repo>/tests/contract/publish.test.mjs:274:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 403,
+    expected: 404,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\contract\publish.test.mjs:600:1
+✖ POST /labs/{labId}/publish — precedence: caller role check precedes lab lookup (anti-enumeration defense) (11.2122ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  403 !== 404
+  
+      at TestContext.<anonymous> (<repo>/tests/contract/publish.test.mjs:653:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 403,
+    expected: 404,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\contract\review-queue.test.mjs:354:1
+✖ publish: a TA of another class gets the same 404 for a real lab and a missing lab (11.9038ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  403 !== 404
+  
+      at TestContext.<anonymous> (<repo>/tests/contract/review-queue.test.mjs:360:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 403,
+    expected: 404,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\contract\review-queue.test.mjs:396:1
+✖ confirm passes: a Publish that commits during the call returns 409 (11.2627ms)
+  AssertionError [ERR_ASSERTION]: {"confirmedCount":0,"state":{"queueItemCount":4,"passDecisionCount":3,"violationDecisionCount":1,"pendingCount":0}}
+  
+  200 !== 409
+  
+      at TestContext.<anonymous> (<repo>/tests/contract/review-queue.test.mjs:425:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 200,
+    expected: 409,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\integration\publish-auth-errors.test.mjs:387:1
+✖ HTTP boundary rejects missing/invalid identity, wrong role and cross-class TA with RFC 9457 problem details (298.6462ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  403 !== 404
+  
+      at TestContext.<anonymous> (<repo>/tests/integration/publish-auth-errors.test.mjs:462:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 403,
+    expected: 404,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+# exit code (in-memory): 1
+✔ postgres review queue: TA sees the queue; others are refused (1023.99ms)
+✔ postgres review queue: evidence rule, pending pass blocks Publish, then publish once and lock (950.0534ms)
+✔ postgres review queue: publication and decisions survive a restart (916.0391ms)
+✖ postgres review queue: confirm-passes waiting behind a Publish returns 409 (864.0334ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5012.3961
+
+✖ failing tests:
+
+test at tests\integration\review-queue-postgres.test.mjs:213:3
+✖ postgres review queue: confirm-passes waiting behind a Publish returns 409 (864.0334ms)
+  AssertionError [ERR_ASSERTION]: {"confirmedCount":0,"state":{"queueItemCount":4,"passDecisionCount":2,"violationDecisionCount":1,"pendingCount":1}}
+  
+  200 !== 409
+  
+      at TestContext.<anonymous> (<repo>/tests/integration/review-queue-postgres.test.mjs:255:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 200,
+    expected: 409,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+# exit code (postgres): 1

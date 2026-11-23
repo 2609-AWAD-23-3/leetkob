@@ -1,4 +1,5 @@
 export type {
+  AuthorizePublishAsyncInput,
   AuthorizePublishInput,
   IdentityResolution,
   IdentityResolver,
@@ -8,15 +9,20 @@ export type {
   ProblemDetails,
   ProblemSlug,
   PublishAccessDecision,
+  PublishIdentityResolver,
   PublishResultProblem,
+  PublishRouteStore,
   TestHeaderIdentityResolverOptions,
   TokenIdentityResolverOptions,
   UnauthenticatedReason,
   ValidationIssue,
 } from './types.js';
 
+export { createSessionPublishIdentityResolver } from './session.js';
+
 export {
   authorizePublishAccess,
+  authorizePublishAccessAsync,
   createPublishFixtureTokens,
   createTestHeaderIdentityResolver,
   createTokenIdentityResolver,

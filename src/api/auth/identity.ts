@@ -1,4 +1,5 @@
 import type {
+  AuthorizePublishAsyncInput,
   AuthorizePublishInput,
   IdentityResolution,
   IdentityResolver,
@@ -208,5 +209,43 @@ export function authorizePublishAccess(
     kind: 'authorized',
     principal: { id: principal.id, role: 'TA' },
     lab: { ...lab },
+  };
+}
+
+// Same precedence as authorizePublishAccess (contract v1, steps 2, 4, 5, 6)
+// for an async Store and session identity (PA03-T09).
+export async function authorizePublishAccessAsync(
+  input: AuthorizePublishAsyncInput,
+): Promise<PublishAccessDecision> {
+  const resolution = await input.identityResolver.resolve(input.headers);
+  if (resolution.kind === 'unauthenticated') {
+    return resolution;
+  }
+
+  const { principal } = resolution;
+  if (principal.role !== 'TA') {
+    return {
+      kind: 'forbidden_role',
+      principal: { id: principal.id, role: principal.role },
+    };
+  }
+
+  const lab = await input.store.getLab(input.labId);
+  if (!lab) {
+    return { kind: 'lab_not_found', labId: input.labId };
+  }
+
+  if (!(await input.store.isTaAssignedToClass(principal.id, lab.classId))) {
+    return {
+      kind: 'forbidden_class',
+      principal: { id: principal.id, role: 'TA' },
+      labId: lab.id,
+    };
+  }
+
+  return {
+    kind: 'authorized',
+    principal: { id: principal.id, role: 'TA' },
+    lab: { id: lab.id, classId: lab.classId, deadline: lab.deadline },
   };
 }

@@ -1,6 +1,7 @@
 import { createApp } from './app.js';
 import { loadConfig, loadDatabaseUrl } from '../shared/config.js';
 import { createPostgresStore } from '../db/postgres/index.js';
+import { createSessionPublishIdentityResolver } from './auth/session.js';
 
 // Caller owns listen/close. Injectable factory permits lifecycle tests without IO.
 export async function createRuntimeApp(
@@ -16,6 +17,11 @@ export async function createRuntimeApp(
       auth: { store: fixture.store },
       labs: { store: fixture.store },
       submissions: { store: fixture.store },
+      reviewQueue: { store: fixture.store },
+      publish: {
+        store: fixture.store,
+        identityResolver: createSessionPublishIdentityResolver(fixture.store),
+      },
     });
     app.addHook('onClose', () => fixture.store.close());
     return app;

@@ -1,0 +1,49 @@
+# T09 nit from Vỹ's review of PR #79: evidenceLines null - red run before changing code
+# source: 4c9fbf4 (PR #79 head) + uncommitted test change only
+# command: npm run build && node --test tests/contract/review-queue.test.mjs
+# date: 2026-11-23T12:27:02Z, node v24.22.3
+# note: Fastify JSON log lines removed and local paths replaced by <repo>
+✔ review queue: the class TA sees every submission x constraint with verdict, evidence, deduction and unsure cause (302.215ms)
+✔ review item: detail adds the whole submission code for the TA (FAQ-09) (21.2892ms)
+✔ review queue: unauthenticated callers get 401, students and admins 403, a TA of another class 404 (31.1984ms)
+✔ review queue: unknown or malformed IDs return 404 or 400 (20.556ms)
+✖ decision: violation needs evidence lines inside the code; the text comes from the code (FAQ-09) (25.7679ms)
+✔ decision: evidence text is read from the stored code for CRLF files too (16.5569ms)
+✔ confirm passes: bulk-confirms only the unreviewed pass verdicts (12.8753ms)
+✔ publish: refused while any verdict, a pass included, is unreviewed; then publishes once (26.5528ms)
+✔ publish: contract v1 statuses hold with session tokens (19.1813ms)
+✔ publish: a TA of another class keeps the contract v1 403 without lab details (17.4085ms)
+✔ review queue: a TA of another class gets the same 404 for a real and a missing lab or item (16.2817ms)
+✔ confirm passes: a Publish that commits during the call returns 409 (15.1211ms)
+✔ after publish: review decisions are locked (16.8922ms)
+✔ students never receive verdicts before publish (FAQ-08) (15.2745ms)
+✔ API docs list the review queue and Publish operations (14.0356ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 14
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 962.4169
+
+✖ failing tests:
+
+test at tests\contract\review-queue.test.mjs:136:1
+✖ decision: violation needs evidence lines inside the code; the text comes from the code (FAQ-09) (25.7679ms)
+  AssertionError [ERR_ASSERTION]: {"decision":"pass","evidenceLines":null}
+  
+  200 !== 400
+  
+      at TestContext.<anonymous> (<repo>/tests/contract/review-queue.test.mjs:159:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 200,
+    expected: 400,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+# exit code: 1
