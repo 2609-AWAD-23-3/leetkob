@@ -6,6 +6,7 @@ export interface SandboxLimits {
   readonly outputLimitBytes: number;
   readonly compileCpuTimeLimitSeconds: number;
   readonly compileWallTimeLimitSeconds: number;
+  readonly compileMemoryLimitMb?: number | undefined;
 }
 
 export type SandboxTerminationReason =
