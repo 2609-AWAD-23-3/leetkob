@@ -23,6 +23,11 @@ export {
 } from './errors.js';
 export type { ModelProviderErrorOptions } from './errors.js';
 export { createSemanticEvaluator } from './evaluate.js';
+export {
+  NO_STUDENT_IDENTITY_DATASET,
+  resolvePromptIdentity,
+} from './identity.js';
+export type { ResolvedIdentity } from './identity.js';
 export type { SemanticEvaluatorDeps } from './evaluate.js';
 export { buildPrompt, numberLines, SYSTEM_PROMPT } from './prompt.js';
 export type { BuiltPrompt, PromptInput } from './prompt.js';
@@ -50,6 +55,8 @@ export type {
   ModelClient,
   ModelCompletion,
   ModelCompletionRequest,
+  PromptIdentity,
+  PromptIdentityLabel,
   PromptRecord,
   SemanticConstraint,
   SemanticEvaluationContext,
