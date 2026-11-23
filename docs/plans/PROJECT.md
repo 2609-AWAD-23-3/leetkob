@@ -18,7 +18,7 @@ Các hạn dưới đây theo brief năm 2026, đều 22:00 trừ seminar/oral l
 | PA04 | 02/12/2026 | Dev-set eval gate, guardrails, human gate và red-team report | [PA04](PA04.md) |
 | PA05 | 16/12/2026 | Publishing/appeals, real-time, observability, 80-submission load test, public deployment, incident post-mortem | [PA05](PA05.md) |
 | Seminar | 10/12 và 17/12 | Chủ đề optimisation theo lịch lớp | Bổ sung khi có brief riêng |
-| PA06 | 24/12 và 31/12 | Oral cá nhân về code và quyết định của nhóm | Bổ sung khi có hướng dẫn riêng |
+| PA06 | 21/12 (`OWNERS.md`); 24/12 hoặc 31/12 (slot) | Final demo và vấn đáp cá nhân về code và quyết định của nhóm | [PA06](PA06.md) |
 
 ## Bất biến xuyên checkpoint
 
