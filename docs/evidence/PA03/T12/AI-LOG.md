@@ -20,4 +20,19 @@
 - Không cho phép `TRUST_PROXY=true` hoặc `0.0.0.0/0` để tránh tin mù quáng `X-Forwarded-For` từ client ngoài Internet.
 - Không mở cổng 3000 hay 5432 trực tiếp ra ngoài VM trong `deploy/compose.yml`; chỉ Caddy giữ cổng 80/443 trước `api`.
 
-**Phần làm tay (By hand):** Phúc cung cấp `MODEL_API_KEY` trong `.env` local (gitignored) và chỉ đạo rebase nhánh T12 lên `develop` (`b239d94`) rồi triển khai lên VPS. Assistant thực hiện code/tests/compose, deploy và xác minh trên VPS, ghi nhận blocker mở cổng 80/443 Azure NSG.
+**Phần làm tay (By hand):** Phúc cung cấp `MODEL_API_KEY` trong `.env` local (gitignored), chỉ đạo rebase nhánh T12 lên `develop` (`b239d94`) và điều phối mở cổng 80/443 Azure NSG; Vượng mở NSG ports 80/443 trên Azure. Assistant thực hiện code/tests/compose, deploy và xác minh cả nội bộ lẫn public HTTPS trên VPS.
+
+## 2026-11-24 — Kiểm chứng cổng và chạy lại Tiêu chí 1 qua public HTTPS
+
+**Công cụ (Tool):** Antigravity assistant (Execution), PowerShell TCP/HTTPS port checks + Node script qua `https://70.153.86.114.sslip.io`, SSH kiểm tra bảng `submissions`/`verdicts`/`model_calls` trên VPS Postgres.
+
+**Yêu cầu (Asked for):** Kiểm tra lại các cổng với timeout và chạy lại luồng Tiêu chí 1 qua URL public HTTPS sau khi Azure NSG đã mở cổng `80` và `443`.
+
+**Phần giữ lại (Kept):** Cấu hình Caddy HTTPS `70.153.86.114.sslip.io`, không mở cổng `3000`/`5432` ra Internet, giữ `TRUST_PROXY=172.28.0.0/24` và 5 tài khoản deploy cô lập.
+
+**Phần điều chỉnh (Changed):**
+- Rà soát cổng TCP (timeout 3s): `22`/`80`/`443` OPEN (`HTTP` chuyển hướng `308` -> `HTTPS /health` `200`, `/docs/` `200`), còn `3000`/`5432` TIMEOUT/FILTERED.
+- Chạy hết luồng Tiêu chí 1 từ bên ngoài qua `https://70.153.86.114.sslip.io` (lab `3962d1dc-1236-422e-befd-e6bccfb03809`, 3 bài `AC` trong Docker sandbox + `claude-haiku-5-5` cho 3 `requestId` mới `req_011ChLK6HZ2nGMMALsCPK46B`, `req_011ChLK6e2648XNXS2jfAJ2R`, `req_011ChLK6yzPGnCJCWbT6b4wh`; RBAC `403`/`404`/`200` khớp; Postgres ghi đủ 6 verdict và 3 bản ghi `model_calls`).
+- Gỡ blocker NSG và hoàn tất checklist thực hiện trong [Evidence T12](./README.md) và [plan PA03](../../../plans/PA03.md#t12--deployment-public).
+
+**Phần làm tay (By hand):** Vượng mở cổng `80`/`443` trên Azure NSG; Phúc yêu cầu test lại cổng với timeout và chạy kiểm chứng lại trên deployment.

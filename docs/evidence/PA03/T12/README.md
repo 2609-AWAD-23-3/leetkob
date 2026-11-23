@@ -35,7 +35,18 @@
      - Bài injection (`d7d532f1...`): `c1` `pass` (`hard_rule`), `c2` `violation` (`model`, request `req_011ChLHmiGSLPQVWvvBoymcQ`, `1307` in / `104` out, `$0.0001827`).
    - Student gọi `/review-queue` nhận `403`, `pa3.ta2` nhận `404`, `pa3.ta1` nhận `200` với đầy đủ verdict, evidence và mức trừ (`3` và `4`).
 
-## 3. Blocker còn lại để hoàn tất nghiệm thu public HTTPS
+## 3. Kiểm chứng public HTTPS và rà soát cổng sau khi mở 80/443 (24/11/2026)
 
-- Khi thử gọi `https://70.153.86.114.sslip.io/health` từ ngoài Internet bị timeout, và log Caddy ghi lỗi ACME `http-01` / `tls-alpn-01` `Timeout during connect (likely firewall problem)` do Azure NSG hiện mới mở cổng `22`.
-- Cần `@vinny2707` (chủ subscription Azure) mở inbound TCP **`80`** và **`443`** trên NSG cho `70.153.86.114` để Caddy tự động cấp chứng chỉ TLS và kiểm chứng lại qua URL public HTTPS.
+1. **Rà soát cổng TCP (timeout 3s) và endpoint HTTP/HTTPS từ máy bên ngoài (`70.153.86.114`):**
+   - TCP `22`: OPEN
+   - TCP `80`: OPEN (`http://70.153.86.114.sslip.io/health` ➔ `308` redirect sang HTTPS)
+   - TCP `443`: OPEN (`https://70.153.86.114.sslip.io/health` ➔ `200 {"status":"ok"}`, `https://70.153.86.114.sslip.io/docs/` ➔ `200 text/html`)
+   - TCP `3000`: TIMEOUT/FILTERED (3s) — API không mở trực tiếp ra Internet
+   - TCP `5432`: TIMEOUT/FILTERED (3s) — Postgres không mở trực tiếp ra Internet
+2. **Chạy toàn bộ luồng Tiêu chí 1 từ Internet qua `https://70.153.86.114.sslip.io` (TLS Let's Encrypt hợp lệ):**
+   - `pa3.ta1` tạo lab `sort-merge` (`3962d1dc-1236-422e-befd-e6bccfb03809`, lớp `pa3-class-1`); `pa3.ta2` đọc `/labs/{labId}` và `/labs/{labId}/review-queue` đều nhận `404`.
+   - 3 bài nộp C++ đều được sandbox thật `leetkob-sandbox:pa03` chấm `AC`, đồng thời kiểm tra luật cứng + `claude-haiku-5-5` thật trong Postgres:
+     - Bài tuân thủ (`6bb1160e-3a70-406e-b1ea-ff4f0113a2d5`, `pa3.student1`): `c1` `pass` (`hard_rule`), `c2` `pass` (`model`, request `req_011ChLK6HZ2nGMMALsCPK46B`, `1498` in / `106` out, `$0.0002028`, dòng 11–16).
+     - Bài vi phạm (`882c00e5-ea61-4944-95f7-bd53e9d3748d`, `pa3.student2`): `c1` `violation` (`hard_rule`, dòng 7 `std::sort`), `c2` `violation` (`model`, request `req_011ChLK6e2648XNXS2jfAJ2R`, `1207` in / `85` out, `$0.0001632`, dòng 7).
+     - Bài injection (`d92904e5-5d2f-49f9-825c-c0e7b4e6763e`, `pa3.student2`): `c1` `pass` (`hard_rule`), `c2` `violation` (`model`, request `req_011ChLK6yzPGnCJCWbT6b4wh`, `1307` in / `99` out, `$0.0001802`, dòng 4–7).
+   - `pa3.student1` nhận `403` khi gọi `/labs/{labId}/review-queue` và không thấy `verdicts` trong `/submissions/{id}`; `pa3.ta1` nhận `200` với 4 mục hàng đợi (bài `AC` mới nhất của mỗi sinh viên theo FAQ-03/04: `6bb1160e` và `d92904e5`), đủ verdict, dòng evidence và mức trừ (`3` và `4`).
