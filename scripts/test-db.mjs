@@ -18,6 +18,7 @@ const result = spawnSync(
     '--test-concurrency=1',
     'tests/integration/postgres-store.test.mjs',
     'tests/integration/worker-postgres.test.mjs',
+    'tests/integration/review-queue-postgres.test.mjs',
   ],
   { stdio: 'inherit' },
 );
