@@ -10,6 +10,10 @@ import {
   ModelConfigError,
   ModelProviderError,
 } from '../../dist/pipeline/model/index.js';
+import {
+  buildSandboxDockerArgs,
+  FIXED_COMPILE_MEMORY_LIMIT_MB,
+} from '../../dist/sandbox/index.js';
 import { FIXED_JUDGE_LIMITS } from '../../dist/shared/domain/index.js';
 import {
   buildSandboxLimitsFromLab,
@@ -50,6 +54,31 @@ test('buildSandboxLimitsFromLab converts lab limits and FIXED_JUDGE_LIMITS to Sa
     compileCpuTimeLimitSeconds: FIXED_JUDGE_LIMITS.compileTimeMs / 1000,
     compileWallTimeLimitSeconds: (FIXED_JUDGE_LIMITS.compileTimeMs * 3) / 1000,
   });
+
+  const lowMemLimits = buildSandboxLimitsFromLab({
+    cpuTimeMs: 1000,
+    memoryMb: 64,
+  });
+  assert.match(
+    buildSandboxDockerArgs({
+      mode: 'compile',
+      containerName: 'w-cmp-64',
+      limits: lowMemLimits,
+      statusToken: 'tok-c',
+    }).join(' '),
+    new RegExp(
+      `--memory ${FIXED_COMPILE_MEMORY_LIMIT_MB}m --memory-swap ${FIXED_COMPILE_MEMORY_LIMIT_MB}m`,
+    ),
+  );
+  assert.match(
+    buildSandboxDockerArgs({
+      mode: 'run',
+      containerName: 'w-run-64',
+      limits: lowMemLimits,
+      statusToken: 'tok-r',
+    }).join(' '),
+    /--memory 64m --memory-swap 64m/,
+  );
 });
 
 test('mapSandboxResultToJudgeResult maps all sandbox verdicts and test statuses cleanly', () => {

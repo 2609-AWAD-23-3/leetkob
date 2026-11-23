@@ -11,6 +11,7 @@ import {
   FAQ05_SANDBOX_LIMITS,
   sanitizeDockerHostEnv,
 } from '../../dist/sandbox/index.js';
+import { createSandboxJudgeSubmission } from '../../dist/worker/index.js';
 
 const ATTACKS_DIR = path.resolve('sandbox/attacks');
 
@@ -435,4 +436,81 @@ int main() { return 0; }
   const compileSecretPath = await runner.compile(secretPathProbe);
   assert.equal(compileSecretPath.success, false);
   assert.match(compileSecretPath.stderr, /No such file or directory/i);
+});
+
+test('lab with 64 MiB runtime limit compiles <bits/stdc++.h> as AC while 96 MiB runtime allocation triggers MLE', async () => {
+  const judgeSubmission = createSandboxJudgeSubmission();
+  const baseContext = (id, code) => ({
+    job: {
+      id: `job-${id}`,
+      submissionId: id,
+      attempts: 1,
+      leaseOwner: 'sbx-test',
+      leaseToken: 'tok',
+      leaseExpiresAt: null,
+      lastError: null,
+    },
+    submission: {
+      id,
+      labId: 'lab-64m',
+      studentId: 'student-1',
+      code,
+      submittedAt: '2026-11-23T00:00:00.000Z',
+      status: 'judging',
+      judgeResult: null,
+    },
+    lab: {
+      id: 'lab-64m',
+      classId: 'class-1',
+      title: 'Sort 64M',
+      statement: 'Sort numbers.',
+      opensAt: '2026-11-22T00:00:00.000Z',
+      deadline: '2026-11-25T00:00:00.000Z',
+      limits: { cpuTimeMs: 1000, memoryMb: 64 },
+      tests: [{ id: 't1', input: '3\n3 1 2\n', expectedOutput: '1 2 3\n' }],
+      constraints: [],
+      createdBy: 'ta-1',
+      createdAt: '2026-11-22T00:00:00.000Z',
+    },
+    signal: new AbortController().signal,
+    renewLease: async () => true,
+  });
+
+  const validSource = `
+#include <bits/stdc++.h>
+int main() {
+  int n = 0;
+  if (!(std::cin >> n)) return 1;
+  std::vector<int> a(n);
+  for (int i = 0; i < n; ++i) std::cin >> a[i];
+  std::sort(a.begin(), a.end());
+  for (int i = 0; i < n; ++i) {
+    if (i > 0) std::cout << ' ';
+    std::cout << a[i];
+  }
+  std::cout << '\\n';
+  return 0;
+}
+`;
+  const acResult = await judgeSubmission(
+    baseContext('sub-64m-ac', validSource),
+  );
+  assert.equal(acResult.verdict, 'AC');
+  assert.deepEqual(acResult.tests, [{ testId: 't1', verdict: 'AC' }]);
+
+  const mleSource = `
+#include <iostream>
+#include <vector>
+int main() {
+  const std::size_t bytes = 96u * 1024u * 1024u;
+  volatile unsigned char* buf = new unsigned char[bytes];
+  for (std::size_t i = 0; i < bytes; i += 4096) buf[i] = 1;
+  std::cout << (int)buf[0] << '\\n';
+  return 0;
+}
+`;
+  const mleResult = await judgeSubmission(
+    baseContext('sub-64m-mle', mleSource),
+  );
+  assert.equal(mleResult.verdict, 'MLE');
 });
