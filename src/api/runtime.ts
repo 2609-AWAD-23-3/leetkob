@@ -1,5 +1,9 @@
 import { createApp } from './app.js';
-import { loadConfig, loadDatabaseUrl } from '../shared/config.js';
+import {
+  loadConfig,
+  loadDatabaseUrl,
+  loadTrustProxy,
+} from '../shared/config.js';
 import { createPostgresStore } from '../db/postgres/index.js';
 import { createSessionPublishIdentityResolver } from './auth/session.js';
 
@@ -9,11 +13,13 @@ export async function createRuntimeApp(
   factory: typeof createPostgresStore = createPostgresStore,
 ) {
   loadConfig(env);
+  const trustProxy = loadTrustProxy(env);
   const fixture = factory({ connectionString: loadDatabaseUrl(env) });
   try {
     await fixture.ready;
     const app = createApp({
       logger: true,
+      trustProxy,
       auth: { store: fixture.store },
       labs: { store: fixture.store },
       submissions: { store: fixture.store },

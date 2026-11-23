@@ -32,12 +32,19 @@ export interface AppOptions {
   reviewQueue?: ReviewQueueOptions;
   publish?: PublishModuleOptions;
   logger?: boolean;
+  trustProxy?: false | string | readonly string[] | undefined;
   modules?: Partial<AppModules>;
 }
 
 // Construction only: caller owns ready/listen/close. Importing never opens a socket.
 // Module replacement is a programmatic composition seam, never an HTTP option.
 export function createApp(options: AppOptions = {}) {
+  const trustProxy =
+    options.trustProxy === undefined || options.trustProxy === false
+      ? false
+      : typeof options.trustProxy === 'string'
+        ? options.trustProxy
+        : [...options.trustProxy];
   const app = Fastify({
     logger: options.logger
       ? {
@@ -48,7 +55,7 @@ export function createApp(options: AppOptions = {}) {
           ],
         }
       : false,
-    trustProxy: false,
+    trustProxy,
   });
 
   app.get('/health', async () => ({ status: 'ok' }));

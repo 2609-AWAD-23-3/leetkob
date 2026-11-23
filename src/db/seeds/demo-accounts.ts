@@ -16,6 +16,25 @@ export interface DemoAccount {
 // Public credential for fictional development accounts, never real users.
 export const DEMO_PASSWORD = 'password123';
 
+/** Prevents accidentally running the public-password development seed in production. */
+export function assertDevSeedAllowed(
+  env: NodeJS.ProcessEnv = process.env,
+): void {
+  const nodeEnv = env.NODE_ENV?.trim().toLowerCase();
+  const leetkobEnv = env.LEETKOB_ENV?.trim().toLowerCase();
+  const allowDevSeed = env.ALLOW_DEV_SEED?.trim().toLowerCase();
+  if (
+    nodeEnv === 'production' ||
+    leetkobEnv === 'production' ||
+    allowDevSeed === '0' ||
+    allowDevSeed === 'false'
+  ) {
+    throw new Error(
+      'Development seed is blocked in production environments. Use npm run db:seed:deploy with explicit deploy passwords instead.',
+    );
+  }
+}
+
 export const demoClasses = [
   { id: 'demo-class-1', name: 'Demo Class 1' },
   { id: 'demo-class-2', name: 'Demo Class 2' },
