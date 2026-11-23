@@ -1,7 +1,7 @@
 # Evidence PA03-T10 — Checker command, case riêng và dev run
 
 **Thực hiện:** Vượng · **Reviewer:** Phúc · **Issue:** #39 · **Nhánh:** `feat/pa03-t10-checker` (tách từ `origin/develop` `80f25e3`).
-**Trạng thái:** bản local chưa commit, chờ Vượng review. Dev run model thật đã chạy ngày 23/11/2026 (mục 6).
+**Trạng thái:** đã commit trên nhánh `feat/pa03-t10-checker` và mở [PR #81](https://github.com/2609-AWAD-23-3/leetkob/pull/81) vào `develop`; CI 3 job (`quality-gate`, `postgres-store`, `sandbox-attacks`) xanh tại `8d2c628`. Vỹ đã review (request changes chỉ về tài liệu, đã sửa); chờ review của Phúc. Dev run model thật đã chạy ngày 23/11/2026 (mục 6).
 
 ## 1. Quyết định thiết kế (Vượng chốt 23/11/2026)
 
@@ -22,7 +22,7 @@
 | Lệnh | `src/cli/checker.ts` (tham số, `MODEL_OFF`, exit code), `src/cli/dataset.ts` (chỉ đọc `statement.md`, `constraints.json`, `solutions/*.cpp`), `src/cli/run.ts` (hard rules → model/`model_off`, call log, concurrency) |
 | B3 | `src/pipeline/model/identity.ts`, `types.ts`, `evaluate.ts`, `index.ts` |
 | A2 | `src/shared/domain/verdicts.ts`, `src/db/validation.ts`, `src/db/migrations/0006_unsure_cause_model_off.ts`, `src/api/modules/api-docs/review-openapi.ts`, `docs/contract/review-queue.md` |
-| Docker | `docker/checker.Dockerfile` (multi-stage `node:24.22.3-bookworm-slim`, user `node`, không secret), `.dockerignore` (loại `.env`, `.git`, `node_modules`, dữ liệu) |
+| Docker | `docker/checker.Dockerfile` (multi-stage `node:24.22.3-bookworm-slim`, chạy bằng root trong container theo quyết định E, không secret), `.dockerignore` (loại `.env`, `.git`, `node_modules`, dữ liệu) |
 | Dev set | `leetkob-eval/` (128 file, commit `552c811db2d35a23d641bc4fdffc1ac120be1a28`), `.gitattributes` `leetkob-eval/** -text`, `.prettierignore` `leetkob-eval/`, manifest `tests/support/leetkob-eval.sha256` |
 | Case riêng | `eval-cases/` (bài `digit-sum`, 6 solution, 12 cặp), `scripts/verify-eval-cases.mjs` |
 | Test | `tests/unit/{leetkob-eval-integrity,model-identity,checker-run,eval-cases}.test.mjs`, `tests/integration/{checker-cli,checker-eval}.test.mjs`, thêm vào `store-conformance.mjs`, `review-queue.test.mjs`, `postgres-store.test.mjs`; helper `tests/support/{checker-dataset,no-network}.mjs` |

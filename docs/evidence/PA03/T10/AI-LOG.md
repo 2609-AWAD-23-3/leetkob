@@ -44,3 +44,12 @@ Kept: Claude chỉ kiểm tên biến và hình dạng key (độ dài, tiền t
 Changed: Không chỉnh prompt hay rule theo cặp khấu trừ sai (AGENTS.md cấm tinh chỉnh theo dev set; PA03 không có ngưỡng eval). Kiểm call log bằng script: 39 request id `req_…` khác nhau, không prompt nào còn comment, không call nào cho constraint hard rule đã quyết, không file nào chứa key; chấm lại ra đúng số liệu.
 Rejected: Chạy lại nhiều lần để chọn lần đẹp nhất (rubric chấm lại file đã commit, phải báo cáo đúng lần chạy).
 By hand: Vượng cấp key qua `.env`. Claude chạy lệnh, kiểm call log, ghi evidence, cập nhật plan.
+
+## 2026-11-23 — Sửa theo review của Vỹ trên PR #81
+
+Tool: Claude Code (desktop app).
+Asked for: Vượng yêu cầu đọc review của Vỹ (request changes, chỉ về tài liệu), rồi sửa và cập nhật hết: tài liệu, mô tả PR và Issue #39.
+Kept: Ba điểm của Vỹ đều đúng khi đối chiếu file: trạng thái "bản local chưa commit" trong evidence và plan; bảng file của evidence còn ghi image dùng user `node` (sót khi bỏ `USER node`); Issue #39 chưa tick các ô thực hiện như plan.
+Changed: Evidence và plan ghi trạng thái theo PR #81 và CI xanh; bảng file ghi image chạy bằng root theo quyết định E. Các dòng nói "image cũ chạy bằng user `node`" và log lịch sử giữ nguyên. Issue #39 tick sáu ô thực hiện, để trống ba ô review của Phúc; mô tả PR ghi CI đã xanh.
+Rejected: Sửa log `logs/quality-checks.txt` (ghi lại đúng thời điểm chạy, không viết lại lịch sử).
+By hand: Vỹ review và chỉ ra các điểm; Vượng yêu cầu sửa và cập nhật. Claude sửa tài liệu, commit, push, cập nhật Issue và mô tả PR.
