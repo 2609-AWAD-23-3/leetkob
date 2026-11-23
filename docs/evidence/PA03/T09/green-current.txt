@@ -1,6 +1,6 @@
-# T09 green run on the current implementation (option B: Publish 403, review queue 404)
-# source: 6df715f (origin/develop) + uncommitted T09 changes; fingerprint of the code, tests, scripts and contracts (sha256 of `git diff HEAD -- src tests scripts docs/contract` + those untracked files, first 16 hex): e7b0e7c1f6da8be4
-# date: 2026-11-23T08:56:05Z; node v24.22.3; npm 11.19.1; PostgreSQL 17.11 (docker/compose.postgres.yml); Windows
+# T09 green run on the current implementation (option B: Publish 403, review queue 404; includes the fixes from Vỹ's review of PR #79)
+# source: 4c9fbf4 (PR #79 head) + uncommitted fixes from Vỹ's review; fingerprint of code, tests, scripts and contracts against the branch base 6df715f (sha256 of `git diff 6df715f --diff-filter=M -- src tests scripts docs/contract` + the content of files added since 6df715f, first 16 hex): 05968c2e46d4cbfc
+# date: 2026-11-23T12:30:51Z; node v24.22.3; npm 11.19.1; PostgreSQL 17.11 (docker/compose.postgres.yml); Windows
 # note: Fastify JSON log lines removed; database URL not printed
 
 ## Exit codes
@@ -72,7 +72,7 @@ command: node --test tests/contract/review-queue.test.mjs tests/integration/revi
 ℹ pass 50
 ℹ fail 0
 ℹ skipped 0
-ℹ duration_ms 845.7705
+ℹ duration_ms 974.3863
 
 ## Postgres review queue tests (npm run test:db, tests/integration/review-queue-postgres.test.mjs)
 ok 87 - postgres review queue: TA sees the queue; others are refused

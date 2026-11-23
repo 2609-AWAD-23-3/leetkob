@@ -3,7 +3,7 @@
 - Task: [Issue #38](https://github.com/2609-AWAD-23-3/leetkob/issues/38), mục T09 trong [plan PA03](../../../plans/PA03.md#t09--review-queue-và-chặn-publish).
 - Người thực hiện: Vượng (@vinny2707). Reviewer: Vỹ (@tranquocvy).
 - Nhánh: `feat/pa03-t09-review-queue`, tách từ `origin/develop` tại `6df715f` (đã có T03, T04, T06, T07, T08).
-- Trạng thái: code, test và tài liệu xong trên working tree local; **chưa commit/push, chưa mở PR, chưa đồng bộ Issue #38**.
+- Trạng thái: [PR #79](https://github.com/2609-AWAD-23-3/leetkob/pull/79) vào `develop`, commit `f938de9` (test) và `4c9fbf4` (code, docs); CI 3 check (`quality-gate`, `postgres-store`, `sandbox-attacks`) xanh tại `4c9fbf4`. Vỹ review tại `4c9fbf4`: CHANGES_REQUESTED, code và test đạt, cần đồng bộ trạng thái tài liệu và Issue #38 (mục 5). Bản sửa theo review đó nằm ở hai commit tiếp theo (`bc26e13` test và commit code, docs ngay sau) trên PR #79; Issue #38 cập nhật sau khi Vượng duyệt nội dung.
 
 ## 1. Đã làm
 
@@ -29,7 +29,7 @@ Log đỏ đã bỏ hai dòng log JSON của Fastify (có tên máy, pid) và th
 
 ## 3. Kiểm chứng local
 
-Node v24.22.3, npm 11.19.1, Windows, PostgreSQL 17.11 trong Docker. Chạy trên working tree chưa commit từ `6df715f`.
+Node v24.22.3, npm 11.19.1, Windows, PostgreSQL 17.11 trong Docker. Lần chạy đầu trên working tree từ `6df715f` (trước khi commit); lần chạy cuối, sau bản sửa theo review của Vỹ, ghi trong log xanh dưới đây.
 
 **Log của bản cài đặt hiện tại (phương án B):** [green-current.txt](green-current.txt): exit code của mọi lệnh, tên từng test T09 và Publish (50/50), 4 test Postgres của review queue, kèm fingerprint của thay đổi để đối chiếu đúng bản. Hai log đỏ ([red-before-implementation.txt](red-before-implementation.txt), [red-review-fixes.txt](red-review-fixes.txt)) là bản ghi lịch sử, giữ nguyên nội dung; dòng đầu mỗi file ghi rõ điều đó.
 
@@ -63,12 +63,26 @@ Các trường hợp được test:
 Vượng review bản local và chỉ ra hai vấn đề. Cả hai làm theo thứ tự test đỏ trước rồi mới sửa code; log: [red-review-fixes.txt](red-review-fixes.txt) (5 test in-memory và 1 test Postgres đỏ, exit 1).
 
 1. **`confirm-passes` trả `200` khi Publish commit giữa chừng.** Route kiểm publication rồi mới gọi Store; trên Postgres `confirmPasses` chờ khoá dòng lab, thấy lab đã publish thì không xác nhận gì và trả 0, nên API trả `200 { confirmedCount: 0 }`. Sửa: `confirmedCount === 0` và lab đã có publication thì trả `409 conflict`, giống route `decision`. Test: in-memory chen Publish vào ngay trước khi Store xác nhận; Postgres giữ khoá `FOR UPDATE` trên dòng lab bằng một kết nối khác, chờ tới khi `confirm-passes` bị chặn (`pg_stat_activity`), ghi publication rồi `COMMIT` → phản hồi `409` và mục `pass` chưa duyệt vẫn chưa được xác nhận.
-2. **Publish lộ việc lab tồn tại cho TA lớp khác** (`403` ở Publish, `404` ở review queue). Lần đầu làm theo đề xuất của Vượng: đổi Publish sang `404` như lab không tồn tại, ghi thay đổi contract và đổi ba kỳ vọng `403` trong test Publish PA02 (log đỏ ở trên có các test này). Sau đó Claude chỉ ra rằng acceptance T09 yêu cầu "giữ contract v1" và mục 5 của `publish.md` dành việc đổi status cho version mới; Vượng so sánh ba phương án và **chốt phương án B**: Publish giữ `403` theo contract v1, review queue giữ `404` như API labs và FAQ-01. Đã hoàn lại: `mapAccessDecisionToProblem` và hai file test Publish PA02 trở về đúng bản trên `develop`, bỏ ghi chú ngoại lệ trong `publish.md`. Khác biệt `403`/`404` được ghi là rủi ro đã chấp nhận trong [review-queue.md](../../../contract/review-queue.md) và đoạn PA03 của `publish.md`: body `403` không có dữ liệu lab, chỉ cho người đã biết ID biết lab tồn tại, và ID lab là UUID ngẫu nhiên. Test giữ lại: TA lớp khác gọi Publish nhận đúng body `403` của contract v1, không chứa `class-1`, lab ID, deadline hay `pendingCount`; bốn endpoint review queue trả cùng `404` cho lab/mục thật và không tồn tại.
+2. **Publish lộ việc lab tồn tại cho TA lớp khác** (`403` ở Publish, `404` ở review queue). Lần đầu làm theo đề xuất của Vượng: đổi Publish sang `404` như lab không tồn tại, ghi thay đổi contract và đổi ba kỳ vọng `403` trong test Publish PA02 (log đỏ ở trên có các test này). Sau đó Claude chỉ ra rằng acceptance T09 yêu cầu "giữ contract v1" và mục 5 của `publish.md` dành việc đổi status cho version mới; Vượng so sánh ba phương án và **chốt phương án B**: Publish giữ `403` theo contract v1, review queue giữ `404` như API labs và FAQ-01. Đã hoàn lại: `mapAccessDecisionToProblem` và hai file test Publish PA02 trở về đúng bản trên `develop`, bỏ ghi chú ngoại lệ trong `publish.md`. Khác biệt `403`/`404` được ghi là rủi ro đã chấp nhận trong [review-queue.md](../../../contract/review-queue.md) và đoạn PA03 của `publish.md`: body `403` không có dữ liệu lab, chỉ cho người đã biết ID biết lab tồn tại, và lab tạo qua API có ID là UUID ngẫu nhiên (chỉ lab nạp từ seed như `lab-sort` có ID cố định). Test giữ lại: TA lớp khác gọi Publish nhận đúng body `403` của contract v1, không chứa `class-1`, lab ID, deadline hay `pendingCount`; bốn endpoint review queue trả cùng `404` cho lab/mục thật và không tồn tại.
 
-## 5. Giới hạn
+## 5. Review của Vỹ trên PR #79 (23/11/2026)
+
+Vỹ review tại `4c9fbf4`, kết luận CHANGES_REQUESTED: tự chạy lại lint, format-check, type-check và `npm test` (515 test, 512 pass, 3 skipped); gửi request trực tiếp cho cả ba mục checklist review T09 và cả ba đạt; thử thêm nộp lại bài, dòng ngoài code, đổi quyết định và race qua khoá dòng lab, không thấy lỗi; đồng ý giữ khác biệt `403`/`404`. Cần sửa và đã sửa:
+
+1. Trạng thái cũ ("chưa commit/push, chưa mở PR", "CI chưa chạy") trong plan và README này: đã cập nhật theo PR #79, hai commit và CI.
+2. Issue #38 chưa khớp plan: nội dung cập nhật được soạn để Vượng duyệt trước khi sửa Issue.
+
+Nit cũng đã xử lý:
+
+- `evidenceLines: null` với `pass` từng được nhận (`200`), lệch contract. Test viết trước và chạy đỏ ([red-review-vy.txt](red-review-vy.txt)), rồi sửa: chỉ vắng mặt hoặc `[]` là "không có dòng", `null` trả `400` cho cả hai quyết định. Contract ghi thêm câu này.
+- Câu "Lab IDs are random UUIDs" sửa thành: lab tạo qua API có UUID ngẫu nhiên, chỉ lab nạp từ seed có ID cố định.
+- Bài `failed` chặn Publish: ghi vào giới hạn cho T11/PA04.
+
+## 6. Giới hạn
 
 - Test OpenAPI được thêm sau khi cài đặt, không nằm trong lần chạy đỏ. Test Postgres viết sau khi bản in-memory đã xanh và xanh ngay lần đầu; chúng kiểm tra cùng hành vi trên Store thật.
-- Kiểm chứng chạy trên Windows local và Postgres trong Docker; CI chưa chạy vì chưa push.
+- Kiểm chứng local chạy trên Windows và Postgres trong Docker; CI của PR #79 chạy trên Linux và xanh tại `4c9fbf4`.
+- Có từ T03, không thuộc T09 (Vỹ ghi nhận khi review): bài được tính ở trạng thái `failed` vẫn tính là pending, nên lab không Publish được; Store có `requeue` nhưng chưa có API để TA hay admin chấm lại. Cần xử lý ở T11 hoặc PA04.
 
 - Không có UI; plan cho phép "UI tối thiểu hoặc chỉ API".
 - Nhật ký đổi quyết định có trong Store (FAQ-10) nhưng chưa có API đọc; lấy mẫu 10% `pass` là PA04.

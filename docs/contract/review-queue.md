@@ -20,7 +20,7 @@ How this contract applies them:
 | `violation` needs at least one line of code (FAQ-09) | `400` without `evidenceLines`; the line text is taken from the stored code |
 | TA of another class sees nothing (FAQ-01) | `404`, identical (status and body) to a missing lab or item, the same as `GET /labs/{labId}` in `docs/contract/labs.md` |
 
-**Known difference with Publish (decision of 2026-11-23).** `POST /labs/{labId}/publish` keeps contract v1 and answers a TA of another class with `403 forbidden`, while this queue answers `404`. The `403` body carries no lab data; it only tells a caller who already knows a lab ID that the lab exists. Lab IDs are random UUIDs, so they cannot be guessed. The risk was accepted to keep the Publish contract at version 1 (T09 acceptance: "giữ contract v1"); aligning Publish to `404` would be a separate, agreed contract change.
+**Known difference with Publish (decision of 2026-11-23).** `POST /labs/{labId}/publish` keeps contract v1 and answers a TA of another class with `403 forbidden`, while this queue answers `404`. The `403` body carries no lab data; it only tells a caller who already knows a lab ID that the lab exists. Labs created through the API (`POST /classes/{classId}/labs`) get random UUIDs that cannot be guessed; only labs loaded from a seed (for example `lab-sort` in the test seed) have fixed IDs. The risk was accepted to keep the Publish contract at version 1 (T09 acceptance: "giữ contract v1"); aligning Publish to `404` would be a separate, agreed contract change.
 
 PA03 scope: every verdict of each counted Accepted submission is in the queue (no 10% `pass` sampling yet, FAQ-10 is PA04), and a TA may confirm all unreviewed `pass` verdicts at once. Requiring evidence lines for `violation` was planned for PA04 and is enforced from PA03 on purpose, so this contract does not need a breaking change later.
 
@@ -86,7 +86,7 @@ Items are ordered by counted submission, then by constraint order of the lab. Th
 Body (`application/json`): `{ "decision": "pass" | "violation", "evidenceLines"?: number[] }`.
 
 - `violation`: 1–50 distinct integers, each between 1 and the number of lines of the submitted code. The server stores `{ line, text }` with `text` read from the code (line breaks `\n`, `\r\n`, `\r`).
-- `pass`: no evidence lines (absent or `[]`).
+- `pass`: no evidence lines (absent or `[]`). `null` is not accepted for either decision (`400`).
 - Any other field, a missing or other `decision`, or a non-object body: `400 validation`. Another content type: `415`.
 
 `200 { "item": ReviewItem }`. A TA may change a decision until Publish; every change of decision, evidence or reviewer is logged in the Store (FAQ-10). After Publish: `409 conflict`.

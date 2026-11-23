@@ -114,7 +114,8 @@ function readDecision(
   if (!DECISIONS.includes(decision as TaDecision))
     fail(400, 'validation', 'decision must be pass or violation.');
   const lines = splitLines(code);
-  const numbers = evidenceLines ?? [];
+  // Only an absent field or [] means "no lines"; null is rejected below.
+  const numbers = evidenceLines === undefined ? [] : evidenceLines;
   if (!Array.isArray(numbers))
     fail(400, 'validation', 'evidenceLines must be an array of line numbers.');
   if (numbers.length > MAX_TA_EVIDENCE_LINES)

@@ -35,3 +35,12 @@ Kept: Review queue trả `404` như API labs và FAQ-01; bản sửa `confirm-pa
 Changed: Claude đánh giá lại đề xuất `404` đã làm: acceptance T09 yêu cầu giữ contract v1, mục 5 của `publish.md` dành việc đổi status cho version mới, ID lab là UUID nên rủi ro lộ thấp. Claude trình bày ba phương án (A: tất cả `404`; B: review `404`, Publish `403`; C: cả hai `403`) kèm rủi ro; Vượng chốt B. Hoàn lại mapping và hai file test Publish PA02 về đúng bản trên `develop`, bỏ ghi chú ngoại lệ trong `publish.md`, ghi khác biệt là rủi ro đã chấp nhận, viết lại test Publish của TA lớp khác thành `403` không lộ dữ liệu lab.
 Rejected: Phương án C (mâu thuẫn với `GET /labs/{labId}` ngay trên cùng một lab); tạo `/v2` cho Publish.
 By hand: Vượng ra quyết định cuối cùng. Claude sửa code, test, tài liệu và chạy lệnh (kết quả ở evidence mục 3).
+
+## 2026-11-23 — Sửa theo review của Vỹ trên PR #79
+
+Tool: Claude Code (desktop app).
+Asked for: Vượng yêu cầu đọc review của Vỹ, rồi sửa hết các điểm nhưng không commit để Vượng review trước.
+Kept: Hai mục chính và ba nit của Vỹ đều đúng khi đối chiếu code và tài liệu.
+Changed: Cập nhật trạng thái trong plan và README theo PR #79, hai commit và CI; `evidenceLines: null` giờ trả `400` (test viết trước, chạy đỏ, log `red-review-vy.txt`); sửa câu về UUID cho đúng (chỉ lab tạo qua API); ghi giới hạn bài `failed` chặn Publish cho T11/PA04; ghi lại log xanh của bản hiện tại. Nội dung mới cho Issue #38 được soạn để Vượng duyệt, chưa sửa Issue.
+Rejected: Sửa Issue #38 hoặc commit trước khi Vượng duyệt.
+By hand: Vỹ review và chỉ ra các điểm; Vượng yêu cầu sửa và giữ bản local để duyệt. Claude sửa test, code, tài liệu và chạy lệnh.
