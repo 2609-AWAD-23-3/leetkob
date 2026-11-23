@@ -1,0 +1,430 @@
+$ node --import tsx --test --test-reporter=tap tests/unit/in-memory-store.test.mjs tests/contract/api-docs.test.mjs
+TAP version 13
+# Subtest: API docs serve local Swagger UI, assets and the four active auth operations
+ok 1 - API docs serve local Swagger UI, assets and the four active auth operations
+  ---
+  duration_ms: 440.738
+  type: 'test'
+  ...
+# Subtest: API docs do not advertise auth operations when no AuthStore is mounted
+ok 2 - API docs do not advertise auth operations when no AuthStore is mounted
+  ---
+  duration_ms: 5.8345
+  type: 'test'
+  ...
+# Subtest: Swagger request examples execute successfully and error examples match handlers
+ok 3 - Swagger request examples execute successfully and error examples match handlers
+  ---
+  duration_ms: 2131.0146
+  type: 'test'
+  ...
+# Subtest: API docs list every unsure cause of a review item, including model_off
+not ok 4 - API docs list every unsure cause of a review item, including model_off
+  ---
+  duration_ms: 12.3694
+  type: 'test'
+  location: '<repo>\\tests\\contract\\api-docs.test.mjs:191:1'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'properties')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (<repo>/tests/contract/api-docs.test.mjs:197:40)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+  ...
+# Subtest: in-memory store: invalid display text is rejected before storing an account
+ok 5 - in-memory store: invalid display text is rejected before storing an account
+  ---
+  duration_ms: 5.3023
+  type: 'test'
+  ...
+# Subtest: in-memory store: registration normalizes usernames and atomically prevents duplicates
+ok 6 - in-memory store: registration normalizes usernames and atomically prevents duplicates
+  ---
+  duration_ms: 6.1466
+  type: 'test'
+  ...
+# Subtest: in-memory store: normalized lookup also covers legacy mixed-case and padded usernames
+ok 7 - in-memory store: normalized lookup also covers legacy mixed-case and padded usernames
+  ---
+  duration_ms: 0.6591
+  type: 'test'
+  ...
+# Subtest: in-memory store: an unknown lab creator is rejected without replacing state
+ok 8 - in-memory store: an unknown lab creator is rejected without replacing state
+  ---
+  duration_ms: 1.8545
+  type: 'test'
+  ...
+# Subtest: in-memory store: login lookup returns the hash apart from the public user
+ok 9 - in-memory store: login lookup returns the hash apart from the public user
+  ---
+  duration_ms: 1.0349
+  type: 'test'
+  ...
+# Subtest: in-memory store: sessions expire by the store clock and can be deleted
+ok 10 - in-memory store: sessions expire by the store clock and can be deleted
+  ---
+  duration_ms: 1.012
+  type: 'test'
+  ...
+# Subtest: in-memory store: memberships scope the labs a user sees
+ok 11 - in-memory store: memberships scope the labs a user sees
+  ---
+  duration_ms: 0.9648
+  type: 'test'
+  ...
+# Subtest: in-memory store: createLab stores a valid lab and rejects bad limits or deductions
+ok 12 - in-memory store: createLab stores a valid lab and rejects bad limits or deductions
+  ---
+  duration_ms: 1.8373
+  type: 'test'
+  ...
+# Subtest: in-memory store: opensAt defaults to createdAt and must be before the deadline
+ok 13 - in-memory store: opensAt defaults to createdAt and must be before the deadline
+  ---
+  duration_ms: 2.3047
+  type: 'test'
+  ...
+# Subtest: in-memory store: createLab rejects an unknown field on the lab
+ok 14 - in-memory store: createLab rejects an unknown field on the lab
+  ---
+  duration_ms: 1.4389
+  type: 'test'
+  ...
+# Subtest: in-memory store: createLab rejects an unknown field as a client-chosen id
+ok 15 - in-memory store: createLab rejects an unknown field as a client-chosen id
+  ---
+  duration_ms: 0.6463
+  type: 'test'
+  ...
+# Subtest: in-memory store: createLab rejects an unknown field on the limits
+ok 16 - in-memory store: createLab rejects an unknown field on the limits
+  ---
+  duration_ms: 0.7879
+  type: 'test'
+  ...
+# Subtest: in-memory store: createLab rejects an unknown field on a test
+ok 17 - in-memory store: createLab rejects an unknown field on a test
+  ---
+  duration_ms: 0.525
+  type: 'test'
+  ...
+# Subtest: in-memory store: createLab rejects an unknown field on a constraint
+ok 18 - in-memory store: createLab rejects an unknown field on a constraint
+  ---
+  duration_ms: 0.3866
+  type: 'test'
+  ...
+# Subtest: in-memory store: returned objects are copies
+ok 19 - in-memory store: returned objects are copies
+  ---
+  duration_ms: 0.3254
+  type: 'test'
+  ...
+# Subtest: in-memory store: submit keeps its receive time when the clock crosses the deadline before it resolves
+ok 20 - in-memory store: submit keeps its receive time when the clock crosses the deadline before it resolves
+  ---
+  duration_ms: 0.7994
+  type: 'test'
+  ...
+# Subtest: in-memory store: submit stores a queued submission and exactly one job
+ok 21 - in-memory store: submit stores a queued submission and exactly one job
+  ---
+  duration_ms: 0.5501
+  type: 'test'
+  ...
+# Subtest: in-memory store: an expired lease is reclaimed and only the holder can complete
+ok 22 - in-memory store: an expired lease is reclaimed and only the holder can complete
+  ---
+  duration_ms: 1.2555
+  type: 'test'
+  ...
+# Subtest: in-memory store: a stale claim cannot touch a newer lease, even from the same worker
+ok 23 - in-memory store: a stale claim cannot touch a newer lease, even from the same worker
+  ---
+  duration_ms: 0.8609
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete stores an unsure verdict with cause model_unsure
+ok 24 - in-memory store: complete stores an unsure verdict with cause model_unsure
+  ---
+  duration_ms: 0.5085
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete stores an unsure verdict with cause schema_error
+ok 25 - in-memory store: complete stores an unsure verdict with cause schema_error
+  ---
+  duration_ms: 0.2932
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete stores an unsure verdict with cause evidence_mismatch
+ok 26 - in-memory store: complete stores an unsure verdict with cause evidence_mismatch
+  ---
+  duration_ms: 0.3479
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete stores an unsure verdict with cause timeout
+ok 27 - in-memory store: complete stores an unsure verdict with cause timeout
+  ---
+  duration_ms: 0.4124
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete stores an unsure verdict with cause cost_cap
+ok 28 - in-memory store: complete stores an unsure verdict with cause cost_cap
+  ---
+  duration_ms: 0.4848
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete stores an unsure verdict with cause model_off
+not ok 29 - in-memory store: complete stores an unsure verdict with cause model_off
+  ---
+  duration_ms: 2.1148
+  type: 'test'
+  location: '<repo>\\tests\\support\\store-conformance.mjs:495:5'
+  failureType: 'testCodeFailure'
+  error: 'An unsure verdict needs a supported unsureCause'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    validateNewVerdict (<repo>\src\db\validation.ts:234:13)
+    Object.complete (<repo>\src\db\in-memory\job-queue.ts:97:9)
+    TestContext.<anonymous> (<repo>/tests/support/store-conformance.mjs:510:21)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+  ...
+# Subtest: in-memory store: complete rejects verdicts for a non-AC result and writes nothing
+ok 30 - in-memory store: complete rejects verdicts for a non-AC result and writes nothing
+  ---
+  duration_ms: 1.6601
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects an unknown judge verdict and writes nothing
+ok 31 - in-memory store: complete rejects an unknown judge verdict and writes nothing
+  ---
+  duration_ms: 0.7256
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects an AC batch missing a constraint and writes nothing
+ok 32 - in-memory store: complete rejects an AC batch missing a constraint and writes nothing
+  ---
+  duration_ms: 0.462
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects a duplicate pair in one batch and writes nothing
+ok 33 - in-memory store: complete rejects a duplicate pair in one batch and writes nothing
+  ---
+  duration_ms: 0.3902
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects an unknown constraint and writes nothing
+ok 34 - in-memory store: complete rejects an unknown constraint and writes nothing
+  ---
+  duration_ms: 0.4254
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects an unknown verdict value and writes nothing
+ok 35 - in-memory store: complete rejects an unknown verdict value and writes nothing
+  ---
+  duration_ms: 0.4126
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects evidence that is not an array and writes nothing
+ok 36 - in-memory store: complete rejects evidence that is not an array and writes nothing
+  ---
+  duration_ms: 0.3332
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects evidence line 0 and writes nothing
+ok 37 - in-memory store: complete rejects evidence line 0 and writes nothing
+  ---
+  duration_ms: 0.3165
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects a violation without evidence and writes nothing
+ok 38 - in-memory store: complete rejects a violation without evidence and writes nothing
+  ---
+  duration_ms: 0.2918
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects an unknown source and writes nothing
+ok 39 - in-memory store: complete rejects an unknown source and writes nothing
+  ---
+  duration_ms: 0.5267
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects a numeric reason and writes nothing
+ok 40 - in-memory store: complete rejects a numeric reason and writes nothing
+  ---
+  duration_ms: 0.3995
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects an unsure verdict without a cause and writes nothing
+ok 41 - in-memory store: complete rejects an unsure verdict without a cause and writes nothing
+  ---
+  duration_ms: 0.3977
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects an unknown unsure cause and writes nothing
+ok 42 - in-memory store: complete rejects an unknown unsure cause and writes nothing
+  ---
+  duration_ms: 0.393
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects an unsureCause on a pass verdict and writes nothing
+ok 43 - in-memory store: complete rejects an unsureCause on a pass verdict and writes nothing
+  ---
+  duration_ms: 0.3167
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects an unknown field on a verdict and writes nothing
+ok 44 - in-memory store: complete rejects an unknown field on a verdict and writes nothing
+  ---
+  duration_ms: 0.3885
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects an unknown field on evidence and writes nothing
+ok 45 - in-memory store: complete rejects an unknown field on evidence and writes nothing
+  ---
+  duration_ms: 0.3784
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects an unknown field on the judge result and writes nothing
+ok 46 - in-memory store: complete rejects an unknown field on the judge result and writes nothing
+  ---
+  duration_ms: 0.4588
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects an unknown field on a test result and writes nothing
+ok 47 - in-memory store: complete rejects an unknown field on a test result and writes nothing
+  ---
+  duration_ms: 0.3729
+  type: 'test'
+  ...
+# Subtest: in-memory store: a worker that crashes on every attempt ends the submission as failed
+ok 48 - in-memory store: a worker that crashes on every attempt ends the submission as failed
+  ---
+  duration_ms: 0.8005
+  type: 'test'
+  ...
+# Subtest: in-memory store: claim and fail reject a missing or invalid maxAttempts
+ok 49 - in-memory store: claim and fail reject a missing or invalid maxAttempts
+  ---
+  duration_ms: 0.5621
+  type: 'test'
+  ...
+# Subtest: in-memory store: fail retries, then marks the submission failed until requeued
+ok 50 - in-memory store: fail retries, then marks the submission failed until requeued
+  ---
+  duration_ms: 0.6961
+  type: 'test'
+  ...
+# Subtest: in-memory store: the counted submission is the last one received before the deadline
+ok 51 - in-memory store: the counted submission is the last one received before the deadline
+  ---
+  duration_ms: 0.8803
+  type: 'test'
+  ...
+# Subtest: in-memory store: a submission received before opensAt is never counted
+ok 52 - in-memory store: a submission received before opensAt is never counted
+  ---
+  duration_ms: 0.3797
+  type: 'test'
+  ...
+# Subtest: in-memory store: the queue holds every verdict of counted AC submissions only
+ok 53 - in-memory store: the queue holds every verdict of counted AC submissions only
+  ---
+  duration_ms: 0.9194
+  type: 'test'
+  ...
+# Subtest: in-memory store: an unreviewed pass blocks until confirmed in bulk
+ok 54 - in-memory store: an unreviewed pass blocks until confirmed in bulk
+  ---
+  duration_ms: 2.5528
+  type: 'test'
+  ...
+# Subtest: in-memory store: unfinished counted submissions count as pending
+ok 55 - in-memory store: unfinished counted submissions count as pending
+  ---
+  duration_ms: 0.3759
+  type: 'test'
+  ...
+# Subtest: in-memory store: decide and confirmPasses reject an unknown reviewer or bad evidence
+ok 56 - in-memory store: decide and confirmPasses reject an unknown reviewer or bad evidence
+  ---
+  duration_ms: 0.9455
+  type: 'test'
+  ...
+# Subtest: in-memory store: every decision change is logged
+ok 57 - in-memory store: every decision change is logged
+  ---
+  duration_ms: 0.9338
+  type: 'test'
+  ...
+# Subtest: in-memory store: verdicts of a replaced submission leave the queue
+ok 58 - in-memory store: verdicts of a replaced submission leave the queue
+  ---
+  duration_ms: 0.4772
+  type: 'test'
+  ...
+# Subtest: in-memory store: model calls are logged per submission
+ok 59 - in-memory store: model calls are logged per submission
+  ---
+  duration_ms: 0.5296
+  type: 'test'
+  ...
+# Subtest: in-memory store: invalid model call metrics write no log and zero metrics are valid
+ok 60 - in-memory store: invalid model call metrics write no log and zero metrics are valid
+  ---
+  duration_ms: 1.2128
+  type: 'test'
+  ...
+# Subtest: in-memory store: isTaAssignedToClass only accepts a TA of that class
+ok 61 - in-memory store: isTaAssignedToClass only accepts a TA of that class
+  ---
+  duration_ms: 0.3896
+  type: 'test'
+  ...
+# Subtest: in-memory store: publish follows the PA02 order of checks
+ok 62 - in-memory store: publish follows the PA02 order of checks
+  ---
+  duration_ms: 1.0111
+  type: 'test'
+  ...
+# Subtest: in-memory store: a published lab no longer accepts review changes
+ok 63 - in-memory store: a published lab no longer accepts review changes
+  ---
+  duration_ms: 0.5673
+  type: 'test'
+  ...
+# Subtest: in-memory store: a lab without submissions publishes an empty summary
+ok 64 - in-memory store: a lab without submissions publishes an empty summary
+  ---
+  duration_ms: 0.3407
+  type: 'test'
+  ...
+# Subtest: in-memory store: instances do not share state
+ok 65 - in-memory store: instances do not share state
+  ---
+  duration_ms: 0.7708
+  type: 'test'
+  ...
+# Subtest: in-memory store: a bad seed is rejected and reset keeps the old state
+ok 66 - in-memory store: a bad seed is rejected and reset keeps the old state
+  ---
+  duration_ms: 1.0102
+  type: 'test'
+  ...
+1..66
+# tests 66
+# suites 0
+# pass 64
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3263.088
+
+# exit code: 1

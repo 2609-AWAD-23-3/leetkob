@@ -1,0 +1,9 @@
+$ npm run build && node scripts/verify-eval-cases.mjs eval-cases   (sandbox leetkob-sandbox:pa03, Docker)
+digit-sum/s01 Accepted (3 tests) 01:accepted 02:accepted 03:accepted
+digit-sum/s02 Accepted (3 tests) 01:accepted 02:accepted 03:accepted
+digit-sum/s03 Accepted (3 tests) 01:accepted 02:accepted 03:accepted
+digit-sum/s04 Accepted (3 tests) 01:accepted 02:accepted 03:accepted
+digit-sum/s05 Accepted (3 tests) 01:accepted 02:accepted 03:accepted
+digit-sum/s06 Accepted (3 tests) 01:accepted 02:accepted 03:accepted
+6 solutions checked, 0 not Accepted
+# exit code: 0

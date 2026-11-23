@@ -1,0 +1,84 @@
+$ node --import tsx --test --test-reporter=tap tests/integration/checker-cli.test.mjs
+TAP version 13
+# Subtest: MODEL_OFF=1 writes predictions without a key and without opening the network
+ok 1 - MODEL_OFF=1 writes predictions without a key and without opening the network
+  ---
+  duration_ms: 544.6366
+  type: 'test'
+  ...
+# Subtest: the checker needs only statement.md, constraints.json and solutions/
+ok 2 - the checker needs only statement.md, constraints.json and solutions/
+  ---
+  duration_ms: 1026.6166
+  type: 'test'
+  ...
+# Subtest: --data is accepted as well as a positional dataset folder
+ok 3 - --data is accepted as well as a positional dataset folder
+  ---
+  duration_ms: 523.0841
+  type: 'test'
+  ...
+# Subtest: --call-log writes one decision per pair and records model_off
+ok 4 - --call-log writes one decision per pair and records model_off
+  ---
+  duration_ms: 512.4929
+  type: 'test'
+  ...
+# Subtest: without MODEL_OFF=1 and without MODEL_API_KEY the checker stops with exit 2 and writes nothing
+ok 5 - without MODEL_OFF=1 and without MODEL_API_KEY the checker stops with exit 2 and writes nothing
+  ---
+  duration_ms: 494.115
+  type: 'test'
+  ...
+# Subtest: without --out (or with --out -) predictions go to stdout and logs stay on stderr
+not ok 6 - without --out (or with --out -) predictions go to stdout and logs stay on stderr
+  ---
+  duration_ms: 1030.5257
+  type: 'test'
+  location: '<repo>\\tests\\integration\\checker-cli.test.mjs:120:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    checker: missing --out <predictions.jsonl>
+    usage: checker <dataset-dir> --out <predictions.jsonl> [--call-log <calls.jsonl>] [--concurrency <n>]
+           (--data <dataset-dir> is accepted too; set MODEL_OFF=1 to run the hard rules only, without network)
+    
+    
+    2 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 2
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (<repo>/tests/integration/checker-cli.test.mjs:130:12)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+    Test.postRun (node:internal/test_runner/test:1542:19)
+    Test.run (node:internal/test_runner/test:1467:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+  ...
+# Subtest: a failed run writes nothing to stdout
+ok 7 - a failed run writes nothing to stdout
+  ---
+  duration_ms: 491.1087
+  type: 'test'
+  ...
+# Subtest: usage errors exit 2: no dataset, unknown flag, missing folder, bad MODEL_OFF or concurrency
+ok 8 - usage errors exit 2: no dataset, unknown flag, missing folder, bad MODEL_OFF or concurrency
+  ---
+  duration_ms: 2412.5512
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 7
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7313.7556
+
+# exit code: 1
