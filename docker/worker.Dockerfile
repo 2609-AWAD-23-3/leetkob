@@ -13,9 +13,7 @@ ENV NODE_ENV=production
 
 # Worker needs the docker CLI binary to launch isolated sibling sandbox containers
 # on the host Docker daemon; secrets are stripped before spawning sandbox containers.
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends docker.io ca-certificates \
-  && rm -rf /var/lib/apt/lists/*
+COPY --from=docker:29-cli /usr/local/bin/docker /usr/local/bin/docker
 
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts
