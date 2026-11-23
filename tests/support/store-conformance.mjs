@@ -482,6 +482,47 @@ export function defineStoreConformance(label, makeFixture) {
     assert.equal((await store.listVerdicts(submission.id)).length, 2);
   });
 
+  // PA03-T10 (A2): `model_off` ghi lại rằng constraint semantic không được gửi cho model
+  // vì model bị tắt (MODEL_OFF=1). Mọi cause được hỗ trợ đều phải lưu được ở cả hai store.
+  for (const cause of [
+    'model_unsure',
+    'schema_error',
+    'evidence_mismatch',
+    'timeout',
+    'cost_cap',
+    'model_off',
+  ]) {
+    test(`${label}: complete stores an unsure verdict with cause ${cause}`, async () => {
+      const { store } = setup();
+      const submission = await store.submit({
+        labId: LAB,
+        studentId: 'student-1',
+        code: 'int main() {}',
+      });
+      const job = await store.claim({
+        workerId: 'worker-a',
+        leaseMs: 60_000,
+        maxAttempts: 3,
+      });
+      const unsure = { ...verdict(submission.id, 'c2', 'unsure') };
+      unsure.unsureCause = cause;
+      assert.equal(
+        await store.complete({
+          jobId: job.id,
+          leaseToken: job.leaseToken,
+          judgeResult: AC,
+          verdicts: [verdict(submission.id, 'c1', 'pass'), unsure],
+        }),
+        true,
+      );
+      const stored = await store.listVerdicts(submission.id);
+      assert.equal(
+        stored.find((v) => v.constraintId === 'c2').unsureCause,
+        cause,
+      );
+    });
+  }
+
   // Each case replaces the full, valid AC batch (c1 pass, c2 violation).
   const invalidCompletes = [
     ['verdicts for a non-AC result', (b) => (b.judgeResult = WA)],

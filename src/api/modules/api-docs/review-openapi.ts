@@ -137,6 +137,7 @@ export function addReviewOpenApi(
               'evidence_mismatch',
               'timeout',
               'cost_cap',
+              'model_off',
               null,
             ],
           },

@@ -47,7 +47,7 @@ One item per (counted Accepted submission, constraint) pair.
 | `verdict` | `pass` \| `violation` \| `unsure` | Pipeline verdict |
 | `source` | `hard_rule` \| `model` | |
 | `evidence` | `{ line, text }[]` | Lines the pipeline cited, in the original code |
-| `unsureCause` | string \| null | `model_unsure`, `schema_error`, `evidence_mismatch`, `timeout`, `cost_cap`; non-null only for `unsure` |
+| `unsureCause` | string \| null | `model_unsure`, `schema_error`, `evidence_mismatch`, `timeout`, `cost_cap`, `model_off` (model switched off with `MODEL_OFF=1`, PA03-T10); non-null only for `unsure` |
 | `reason` | string \| null | Untrusted model or rule text; clients must escape it |
 | `createdAt` | string | UTC ISO timestamp |
 | `taDecision` | `pass` \| `violation` \| null | `null` = not reviewed |

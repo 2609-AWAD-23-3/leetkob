@@ -602,6 +602,7 @@ if (!url) {
         '0003_normalized_username',
         '0004_lab_creation_idempotency',
         '0005_submission_intake',
+        '0006_unsure_cause_model_off',
       ];
       const applied = await db.query(
         'SELECT id FROM schema_migrations ORDER BY id',
@@ -614,7 +615,7 @@ if (!url) {
       await reopened.ready;
       assert.equal(
         (await db.query('SELECT * FROM schema_migrations')).rowCount,
-        5,
+        6,
       );
     } finally {
       await db.end();
@@ -677,6 +678,7 @@ if (!url) {
           '0003_normalized_username',
           '0004_lab_creation_idempotency',
           '0005_submission_intake',
+          '0006_unsure_cause_model_off',
         ],
       );
     } finally {
