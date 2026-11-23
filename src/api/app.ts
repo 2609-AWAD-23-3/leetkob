@@ -5,8 +5,16 @@ import {
   createSubmissionsModule,
   type SubmissionsOptions,
 } from './modules/submissions/index.js';
-import { reviewQueueModule } from './modules/review-queue/index.js';
-import { publishModule } from './modules/publish/index.js';
+import {
+  createReviewQueueModule,
+  reviewQueueModule,
+  type ReviewQueueOptions,
+} from './modules/review-queue/index.js';
+import {
+  createPublishModule,
+  publishModule,
+  type PublishModuleOptions,
+} from './modules/publish/index.js';
 import { createAuthModule, type AuthOptions } from './modules/auth/index.js';
 import { registerApiDocs } from './modules/api-docs/index.js';
 import { createLabsModule, type LabsOptions } from './modules/labs/index.js';
@@ -21,6 +29,8 @@ export interface AppOptions {
   submissions?: SubmissionsOptions;
   labs?: LabsOptions;
   auth?: AuthOptions;
+  reviewQueue?: ReviewQueueOptions;
+  publish?: PublishModuleOptions;
   logger?: boolean;
   modules?: Partial<AppModules>;
 }
@@ -44,11 +54,25 @@ export function createApp(options: AppOptions = {}) {
   app.get('/health', async () => ({ status: 'ok' }));
   if (options.submissions && options.modules?.submissions)
     throw new TypeError('Choose submissions dependencies or a module override');
-  if (options.auth || options.labs || options.submissions)
+  if (options.reviewQueue && options.modules?.reviewQueue)
+    throw new TypeError(
+      'Choose review queue dependencies or a module override',
+    );
+  if (options.publish && options.modules?.publish)
+    throw new TypeError('Choose publish dependencies or a module override');
+  if (
+    options.auth ||
+    options.labs ||
+    options.submissions ||
+    options.reviewQueue ||
+    options.publish
+  )
     registerApiDocs(app, {
       auth: Boolean(options.auth),
       labs: Boolean(options.labs),
       submissions: Boolean(options.submissions),
+      reviewQueue: Boolean(options.reviewQueue),
+      publish: Boolean(options.publish),
     });
   if (options.auth) app.register(createAuthModule(options.auth));
   if (options.labs) app.register(createLabsModule(options.labs));
@@ -59,8 +83,16 @@ export function createApp(options: AppOptions = {}) {
         ? createSubmissionsModule(options.submissions)
         : submissionsModule),
   );
-  app.register(options.modules?.reviewQueue ?? reviewQueueModule);
-  app.register(options.modules?.publish ?? publishModule);
+  app.register(
+    options.modules?.reviewQueue ??
+      (options.reviewQueue
+        ? createReviewQueueModule(options.reviewQueue)
+        : reviewQueueModule),
+  );
+  app.register(
+    options.modules?.publish ??
+      (options.publish ? createPublishModule(options.publish) : publishModule),
+  );
 
   return app;
 }

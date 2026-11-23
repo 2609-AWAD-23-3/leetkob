@@ -1,5 +1,8 @@
-import type { PublishStore, PublicationSummary } from '../../../db/types.js';
-import type { IdentityResolver } from '../../auth/types.js';
+import type { PublicationSummary } from '../../../db/types.js';
+import type {
+  PublishIdentityResolver,
+  PublishRouteStore,
+} from '../../auth/types.js';
 
 export interface LabPublication {
   readonly labId: string;
@@ -10,7 +13,9 @@ export interface LabPublication {
   readonly summary: PublicationSummary;
 }
 
+// The PA02 synchronous PublishStore and the PA03 async Store (PublicationStore
+// + LabStore) both fit PublishRouteStore; contract v1 is the same for both.
 export interface PublishModuleOptions {
-  readonly store?: PublishStore;
-  readonly identityResolver?: IdentityResolver;
+  readonly store?: PublishRouteStore;
+  readonly identityResolver?: PublishIdentityResolver;
 }

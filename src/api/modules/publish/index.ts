@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import { createApp, type AppOptions } from '../../app.js';
 import {
-  authorizePublishAccess,
+  authorizePublishAccessAsync,
   createTokenIdentityResolver,
   createValidationProblem,
   mapAccessDecisionToProblem,
@@ -42,7 +42,7 @@ export function createPublishModule(
         const labId = request.params?.labId;
 
         // Precedence step 1: Authentication
-        const authDecision = authorizePublishAccess({
+        const authDecision = await authorizePublishAccessAsync({
           headers: request.headers,
           labId: typeof labId === 'string' ? labId : '',
           store,
@@ -68,7 +68,7 @@ export function createPublishModule(
         }
 
         // Precedence steps 5-8: Publication transition & repeat checks via store
-        const publishResult = store.publishLab({
+        const publishResult = await store.publishLab({
           labId: authDecision.lab.id,
           publishedBy: authDecision.principal.id,
         });

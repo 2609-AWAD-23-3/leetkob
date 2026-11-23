@@ -1,0 +1,81 @@
+# T09 green run on the current implementation (option B: Publish 403, review queue 404)
+# source: 6df715f (origin/develop) + uncommitted T09 changes; fingerprint of the code, tests, scripts and contracts (sha256 of `git diff HEAD -- src tests scripts docs/contract` + those untracked files, first 16 hex): e7b0e7c1f6da8be4
+# date: 2026-11-23T08:56:05Z; node v24.22.3; npm 11.19.1; PostgreSQL 17.11 (docker/compose.postgres.yml); Windows
+# note: Fastify JSON log lines removed; database URL not printed
+
+## Exit codes
+npm run lint           -> 0
+npm run format-check   -> 0
+npm run type-check     -> 0
+npm test               -> 0   (tests 515, pass 512, fail 0, skipped 3)
+npm run test:db        -> 0   (tests 95, pass 95, fail 0, skipped 0)
+git diff --check       -> 0
+
+The 3 skipped tests of npm test are the three Postgres files without TEST_DATABASE_URL:
+  postgres store tests # SKIP TEST_DATABASE_URL is not set
+  postgres review queue tests # SKIP TEST_DATABASE_URL is not set
+  worker postgres integration tests # SKIP TEST_DATABASE_URL is not set
+
+## T09 and Publish test files (node --test, exit 0)
+command: node --test tests/contract/review-queue.test.mjs tests/integration/review-runtime.test.mjs tests/contract/publish.test.mjs tests/integration/publish-auth-errors.test.mjs
+✔ POST /labs/{labId}/publish — 401 unauthenticated when credentials are missing, malformed, or invalid
+✔ POST /labs/{labId}/publish — 400 invalid-json for malformed JSON or prototype pollution payload
+✔ POST /labs/{labId}/publish — 400 validation for invalid labId syntax or non-object JSON body
+✔ POST /labs/{labId}/publish — 404 not-found when target lab does not exist
+✔ POST /labs/{labId}/publish — 403 forbidden for student, admin, or cross-class TA
+✔ POST /labs/{labId}/publish — 409 before-deadline when server time is before deadline
+✔ POST /labs/{labId}/publish — 409 pending-reviews with pendingCount member when reviews remain pending
+✔ POST /labs/{labId}/publish — 200 OK initial publication succeeds and returns LabPublication resource
+✔ POST /labs/{labId}/publish — 200 OK repeated call is naturally idempotent with Idempotent-Replayed: true
+✔ POST /labs/{labId}/publish — client cannot spoof caller identity, role, or state in body
+✔ POST /labs/{labId}/publish — empty request body or omitted body succeeds
+✔ POST /labs/{labId}/publish — 413 payload-too-large when body exceeds 64 KB limit
+✔ POST /labs/{labId}/publish — 415 unsupported-media-type when content-type is unsupported (application/xml, text/plain)
+✔ POST /labs/{labId}/publish — precedence: unsupported content-type (text/plain) is rejected with 415 before authentication
+✔ POST /labs/{labId}/publish — precedence: malformed JSON body is rejected with 400 invalid-json before authentication
+✔ POST /labs/{labId}/publish — precedence: caller role check precedes lab lookup (anti-enumeration defense)
+✔ review queue: the class TA sees every submission x constraint with verdict, evidence, deduction and unsure cause
+✔ review item: detail adds the whole submission code for the TA (FAQ-09)
+✔ review queue: unauthenticated callers get 401, students and admins 403, a TA of another class 404
+✔ review queue: unknown or malformed IDs return 404 or 400
+✔ decision: violation needs evidence lines inside the code; the text comes from the code (FAQ-09)
+✔ decision: evidence text is read from the stored code for CRLF files too
+✔ confirm passes: bulk-confirms only the unreviewed pass verdicts
+✔ publish: refused while any verdict, a pass included, is unreviewed; then publishes once
+✔ publish: contract v1 statuses hold with session tokens
+✔ publish: a TA of another class keeps the contract v1 403 without lab details
+✔ review queue: a TA of another class gets the same 404 for a real and a missing lab or item
+✔ confirm passes: a Publish that commits during the call returns 409
+✔ after publish: review decisions are locked
+✔ students never receive verdicts before publish (FAQ-08)
+✔ API docs list the review queue and Publish operations
+✔ token identity resolver authenticates valid bearer tokens and returns defensive copies
+✔ token identity resolver rejects missing header with missing_credentials
+✔ token identity resolver rejects undefined authorization with missing_credentials
+✔ token identity resolver rejects empty authorization with malformed_credentials
+✔ token identity resolver rejects whitespace authorization with malformed_credentials
+✔ token identity resolver rejects leading whitespace authorization with malformed_credentials
+✔ token identity resolver rejects wrong auth scheme with malformed_credentials
+✔ token identity resolver rejects bearer without token with malformed_credentials
+✔ token identity resolver rejects bearer with extra segments with malformed_credentials
+✔ token identity resolver rejects array authorization header with malformed_credentials
+✔ token identity resolver rejects unknown bearer token with invalid_credentials
+✔ default token resolver has no implicit credentials and rejects all requests
+✔ test-header identity injection is disabled by default and cannot become a public bypass
+✔ explicit programmatic test-header resolver validates headers when enabled in tests
+✔ authorizePublishAccess enforces role TA, lab existence and T02 class ownership
+✔ HTTP boundary rejects missing/invalid identity, wrong role and cross-class TA with RFC 9457 problem details
+✔ HTTP boundary maps parser errors, validation errors, deadline/pending conflicts and internal errors to RFC 9457 without leaking internals
+✔ problem factories validate inputs and return defensive copies
+✔ runtime mounts the review queue and Publish on the Store with session auth
+ℹ tests 50
+ℹ pass 50
+ℹ fail 0
+ℹ skipped 0
+ℹ duration_ms 845.7705
+
+## Postgres review queue tests (npm run test:db, tests/integration/review-queue-postgres.test.mjs)
+ok 87 - postgres review queue: TA sees the queue; others are refused
+ok 88 - postgres review queue: evidence rule, pending pass blocks Publish, then publish once and lock
+ok 89 - postgres review queue: publication and decisions survive a restart
+ok 90 - postgres review queue: confirm-passes waiting behind a Publish returns 409

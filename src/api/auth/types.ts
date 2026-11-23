@@ -58,6 +58,30 @@ export interface AuthorizePublishInput {
   readonly identityResolver: IdentityResolver;
 }
 
+type MaybePromise<T> = T | Promise<T>;
+
+// PA03-T09: Publish runs on either the PA02 synchronous PublishStore or the
+// async Store (PublicationStore + LabStore), with token or session identity.
+export interface PublishIdentityResolver {
+  resolve(headers: IncomingHeaders): MaybePromise<IdentityResolution>;
+}
+
+export interface PublishRouteStore {
+  getLab(labId: string): MaybePromise<Lab | undefined>;
+  isTaAssignedToClass(taId: string, classId: string): MaybePromise<boolean>;
+  publishLab(input: {
+    labId: string;
+    publishedBy: string;
+  }): MaybePromise<PublishResult>;
+}
+
+export interface AuthorizePublishAsyncInput {
+  readonly headers: IncomingHeaders;
+  readonly labId: string;
+  readonly store: Pick<PublishRouteStore, 'getLab' | 'isTaAssignedToClass'>;
+  readonly identityResolver: PublishIdentityResolver;
+}
+
 export type ProblemSlug =
   | 'unauthenticated'
   | 'forbidden'
