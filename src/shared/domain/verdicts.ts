@@ -8,7 +8,9 @@ export type UnsureCause =
   | 'schema_error'
   | 'evidence_mismatch'
   | 'timeout'
-  | 'cost_cap';
+  | 'cost_cap'
+  // PA03-T10: the model was switched off (MODEL_OFF=1), so no call was made.
+  | 'model_off';
 
 export interface Evidence {
   line: number; // 1-based line in the student's original code

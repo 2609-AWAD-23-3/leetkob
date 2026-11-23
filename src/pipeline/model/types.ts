@@ -55,10 +55,26 @@ export type SemanticEvaluator = (
   constraints: readonly SemanticConstraint[],
 ) => Promise<SemanticEvaluationResult>;
 
+/**
+ * Danh tính cần che khỏi prompt (PA03-T10, B3).
+ * - `student`: họ tên và từng phần tên, MSSV, username, email. Worker luôn dùng dạng này;
+ *   evaluator fail-closed nếu không có chuỗi nào dùng được.
+ * - `none` + `reason: 'dataset'`: checker chạy trên dataset, không có sinh viên nào để che.
+ *   Chỉ dùng qua hằng `NO_STUDENT_IDENTITY_DATASET` để dễ tìm và review.
+ * Mảng chuỗi (dạng cũ của T08) được hiểu là `student`.
+ */
+export type PromptIdentity =
+  | { readonly kind: 'student'; readonly parts: readonly string[] }
+  | { readonly kind: 'none'; readonly reason: 'dataset' };
+
+/** Ghi lại prompt đã được che danh tính sinh viên hay vốn không có danh tính. */
+export type PromptIdentityLabel = 'student' | 'none:dataset';
+
 /** Prompt cuối cùng đã gửi, để script evidence ghi ra file (bảng `model_calls` không có cột prompt). */
 export interface PromptRecord {
   readonly submissionId: string;
   readonly system: string;
   readonly user: string;
   readonly promptSha256: string;
+  readonly identity: PromptIdentityLabel;
 }

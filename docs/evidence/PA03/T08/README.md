@@ -124,6 +124,7 @@ createQueueWorker({ store, judgeSubmission, evaluateSemanticConstraints });
 - Dòng call log khi lỗi provider nằm ở `error.modelCall` (xem mục 3), để T11 ghi nếu muốn.
 - **Retry job (T11):** worker T06 hiện không có backoff và không đọc `retryable`, `maxAttempts` mặc định là 3. SDK đã retry 429/5xx trong hạn của một call, nhưng một đợt lỗi dài vẫn có thể làm hết lượt. T11 có thể thêm backoff giữa các lần retry job và không retry khi `error.retryable === false` (400/401/403/404).
 - **Hợp đồng `getIdentity` (T11):** phải trả ít nhất một chuỗi dùng được (từ 3 ký tự, một dòng), ví dụ họ tên đầy đủ; nếu không evaluator ném `ModelConfigError` và job lỗi.
+- **Ghi chú thêm từ PA03-T10 (23/11/2026, Vượng chốt):** `getIdentity` nay nhận thêm dạng có kiểu `{ kind: 'student', parts }` (mảng chuỗi như trên vẫn dùng được và vẫn fail-closed) và hằng `NO_STUDENT_IDENTITY_DATASET` (`{ kind: 'none', reason: 'dataset' }`) chỉ cho checker chạy trên dataset; `PromptRecord` có thêm `identity` (`student` | `none:dataset`). Worker (T11) không dùng hằng này. Xem [evidence T10](../T10/README.md) mục 1.
 
 ## 7. Kiểm chứng offline
 

@@ -1,0 +1,41 @@
+ok   docker build exit 0
+image user: (root)
+
+== stdout, --cap-drop ALL --read-only --user 12345:12345
+checker: MODEL_OFF=1, hard rules only; semantic constraints are written as unsure and no network connection is opened
+checker: 6 problems, 102 pairs (pass 40, violation 15, unsure 47); model calls 0 (not ok 0), cost $0.000000
+checker: wrote predictions to stdout
+ok   checker exit 0
+ok   prediction file has 102 lines
+ok   eval.mjs exit 1 (must be 0 or 1): FAIL (recall 40.5% < 90.0%; unsure 46.1% > 20.0%)
+
+== stdout, --out -
+checker: MODEL_OFF=1, hard rules only; semantic constraints are written as unsure and no network connection is opened
+checker: 6 problems, 102 pairs (pass 40, violation 15, unsure 47); model calls 0 (not ok 0), cost $0.000000
+checker: wrote predictions to stdout
+ok   checker exit 0
+ok   prediction file has 102 lines
+ok   eval.mjs exit 1 (must be 0 or 1): FAIL (recall 40.5% < 90.0%; unsure 46.1% > 20.0%)
+
+== mount /out owned by root:root 755 (Docker-created out/)
+output folder: 0:0 755
+checker: MODEL_OFF=1, hard rules only; semantic constraints are written as unsure and no network connection is opened
+checker: 6 problems, 102 pairs (pass 40, violation 15, unsure 47); model calls 0 (not ok 0), cost $0.000000
+checker: wrote predictions to /out/predictions.jsonl
+ok   checker exit 0
+ok   stdout is empty when --out is a file
+ok   prediction file has 102 lines
+ok   eval.mjs exit 1 (must be 0 or 1): FAIL (recall 40.5% < 90.0%; unsure 46.1% > 20.0%)
+
+== mount /out owned by another user (4242:4242 755)
+output folder: 4242:4242 755
+checker: MODEL_OFF=1, hard rules only; semantic constraints are written as unsure and no network connection is opened
+checker: 6 problems, 102 pairs (pass 40, violation 15, unsure 47); model calls 0 (not ok 0), cost $0.000000
+checker: wrote predictions to /out/predictions.jsonl
+ok   checker exit 0
+ok   stdout is empty when --out is a file
+ok   prediction file has 102 lines
+ok   eval.mjs exit 1 (must be 0 or 1): FAIL (recall 40.5% < 90.0%; unsure 46.1% > 20.0%)
+
+ok   every way of running gives the same prediction file
+# exit code: 0

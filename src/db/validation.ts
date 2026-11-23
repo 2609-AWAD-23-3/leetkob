@@ -27,6 +27,7 @@ const UNSURE_CAUSES = new Set([
   'evidence_mismatch',
   'timeout',
   'cost_cap',
+  'model_off',
 ]);
 const JUDGE_VERDICTS = new Set(['AC', 'WA', 'TLE', 'MLE', 'RE', 'CE']);
 

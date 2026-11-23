@@ -515,3 +515,22 @@ test('API docs list the review queue and Publish operations', async (t) => {
   assert.deepEqual(input.properties.decision.enum, ['pass', 'violation']);
   assert.equal('deduction' in input.properties, false);
 });
+
+// PA03-T10 (A2): review items document every unsure cause, including `model_off`
+// (semantic constraint not sent because the model was switched off).
+test('API docs list every unsure cause of a review item, including model_off', async (t) => {
+  const h = await reviewHarness(t);
+  const spec = (await h.app.inject('/docs/json')).json();
+  assert.deepEqual(
+    spec.components.schemas.ReviewItem.properties.unsureCause.enum,
+    [
+      'model_unsure',
+      'schema_error',
+      'evidence_mismatch',
+      'timeout',
+      'cost_cap',
+      'model_off',
+      null,
+    ],
+  );
+});

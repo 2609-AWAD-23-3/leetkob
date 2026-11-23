@@ -1,0 +1,85 @@
+$ node --import tsx --test --test-reporter=tap tests/unit/checker-run.test.mjs
+TAP version 13
+# Subtest: dataset: problems and .cpp solutions are read in a fixed order with problem/sNN ids
+ok 1 - dataset: problems and .cpp solutions are read in a fixed order with problem/sNN ids
+  ---
+  duration_ms: 40.2721
+  type: 'test'
+  ...
+# Subtest: dataset: a broken constraints.json or a missing problems folder is a DatasetError
+ok 2 - dataset: a broken constraints.json or a missing problems folder is a DatasetError
+  ---
+  duration_ms: 46.1926
+  type: 'test'
+  ...
+# Subtest: dataset: a constraint without a string id and text is a DatasetError
+ok 3 - dataset: a constraint without a string id and text is a DatasetError
+  ---
+  duration_ms: 35.4436
+  type: 'test'
+  ...
+# Subtest: model off: ban lists are decided by hard rules with original lines; semantic pairs are unsure
+ok 4 - model off: ban lists are decided by hard rules with original lines; semantic pairs are unsure
+  ---
+  duration_ms: 30.0157
+  type: 'test'
+  ...
+# Subtest: model off wins: a model passed in is never called
+ok 5 - model off wins: a model passed in is never called
+  ---
+  duration_ms: 25.5824
+  type: 'test'
+  ...
+# Subtest: model on: one call per solution with semantic constraints, prompt logged with dataset identity
+ok 6 - model on: one call per solution with semantic constraints, prompt logged with dataset identity
+  ---
+  duration_ms: 28.0676
+  type: 'test'
+  ...
+# Subtest: model on: a provider error makes that solution unsure, is logged, and the run continues
+not ok 7 - model on: a provider error makes that solution unsure, is logged, and the run continues
+  ---
+  duration_ms: 34.3915
+  type: 'test'
+  location: '<repo>\\tests\\unit\\checker-run.test.mjs:183:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + null
+    - 'provider_error'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'provider_error'
+  actual: ~
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (<repo>/tests/unit/checker-run.test.mjs:223:10)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+  ...
+# Subtest: output order does not depend on concurrency or model latency
+ok 8 - output order does not depend on concurrency or model latency
+  ---
+  duration_ms: 91.6337
+  type: 'test'
+  ...
+# Subtest: formatJsonl writes one JSON object per line with exactly the prediction fields
+ok 9 - formatJsonl writes one JSON object per line with exactly the prediction fields
+  ---
+  duration_ms: 22.2992
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 8
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1147.894
+
+# exit code: 1

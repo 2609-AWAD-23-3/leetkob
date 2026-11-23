@@ -1,0 +1,7 @@
+ok   docker build exit 0
+output folder in the container: root:root 755
+checker: MODEL_OFF=1, hard rules only; semantic constraints are written as unsure and no network connection is opened
+checker: failed: EACCES: permission denied, open '/out/predictions.jsonl'
+FAIL checker exit 1
+FAIL prediction file has 0 lines
+# exit code: 1

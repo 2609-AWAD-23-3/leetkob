@@ -12,6 +12,7 @@ import { migration0002 } from './0002_model_call_metrics.js';
 import { migration0003 } from './0003_normalized_username.js';
 import { migration0004 } from './0004_lab_creation_idempotency.js';
 import { migration0005 } from './0005_submission_intake.js';
+import { migration0006 } from './0006_unsure_cause_model_off.js';
 
 export type { Migration } from './types.js';
 export const MIGRATIONS: readonly Migration[] = [
@@ -20,4 +21,5 @@ export const MIGRATIONS: readonly Migration[] = [
   migration0003,
   migration0004,
   migration0005,
+  migration0006,
 ];

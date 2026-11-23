@@ -1,0 +1,39 @@
+PA03-T10 — quality checks trên bản local (chưa commit), base origin/develop 80f25e3, ngày 2026-11-23
+Node v24.22.3, npm 11.19.1, Windows + Git Bash; Postgres 16 local (docker/compose.postgres.yml, cổng 5433)
+
+$ npm ci --ignore-scripts                 exit 0
+$ npm run lint                            exit 0
+$ npm run format-check                    exit 0   (All matched files use Prettier code style)
+$ npm run type-check                      exit 0
+$ git diff --check                        exit 0
+$ npm test                                exit 0   tests 551, pass 548, fail 0, skipped 3
+$ TEST_DATABASE_URL=… npm run test:db     exit 0   tests 101, pass 101, fail 0
+$ TEST_DATABASE_URL=… npm test            exit 0   tests 649, pass 649, fail 0, skipped 0
+  (3 test skip ở dòng npm test trên là ba bộ Postgres, chỉ chạy khi có TEST_DATABASE_URL)
+
+Sau review của Vượng (image chạy bằng root; unsureCause provider_error, hướng A):
+$ npm run lint / format-check / type-check / git diff --check   exit 0
+$ TEST_DATABASE_URL=… npm test            exit 0   tests 649, pass 649, fail 0, skipped 0
+$ npm run test:checker-image              exit 0   (log: logs/checker-image.log)
+
+Sau khi đổi sang ghi prediction ra stdout (Vượng chốt):
+$ npm run lint / format-check / type-check / git diff --check   exit 0
+$ TEST_DATABASE_URL=… npm test            exit 0   tests 651, pass 651, fail 0, skipped 0
+$ npm run test:checker-image              exit 0   4 cấu hình, cùng một file, eval.mjs exit 1
+$ docker run --rm --network none -e MODEL_OFF=1 -v <repo>/leetkob-eval:/data:ro leetkob-checker /data > predictions.jsonl
+                                          exit 0   giống byte model-off/predictions.jsonl
+PowerShell: `docker run ... > file` ghi kèm BOM → eval.mjs exit 2; cách mount `--out` → eval.mjs exit 1
+
+Baseline trước khi sửa (cùng base): lint/format-check/type-check exit 0; npm test 515 test, 512 pass, 3 skipped.
+
+Checker image, model tắt, giống cách người chấm chạy:
+$ docker build -f docker/checker.Dockerfile -t leetkob-checker .                       exit 0
+$ docker run --rm --network none --memory 512m --pids-limit 64 -e MODEL_OFF=1 \
+    -v <repo>/leetkob-eval:/data:ro -v <repo>/docs/evidence/PA03/T10/model-off:/out \
+    leetkob-checker /data --out /out/predictions.jsonl --call-log /out/call-log.jsonl   exit 0
+$ node leetkob-eval/eval.mjs --data leetkob-eval \
+    --predictions docs/evidence/PA03/T10/model-off/predictions.jsonl \
+    --json docs/evidence/PA03/T10/model-off/eval-summary.json                          exit 1 (không phải 2)
+  wrongful 0; recall 40.5% (15/37); unsure 46.1% (47/102)
+  Cùng lệnh trên eval-cases (model-off/eval-cases/): exit 1; wrongful 0; recall 33.3% (2/6); unsure 50.0% (6/12)
+  File prediction của image giống byte với lần chạy `MODEL_OFF=1 node dist/cli/checker.js` trên host.
