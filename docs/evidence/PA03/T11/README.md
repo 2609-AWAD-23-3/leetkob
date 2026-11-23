@@ -2,10 +2,13 @@
 
 - Task: [Issue #40](https://github.com/2609-AWAD-23-3/leetkob/issues/40), mục T11 trong [plan PA03](../../../plans/PA03.md#t11--t%C3%ADch-h%E1%BB%A3p-pipeline-end-to-end).
 - Người thực hiện: Phúc (`@BHVPhuc`). Reviewer độc lập: Vỹ (`@tranquocvy`).
-- Nhánh: `feat/pa03-t11-e2e-integration` tách từ `origin/develop` (`80f25e3`).
+- Nhánh: `feat/pa03-t11-e2e-integration` ([PR #80](https://github.com/2609-AWAD-23-3/leetkob/pull/80)) tách từ `origin/develop` (`80f25e3`).
 - Commits:
-  - Test-first: `408ad97` (`tests/unit/worker-integration.test.mjs`, `tests/e2e/pipeline.test.mjs`)
-  - Implementation: `66ccfda` (`src/worker/adapters.ts`, `src/worker/types.ts`, `src/worker/runner.ts`, `src/worker/cli.ts`, `src/worker/index.ts`, `tests/integration/worker-postgres.test.mjs`)
+  - Test-first ban đầu: `408ad97` (`tests/unit/worker-integration.test.mjs`, `tests/e2e/pipeline.test.mjs`)
+  - Implementation ban đầu: `66ccfda` (`src/worker/{adapters,types,runner,cli,index}.ts`, `tests/integration/worker-postgres.test.mjs`)
+  - Docs ban đầu: `93cdaf6` (`docs/evidence/PA03/T11/`, `docs/plans/PA03.md`)
+  - Sửa review PR #80 (test-first): `d7643d8` (compile memory 256 MiB cho lab 64 MiB + test Docker `<bits/stdc++.h>` + thu gọn `/MODEL_API_KEY/`)
+  - Sửa review PR #80 (fix): `46cdc44` (`src/sandbox/{types,runner,index}.ts` tách `FIXED_COMPILE_MEMORY_LIMIT_MB = 256`)
 
 ## 1. Phạm vi nối pipeline
 
@@ -35,7 +38,7 @@ Luồng tích hợp end-to-end:
 
 - `npm test` thoát mã `1`: `517` test, `512` pass, `2` fail (`tests/e2e/pipeline.test.mjs`, `tests/unit/worker-integration.test.mjs` báo thiếu export `createSandboxJudgeSubmission` và `DEFAULT_WORKER_RETRY_BACKOFF_MS` từ `dist/worker/index.js`), `3` skip.
 
-### Xanh sau cài đặt (commit `66ccfda`)
+### Xanh sau sửa review (commit `46cdc44`)
 
 | Kiểm tra | Mã thoát | Kết quả |
 | --- | ---: | --- |
@@ -43,13 +46,16 @@ Luồng tích hợp end-to-end:
 | `npm run format-check` | `0` | Toàn bộ file đạt Prettier |
 | `npm run type-check` | `0` | TypeScript strict (`tsconfig.check.json`) đạt |
 | `git diff --check` | `0` | Không lỗi whitespace |
-| `npm test` | `0` | **525** tests: **522** pass, **0** fail, **3** skip (3 suite Postgres tự bỏ qua khi chưa đặt `TEST_DATABASE_URL`) |
+| `npm test` | `0` | **526** tests: **523** pass, **0** fail, **3** skip (3 suite Postgres tự bỏ qua khi chưa đặt `TEST_DATABASE_URL`) |
+| CI PR #80 vòng đầu (`93cdaf6`) | `0` | [Run 45208029943](https://github.com/2609-AWAD-23-3/leetkob/actions/runs/45208029943): `quality-gate`, `postgres-store` và `sandbox-attacks` đều `SUCCESS` |
 
-Phạm vi test mới:
-- `tests/unit/worker-integration.test.mjs` (`9/9` pass): ánh xạ limits/verdicts sandbox, `createSandboxJudgeSubmission`, `createStoreIdentityResolver` fail-closed với `ModelConfigError`, `ModelProviderError` (`retryable: false` fail ngay và ghi `provider_error`, `retryable: true` chờ backoff và ghi cả 2 log), `onHardRulesDecision` (`modelCalled: false`), và `loadWorkerProcessConfig`.
-- `tests/e2e/pipeline.test.mjs` (`1/1` pass): kịch bản đầy đủ Tiêu chí 1 (`sort-merge`) qua HTTP thật (`createApp` + `createInMemoryStore`), fake sandbox, `runHardRules`, fake model (`createSemanticEvaluator`), cho 4 bài nộp (`WA` không soát theo FAQ-04; tuân thủ; vi phạm `std::sort` + bubble sort; prompt injection kèm tên sinh viên bị xóa comment/danh tính). Kiểm tra `GET /submissions/:id` và `/mine` chỉ trả `judgeResult` (FAQ-08), student `403` và TA lớp khác `404` trên review queue (FAQ-01), Publish bị chặn `409 pending-reviews` trước khi TA duyệt đủ, và Publish `200` sau khi `confirm-passes` + duyệt `violation` kèm `evidenceLines`.
+Phạm vi test bổ sung theo review:
+- `tests/unit/sandbox-runner.test.mjs` & `tests/unit/worker-integration.test.mjs`: xác nhận `buildSandboxDockerArgs` ở `mode: 'compile'` giữ `--memory 256m --memory-swap 256m` (`FIXED_COMPILE_MEMORY_LIMIT_MB`) khi lab đặt `memoryLimitMb: 64`, trong khi `mode: 'run'` áp đúng `64m`.
+- `tests/sandbox/sandbox-attacks.mjs`: test Docker thật chạy `createSandboxJudgeSubmission` trên lab `64 MiB` cho bài `#include <bits/stdc++.h>` + `std::sort` đạt `AC` và bài cấp phát 96 MiB ở runtime bị chặn `MLE` (chạy trên CI job `sandbox-attacks`).
+- `tests/integration/worker-postgres.test.mjs`: thu gọn assertion fail-closed thành `/MODEL_API_KEY/`.
 
-## 3. Giới hạn và bàn giao
+## 3. Giới hạn, rủi ro vận hành và bàn giao
 
-- Chế độ offline (`npm test`) dùng `createInMemoryStore`, fake `SandboxRunner` và fake `ModelClient` để không phụ thuộc mạng, Docker hay Postgres theo đúng ranh giới PA03; kiểm chứng Docker sandbox thật + Postgres thật trên VPS công khai thuộc **T12** (`#41`).
+- Chế độ offline (`npm test`) dùng `createInMemoryStore`, fake `SandboxRunner` và fake `ModelClient` để không phụ thuộc mạng, Docker hay Postgres theo đúng ranh giới PA03; kiểm chứng Docker sandbox thật và Postgres chạy trên CI PR #80 (`sandbox-attacks`, `postgres-store`), còn deployment thật trên VPS thuộc **T12** (`#41`).
+- **Rủi ro vận hành (cho T12 / PA04):** các lỗi `ModelProviderError` không retry được (`retryable: false`, ví dụ `MODEL_API_KEY` sai trả `401`) làm bài nộp chuyển sang `failed` ngay ở lần thử đầu tiên, và PA03 chưa có API chấm lại. Khi deploy T12 cần kiểm tra kỹ `MODEL_API_KEY` trước khi mở lab nhận bài.
 - Không mở rộng bảng `model_calls` để thêm cột `prompt_sha256` trong T11 để tránh sửa migration DB ngoài `src/worker/`; có thể bổ sung ở PA04/PA05 nếu cần.
