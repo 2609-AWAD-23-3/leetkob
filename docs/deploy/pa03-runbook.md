@@ -36,7 +36,7 @@ chmod 600 deploy/.env
 Điền đầy đủ giá trị vào `deploy/.env` (file này được `.gitignore` bỏ qua, không bao giờ commit):
 
 - `LEETKOB_SITE`: domain HTTPS trỏ về `70.153.86.114` (nếu chưa mua domain riêng, dùng `70.153.86.114.sslip.io` để Caddy tự cấp TLS hợp lệ).
-- `POSTGRES_PASSWORD`: mật khẩu ngẫu nhiên mạnh cho database production.
+- `POSTGRES_PASSWORD`: mật khẩu ngẫu nhiên mạnh cho database production (nên chỉ dùng chữ và số, hoặc phải URL-encode nếu chứa ký tự đặc biệt như `@`, `/`, `:` để `DATABASE_URL` trong `compose.yml` không bị sai).
 - `TRUST_PROXY`: giữ `172.28.0.0/24` (khớp subnet mạng nội bộ `leetkob_net` nơi Caddy đứng trước `api`).
 - `MODEL_API_KEY`: key workspace `leetkob` do `@tranquocvy` gửi qua kênh riêng.
 - 5 biến `DEPLOY_ADMIN_PASSWORD`, `DEPLOY_TA1_PASSWORD`, `DEPLOY_TA2_PASSWORD`, `DEPLOY_STUDENT1_PASSWORD`, `DEPLOY_STUDENT2_PASSWORD`: mỗi mật khẩu dài **15–128 ký tự**, tuyệt đối không dùng `password123`.
@@ -48,20 +48,14 @@ cd ~/leetkob
 docker compose --env-file deploy/.env -f deploy/compose.yml up -d --build
 ```
 
-Kiểm tra container đang chạy và chạy migrate + seed 5 tài khoản test cô lập (chỉ thực hiện trong container `api`, nạp thêm các biến `DEPLOY_*_PASSWORD` từ `deploy/.env`):
+Kiểm tra container đang chạy và chạy migrate + seed 5 tài khoản test cô lập (chỉ thực hiện trong container `api`, nạp thêm `DEPLOY_*_PASSWORD` qua stdin để không lộ mật khẩu trong dòng lệnh tiến trình `docker compose exec` trên host; `DATABASE_URL` đã có sẵn từ `compose.yml`):
 
 ```bash
 docker compose --env-file deploy/.env -f deploy/compose.yml ps
 
 # Chạy migration + seed 5 tài khoản test (bắt buộc --confirm-deploy-seed)
-docker compose --env-file deploy/.env -f deploy/compose.yml exec \
-  -e DATABASE_URL="postgres://leetkob:$(grep '^POSTGRES_PASSWORD=' deploy/.env | cut -d= -f2-)@postgres:5432/leetkob" \
-  -e DEPLOY_ADMIN_PASSWORD="$(grep '^DEPLOY_ADMIN_PASSWORD=' deploy/.env | cut -d= -f2-)" \
-  -e DEPLOY_TA1_PASSWORD="$(grep '^DEPLOY_TA1_PASSWORD=' deploy/.env | cut -d= -f2-)" \
-  -e DEPLOY_TA2_PASSWORD="$(grep '^DEPLOY_TA2_PASSWORD=' deploy/.env | cut -d= -f2-)" \
-  -e DEPLOY_STUDENT1_PASSWORD="$(grep '^DEPLOY_STUDENT1_PASSWORD=' deploy/.env | cut -d= -f2-)" \
-  -e DEPLOY_STUDENT2_PASSWORD="$(grep '^DEPLOY_STUDENT2_PASSWORD=' deploy/.env | cut -d= -f2-)" \
-  api node scripts/seed-deploy.mjs --confirm-deploy-seed
+grep '^DEPLOY_.*_PASSWORD=' deploy/.env | docker compose --env-file deploy/.env -f deploy/compose.yml exec -T api \
+  sh -c 'set -a; . /dev/stdin; set +a; exec node scripts/seed-deploy.mjs --confirm-deploy-seed'
 ```
 
 ### Kiểm tra bảo vệ seed dev và sandbox
@@ -73,7 +67,7 @@ docker compose --env-file deploy/.env -f deploy/compose.yml exec \
   ```
 - Kiểm tra container sandbox không nhận bất kỳ secret nào khi chạy thật (`MODEL_API_KEY`, `DATABASE_URL`):
   ```bash
-  docker run --rm --network none --read-only --user 10001:10001 leetkob-sandbox:pa03 env
+  docker run --rm --network none --read-only --user 10001:10001 --entrypoint env leetkob-sandbox:pa03
   # Kỳ vọng: không có MODEL_API_KEY hay DATABASE_URL
   ```
 
@@ -90,8 +84,8 @@ docker compose --env-file deploy/.env -f deploy/compose.yml exec \
 # Xem log
 docker compose --env-file deploy/.env -f deploy/compose.yml logs -f api worker
 
-# Khởi động lại sau khi cập nhật code hoặc .env
-git pull --ff-only origin main
+# Khởi động lại sau khi cập nhật code hoặc .env (thống nhất cùng nhánh develop ở mục 2)
+git pull --ff-only origin develop
 docker build -f docker/sandbox.Dockerfile -t leetkob-sandbox:pa03 docker
 docker compose --env-file deploy/.env -f deploy/compose.yml up -d --build
 
