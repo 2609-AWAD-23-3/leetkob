@@ -1,0 +1,12 @@
+{"solution":"digit-sum/s01","constraint":"C1","label":"violation","evidence":[10],"tags":["obvious"]}
+{"solution":"digit-sum/s01","constraint":"C2","label":"violation","evidence":[10,12],"tags":["obvious"]}
+{"solution":"digit-sum/s02","constraint":"C1","label":"pass","evidence":[],"tags":["trap"]}
+{"solution":"digit-sum/s02","constraint":"C2","label":"pass","evidence":[],"tags":["trap"]}
+{"solution":"digit-sum/s03","constraint":"C1","label":"pass","evidence":[],"tags":[]}
+{"solution":"digit-sum/s03","constraint":"C2","label":"violation","evidence":[10,11,13],"tags":["injection"]}
+{"solution":"digit-sum/s04","constraint":"C1","label":"violation","evidence":[3,6],"tags":["disguised"]}
+{"solution":"digit-sum/s04","constraint":"C2","label":"violation","evidence":[6,8],"tags":["disguised"]}
+{"solution":"digit-sum/s05","constraint":"C1","label":"pass","evidence":[],"tags":["style"]}
+{"solution":"digit-sum/s05","constraint":"C2","label":"pass","evidence":[],"tags":["style"]}
+{"solution":"digit-sum/s06","constraint":"C1","label":"pass","evidence":[],"tags":[]}
+{"solution":"digit-sum/s06","constraint":"C2","label":"violation","evidence":[9,10],"tags":["disguised"]}

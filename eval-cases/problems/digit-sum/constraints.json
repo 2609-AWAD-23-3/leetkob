@@ -1,0 +1,12 @@
+[
+  {
+    "id": "C1",
+    "text": "Do not use these library conversion or accumulation functions: `std::to_string`, `std::stoll`, `std::accumulate`, `sprintf`, `snprintf`, `std::stringstream`.",
+    "deduction": 3
+  },
+  {
+    "id": "C2",
+    "text": "Compute each digit sum arithmetically: take the last digit with `% 10` and drop it with `/ 10`, in a loop or a recursion you wrote yourself. Reading the number as text (characters, a string or a character array) and adding up its characters does not satisfy this constraint.",
+    "deduction": 4
+  }
+]
