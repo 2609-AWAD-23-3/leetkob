@@ -9,6 +9,10 @@ import {
 } from 'node:fs';
 import path from 'node:path';
 import { runHardRules } from '../pipeline/hard-rules/index.js';
+import {
+  ModelConfigError,
+  ModelProviderError,
+} from '../pipeline/model/errors.js';
 import type {
   JudgeVerdict,
   NewConstraintVerdict,
@@ -27,7 +31,21 @@ import type {
 export const DEFAULT_WORKER_LEASE_MS = 30_000;
 export const DEFAULT_WORKER_MAX_ATTEMPTS = 3;
 export const DEFAULT_WORKER_POLL_INTERVAL_MS = 200;
+export const DEFAULT_WORKER_RETRY_BACKOFF_MS = 500;
+export const DEFAULT_WORKER_MAX_RETRY_BACKOFF_MS = 30_000;
 export const DEFAULT_MODEL_CALL_RETRY_ATTEMPTS = 2;
+
+export function computeRetryBackoffMs(
+  attempts: number,
+  baseMs: number = DEFAULT_WORKER_RETRY_BACKOFF_MS,
+  maxMs: number = DEFAULT_WORKER_MAX_RETRY_BACKOFF_MS,
+): number {
+  if (baseMs <= 0 || maxMs <= 0) {
+    return 0;
+  }
+  const exponent = Math.max(0, attempts - 1);
+  return Math.min(maxMs, baseMs * 2 ** exponent);
+}
 
 const WORKER_ID_PATTERN = /^[a-zA-Z0-9_-]{1,64}$/;
 
@@ -159,6 +177,11 @@ export function createDefaultSubmissionEvaluator(
       code: context.submission.code,
       constraints: context.lab.constraints,
     });
+    options.onHardRulesDecision?.({
+      submissionId: context.submission.id,
+      labId: context.lab.id,
+      decisionLog: hardResult.decisionLog,
+    });
 
     const verdictsByConstraintId = new Map<string, NewConstraintVerdict>();
     for (const hv of hardResult.verdicts) {
@@ -243,6 +266,18 @@ export function createQueueWorker(options: QueueWorkerOptions): QueueWorker {
   if (!Number.isFinite(pollIntervalMs) || pollIntervalMs <= 0) {
     throw new TypeError('pollIntervalMs must be a positive finite number');
   }
+  const retryBackoffMs =
+    options.retryBackoffMs ?? DEFAULT_WORKER_RETRY_BACKOFF_MS;
+  if (!Number.isFinite(retryBackoffMs) || retryBackoffMs < 0) {
+    throw new TypeError('retryBackoffMs must be a non-negative finite number');
+  }
+  const maxRetryBackoffMs =
+    options.maxRetryBackoffMs ?? DEFAULT_WORKER_MAX_RETRY_BACKOFF_MS;
+  if (!Number.isFinite(maxRetryBackoffMs) || maxRetryBackoffMs < 0) {
+    throw new TypeError(
+      'maxRetryBackoffMs must be a non-negative finite number',
+    );
+  }
   const heartbeatIntervalMs = resolveHeartbeatIntervalMs(
     options.heartbeatIntervalMs,
     leaseMs,
@@ -266,6 +301,7 @@ export function createQueueWorker(options: QueueWorkerOptions): QueueWorker {
     createDefaultSubmissionEvaluator({
       judgeSubmission: options.judgeSubmission!,
       evaluateSemanticConstraints: options.evaluateSemanticConstraints,
+      onHardRulesDecision: options.onHardRulesDecision,
     });
 
   const pendingModelCalls: NewModelCallLog[] = readPendingJournal(journalPath);
@@ -337,7 +373,7 @@ export function createQueueWorker(options: QueueWorkerOptions): QueueWorker {
   let sleepTimer: NodeJS.Timeout | null = null;
   let wakeSleep: (() => void) | null = null;
 
-  const waitForNextPoll = (): Promise<void> =>
+  const waitForTimer = (delayMs: number): Promise<void> =>
     new Promise<void>((resolve) => {
       if (!running) {
         resolve();
@@ -357,8 +393,18 @@ export function createQueueWorker(options: QueueWorkerOptions): QueueWorker {
         if (wakeSleep) {
           wakeSleep();
         }
-      }, pollIntervalMs);
+      }, delayMs);
     });
+
+  const waitForNextPoll = (): Promise<void> => waitForTimer(pollIntervalMs);
+
+  const waitForRetryBackoff = async (delayMs: number): Promise<void> => {
+    if (options.sleep) {
+      await options.sleep(delayMs);
+      return;
+    }
+    await waitForTimer(delayMs);
+  };
 
   const runOnce = async (): Promise<WorkerStepResult> => {
     if (pendingModelCalls.length > 0) {
@@ -500,18 +546,40 @@ export function createQueueWorker(options: QueueWorkerOptions): QueueWorker {
         };
       }
 
+      if (
+        error instanceof ModelProviderError &&
+        error.modelCall !== undefined
+      ) {
+        pendingModelCalls.push(error.modelCall);
+        persistPendingModelCalls();
+        await flushPendingModelCalls();
+      }
+
+      const nonRetryable =
+        error instanceof ModelConfigError ||
+        (error instanceof ModelProviderError && error.retryable === false);
+      const effectiveMaxAttempts = nonRetryable
+        ? Math.min(maxAttempts, job.attempts)
+        : maxAttempts;
+
       const failed = await store.fail({
         jobId: job.id,
         leaseToken,
         error: message,
-        maxAttempts,
+        maxAttempts: effectiveMaxAttempts,
       });
+      const willRetry =
+        failed && !nonRetryable && job.attempts < effectiveMaxAttempts;
       return {
         processed: true,
         jobId: job.id,
         submissionId: submission.id,
         attempts: job.attempts,
         outcome: failed ? 'failed' : 'stale_lease',
+        willRetry: failed ? willRetry : false,
+        ...(pendingModelCalls.length > 0
+          ? { pendingModelCallCount: pendingModelCalls.length }
+          : {}),
         error: message,
       };
     } finally {
@@ -581,6 +649,15 @@ export function createQueueWorker(options: QueueWorkerOptions): QueueWorker {
           }
           if (!step.processed) {
             await waitForNextPoll();
+          } else if (step.outcome === 'failed' && step.willRetry) {
+            const delayMs = computeRetryBackoffMs(
+              step.attempts,
+              retryBackoffMs,
+              maxRetryBackoffMs,
+            );
+            if (delayMs > 0) {
+              await waitForRetryBackoff(delayMs);
+            }
           }
         } catch (error) {
           options.onError?.(error);

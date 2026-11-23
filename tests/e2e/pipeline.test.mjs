@@ -18,7 +18,7 @@ import {
 
 const PASSWORD = 'e2e-test-password-123';
 const OPENS_AT = '2026-11-23T00:00:00.000Z';
-const DEADLINE = '2026-11-24T00:00:00.000Z';
+const DEADLINE = '2026-11-23T13:00:00.000Z';
 
 const CODE_WA = [
   '#include <iostream>',

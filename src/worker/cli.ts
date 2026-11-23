@@ -1,6 +1,18 @@
 import { writeSync } from 'node:fs';
+import type { Store } from '../db/index.js';
 import { createPostgresStore } from '../db/postgres/index.js';
+import {
+  createAnthropicModelClient,
+  createSemanticEvaluator,
+  readModelConfig,
+  type ModelConfig,
+} from '../pipeline/model/index.js';
+import { DEFAULT_SANDBOX_IMAGE } from '../sandbox/index.js';
 import type { JudgeVerdict } from '../shared/domain/index.js';
+import {
+  createSandboxJudgeSubmission,
+  createStoreIdentityResolver,
+} from './adapters.js';
 import {
   createDefaultSubmissionEvaluator,
   createQueueWorker,
@@ -8,6 +20,7 @@ import {
   DEFAULT_WORKER_LEASE_MS,
   DEFAULT_WORKER_MAX_ATTEMPTS,
   DEFAULT_WORKER_POLL_INTERVAL_MS,
+  DEFAULT_WORKER_RETRY_BACKOFF_MS,
 } from './runner.js';
 import type { SubmissionEvaluator, WorkerStepResult } from './types.js';
 
@@ -27,9 +40,13 @@ export interface WorkerProcessConfig {
   readonly leaseMs: number;
   readonly maxAttempts: number;
   readonly pollIntervalMs: number;
+  readonly retryBackoffMs: number;
   readonly maxJobs?: number | undefined;
   readonly exitWhenIdle: boolean;
   readonly clockIso?: string | undefined;
+  readonly sandboxImage: string;
+  readonly dockerCommand: string;
+  readonly modelConfig?: ModelConfig | undefined;
   readonly allowSimulatedJudge: boolean;
   readonly simulateCrashAfterClaim: boolean;
   readonly simulateFailError?: string | undefined;
@@ -60,6 +77,23 @@ function parseOptionalPositiveInt(
   return value;
 }
 
+function parseOptionalNonNegativeInt(
+  raw: string | undefined,
+  name: string,
+): number | undefined {
+  if (raw === undefined || raw.trim() === '') {
+    return undefined;
+  }
+  if (!/^[0-9]+$/.test(raw.trim())) {
+    throw new TypeError(`${name} must be a non-negative integer`);
+  }
+  const value = Number(raw.trim());
+  if (!Number.isInteger(value) || value < 0) {
+    throw new TypeError(`${name} must be a non-negative integer`);
+  }
+  return value;
+}
+
 export function loadWorkerProcessConfig(
   env: NodeJS.ProcessEnv = process.env,
 ): WorkerProcessConfig {
@@ -83,6 +117,11 @@ export function loadWorkerProcessConfig(
       env.WORKER_POLL_INTERVAL_MS,
       'WORKER_POLL_INTERVAL_MS',
     ) ?? DEFAULT_WORKER_POLL_INTERVAL_MS;
+  const retryBackoffMs =
+    parseOptionalNonNegativeInt(
+      env.WORKER_RETRY_BACKOFF_MS,
+      'WORKER_RETRY_BACKOFF_MS',
+    ) ?? DEFAULT_WORKER_RETRY_BACKOFF_MS;
   const maxJobs = parseOptionalPositiveInt(
     env.WORKER_MAX_JOBS,
     'WORKER_MAX_JOBS',
@@ -120,14 +159,16 @@ export function loadWorkerProcessConfig(
     simulateJudgeVerdict = candidate;
   }
 
+  const sandboxImage = env.SANDBOX_IMAGE?.trim() || DEFAULT_SANDBOX_IMAGE;
+  const dockerCommand = env.DOCKER_COMMAND?.trim() || 'docker';
+
+  let modelConfig: ModelConfig | undefined;
   if (
     !simulateCrashAfterClaim &&
     simulateFailError === undefined &&
     (!allowSimulatedJudge || simulateJudgeVerdict === undefined)
   ) {
-    throw new Error(
-      'Queue worker requires a real judge adapter (wired in PA03-T11); refusing to start with simulated AC. For tests, set WORKER_ALLOW_SIMULATED_JUDGE=1 and WORKER_SIMULATE_JUDGE_VERDICT=<AC|WA|TLE|MLE|RE|CE>.',
-    );
+    modelConfig = readModelConfig(env);
   }
 
   const simulateEvalDelayMs = parseOptionalPositiveInt(
@@ -144,9 +185,13 @@ export function loadWorkerProcessConfig(
     leaseMs,
     maxAttempts,
     pollIntervalMs,
+    retryBackoffMs,
     maxJobs,
     exitWhenIdle,
     clockIso,
+    sandboxImage,
+    dockerCommand,
+    modelConfig,
     allowSimulatedJudge,
     simulateCrashAfterClaim,
     simulateFailError,
@@ -158,8 +203,24 @@ export function loadWorkerProcessConfig(
 
 function buildProcessEvaluator(
   config: WorkerProcessConfig,
+  store: Pick<Store, 'getUser' | 'getSubmission'>,
 ): SubmissionEvaluator {
-  const defaultEvaluator =
+  const realEvaluator =
+    config.modelConfig !== undefined
+      ? createDefaultSubmissionEvaluator({
+          judgeSubmission: createSandboxJudgeSubmission({
+            imageTag: config.sandboxImage,
+            dockerCommand: config.dockerCommand,
+          }),
+          evaluateSemanticConstraints: createSemanticEvaluator({
+            client: createAnthropicModelClient(config.modelConfig),
+            timeoutMs: config.modelConfig.timeoutMs,
+            getIdentity: createStoreIdentityResolver(store),
+          }),
+        })
+      : null;
+
+  const simulatedEvaluator =
     config.allowSimulatedJudge && config.simulateJudgeVerdict !== undefined
       ? createDefaultSubmissionEvaluator({
           judgeSubmission: createSimulatedJudgeSubmission(
@@ -167,6 +228,8 @@ function buildProcessEvaluator(
           ),
         })
       : null;
+
+  const defaultEvaluator = realEvaluator ?? simulatedEvaluator;
 
   return async (context) => {
     if (config.simulateEvalDelayMs !== undefined) {
@@ -229,8 +292,9 @@ export async function runWorkerProcess(
       leaseMs: config.leaseMs,
       maxAttempts: config.maxAttempts,
       pollIntervalMs: config.pollIntervalMs,
+      retryBackoffMs: config.retryBackoffMs,
       modelCallJournalPath: config.modelCallJournalPath,
-      evaluator: buildProcessEvaluator(config),
+      evaluator: buildProcessEvaluator(config, store),
       onError: (error) => {
         console.error('[worker] error:', error);
       },

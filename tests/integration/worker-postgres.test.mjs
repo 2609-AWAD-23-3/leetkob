@@ -91,7 +91,9 @@ if (!url) {
       WORKER_CLOCK_ISO: OPEN,
     });
     assert.notEqual(proc.status, 0);
-    assert.match(proc.stderr, /requires a real judge adapter/i);
+    // PA03-T11 wired real sandbox + semantic model into default worker mode, so
+    // starting without MODEL_API_KEY fails closed with ModelConfigError.
+    assert.match(proc.stderr, /MODEL_API_KEY|requires a real judge adapter/i);
 
     const saved = await fixture.store.getSubmission(invalidSub.id);
     assert.equal(saved?.status, 'queued');
