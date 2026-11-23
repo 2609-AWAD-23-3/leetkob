@@ -1,0 +1,15 @@
+# Build context của docker/checker.Dockerfile (root repo): chỉ cần package*.json, tsconfig.json và src/.
+# Không bao giờ đưa secret (.env) hay dữ liệu lớn vào context.
+.env
+.env.*
+**/.env
+.git
+.claude
+node_modules
+dist
+docs
+tests
+leetkob-eval
+eval-cases
+sandbox
+*.log

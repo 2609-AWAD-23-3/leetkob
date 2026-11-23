@@ -35,7 +35,33 @@ npm start
 
 Mặc định `http://127.0.0.1:3000/health` trả `{"status":"ok"}`. `npm run dev` dùng watch; Ctrl+C để dừng. Các lệnh `npm run dev`, `npm start`, `npm run db:migrate` và `npm run db:seed` đọc `.env` tại root bằng Node CLI. Copy [.env.example](.env.example) thành `.env` lần đầu, chỉnh cấu hình local nếu cần; `.env` bị Git ignore. Biến đã đặt trong terminal/deployment được ưu tiên hơn file. Sửa `.env` thì khởi động lại backend. Unit/contract tests không tự đọc `.env`; `test:db` vẫn yêu cầu `TEST_DATABASE_URL` riêng.
 
-`npm start` chạy `dist/api/server.js`. Sau build, `npm run worker` và `npm run checker` chạy entry point riêng và thoát ngay; chức năng chấm và checker sẽ được bổ sung ở PA03-T06/T10.
+`npm start` chạy `dist/api/server.js`. Sau build, `npm run worker` chạy entry point worker; checker xem mục dưới.
+
+## Checker và eval (PA03-T10)
+
+Một lệnh nhận thư mục dataset (layout của dev set) và ghi file prediction JSONL cho `eval.mjs`. Checker chỉ đọc `problems/*/statement.md`, `problems/*/constraints.json` và `solutions/*/*.cpp`; không đọc `labels.jsonl` hay `tests/`.
+
+Linux/macOS (bash, sh, zsh) — prediction ra stdout, log ra stderr, không cần mount thư mục output:
+
+```sh
+docker build -f docker/checker.Dockerfile -t leetkob-checker .
+docker run --rm --network none -e MODEL_OFF=1 -v "$PWD/leetkob-eval:/data:ro" leetkob-checker /data > predictions.jsonl
+node leetkob-eval/eval.mjs --data leetkob-eval --predictions predictions.jsonl
+```
+
+Windows PowerShell: **không dùng `>`** (PowerShell ghi file kèm BOM/UTF-16, `eval.mjs` báo dòng 1 không phải JSON và exit 2); mount thư mục output và dùng `--out`:
+
+```powershell
+docker run --rm --network none -e MODEL_OFF=1 -v "${PWD}\leetkob-eval:/data:ro" -v "${PWD}\out:/out" leetkob-checker /data --out /out/predictions.jsonl
+```
+
+Cách mount `-v "$PWD/out:/out" ... --out /out/predictions.jsonl` cũng dùng được trên Linux: image chạy checker bằng root trong container nên ghi được cả khi Docker tự tạo `out/` thuộc root; checker chỉ đọc text, không chạy code sinh viên. Cách stdout không ghi file nào trong container nên chạy được với mọi `--user`, `--cap-drop ALL`, `--read-only`. `npm run test:checker-image` (cần Docker) build image rồi chạy cả hai cách trong các cấu hình đó và kiểm mọi cách cho cùng một file, `eval.mjs` exit 0 hoặc 1. Không dùng Docker: `npm run build`, rồi `MODEL_OFF=1 npm run checker -- leetkob-eval --out out/predictions.jsonl` (PowerShell: `$env:MODEL_OFF='1'; npm.cmd run checker -- leetkob-eval --out out/predictions.jsonl`). Tuỳ chọn `--call-log <file>` ghi quyết định cho từng cặp và mọi model call (request id, model, token, thời gian, chi phí, prompt đã gửi); `--concurrency <n>` (1–32, mặc định 4) chỉ có tác dụng khi bật model.
+
+- `MODEL_OFF=1`: chỉ chạy hard rules; constraint semantic ghi `unsure` (call log ghi `unsureCause: "model_off"`); không tạo model client, không đọc `MODEL_API_KEY`, không mở network.
+- Không đặt `MODEL_OFF`: cần `MODEL_API_KEY` (truyền lúc chạy, ví dụ `docker run -e MODEL_API_KEY ...` với biến đã đặt trong shell; không ghi key vào image hay file). Thiếu key thì lệnh dừng với exit 2. Lỗi provider ở một bài chỉ làm bài đó thành `unsure` và được ghi vào call log; lần chạy vẫn ra file đầy đủ.
+- Exit code của checker: 0 khi đã ghi prediction; 2 khi sai tham số, cấu hình hoặc dataset. Prediction chỉ được ghi một lần sau khi chấm xong, lần chạy lỗi không ghi gì ra stdout.
+
+`leetkob-eval/` là dev set nguyên byte từ commit `552c811` (`npm test` so SHA-256 từng file). Case riêng của nhóm ở `eval-cases/` cùng layout; chấm bằng `node leetkob-eval/eval.mjs --data eval-cases --predictions <file>`. Kiểm mọi case là Accepted trong sandbox (cần Docker): `npm run build && node scripts/verify-eval-cases.mjs eval-cases`. Kết quả chạy và dev run: [evidence T10](docs/evidence/PA03/T10/README.md).
 
 Test auth và lab trực tiếp tại [Swagger UI](http://127.0.0.1:3000/docs/) sau khi bật API. Dùng **Try it out** để login, copy `accessToken` vào **Authorize** (không thêm `Bearer`), rồi gọi `/auth/me` hoặc logout. Tài khoản seed dev dùng chung password công khai `password123`; danh sách ở `src/db/seeds/demo-accounts.ts`. OpenAPI JSON tại `/docs/json`; thay cổng nếu PORT đã cấu hình khác.
 
