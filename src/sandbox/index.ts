@@ -5,6 +5,7 @@ export {
   DEFAULT_SANDBOX_IMAGE,
   ensureSandboxImage,
   FAQ05_SANDBOX_LIMITS,
+  FIXED_COMPILE_MEMORY_LIMIT_MB,
   normalizeJudgeOutput,
   resolveSandboxLimits,
   sanitizeDockerHostEnv,

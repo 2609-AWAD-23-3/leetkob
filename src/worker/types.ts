@@ -1,4 +1,5 @@
 import type { Store } from '../db/index.js';
+import type { DecisionLogEntry } from '../pipeline/hard-rules/index.js';
 import type {
   Constraint,
   Job,
@@ -53,10 +54,18 @@ export type EvaluateSemanticConstraintsFn = (
   constraints: readonly Constraint[],
 ) => Promise<SemanticEvaluationOutput>;
 
+export interface HardRulesDecisionInfo {
+  readonly submissionId: string;
+  readonly labId: string;
+  readonly decisionLog: readonly DecisionLogEntry[];
+}
+
 export interface DefaultEvaluatorOptions {
   readonly judgeSubmission: JudgeSubmissionFn;
   readonly evaluateSemanticConstraints?:
     EvaluateSemanticConstraintsFn | undefined;
+  readonly onHardRulesDecision?:
+    ((info: HardRulesDecisionInfo) => void) | undefined;
 }
 
 export interface QueueWorkerOptions {
@@ -66,10 +75,16 @@ export interface QueueWorkerOptions {
   readonly maxAttempts?: number | undefined;
   readonly pollIntervalMs?: number | undefined;
   readonly heartbeatIntervalMs?: number | null | undefined;
+  readonly retryBackoffMs?: number | undefined;
+  readonly maxRetryBackoffMs?: number | undefined;
+  readonly sleep?:
+    ((ms: number, signal?: AbortSignal) => Promise<void>) | undefined;
   readonly evaluator?: SubmissionEvaluator | undefined;
   readonly judgeSubmission?: JudgeSubmissionFn | undefined;
   readonly evaluateSemanticConstraints?:
     EvaluateSemanticConstraintsFn | undefined;
+  readonly onHardRulesDecision?:
+    ((info: HardRulesDecisionInfo) => void) | undefined;
   readonly modelCallJournalPath?: string | undefined;
   readonly modelCallRetryAttempts?: number | undefined;
   readonly onError?: ((error: unknown) => void) | undefined;
@@ -83,6 +98,7 @@ export type WorkerStepResult =
       readonly submissionId: string;
       readonly attempts: number;
       readonly outcome: 'completed' | 'failed' | 'stale_lease';
+      readonly willRetry?: boolean | undefined;
       readonly judgeVerdict?: JudgeVerdict | undefined;
       readonly verdictCount?: number | undefined;
       readonly pendingModelCallCount?: number | undefined;

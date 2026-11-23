@@ -15,6 +15,7 @@ import type {
 } from './types.js';
 
 export const DEFAULT_SANDBOX_IMAGE = 'leetkob-sandbox:pa03';
+export const FIXED_COMPILE_MEMORY_LIMIT_MB = 256;
 
 // FAQ-05 defaults: 1s CPU, wall 3x CPU, 256 MB memory (swap included), 16 processes, 1 MB output.
 export const FAQ05_SANDBOX_LIMITS: SandboxLimits = Object.freeze({
@@ -198,6 +199,9 @@ export function resolveSandboxLimits(
     compileWallTimeLimitSeconds:
       overrides.compileWallTimeLimitSeconds ??
       FAQ05_SANDBOX_LIMITS.compileWallTimeLimitSeconds,
+    ...(overrides.compileMemoryLimitMb !== undefined
+      ? { compileMemoryLimitMb: overrides.compileMemoryLimitMb }
+      : {}),
   };
 
   const integerLimitKeys = [
@@ -211,6 +215,15 @@ export function resolveSandboxLimits(
     if (!Number.isInteger(value) || value <= 0) {
       throw new Error(`Sandbox limit "${key}" must be a positive integer`);
     }
+  }
+  if (
+    resolved.compileMemoryLimitMb !== undefined &&
+    (!Number.isInteger(resolved.compileMemoryLimitMb) ||
+      resolved.compileMemoryLimitMb <= 0)
+  ) {
+    throw new Error(
+      'Sandbox limit "compileMemoryLimitMb" must be a positive integer',
+    );
   }
 
   for (const key of [
@@ -251,6 +264,10 @@ export function buildSandboxDockerArgs(
     options.mode === 'compile'
       ? MAX_COMPILE_BINARY_BYTES
       : limits.outputLimitBytes;
+  const memoryLimitMb =
+    options.mode === 'compile'
+      ? (limits.compileMemoryLimitMb ?? FIXED_COMPILE_MEMORY_LIMIT_MB)
+      : limits.memoryLimitMb;
 
   const args: string[] = [
     'run',
@@ -263,9 +280,9 @@ export function buildSandboxDockerArgs(
     '--cpus',
     '1',
     '--memory',
-    `${limits.memoryLimitMb}m`,
+    `${memoryLimitMb}m`,
     '--memory-swap',
-    `${limits.memoryLimitMb}m`,
+    `${memoryLimitMb}m`,
     '--pids-limit',
     String(limits.maxProcesses),
     '--ulimit',

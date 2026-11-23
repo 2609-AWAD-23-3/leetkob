@@ -7,6 +7,7 @@ import {
   buildSandboxDockerArgs,
   createDockerSandboxRunner,
   FAQ05_SANDBOX_LIMITS,
+  FIXED_COMPILE_MEMORY_LIMIT_MB,
   normalizeJudgeOutput,
   resolveSandboxLimits,
   sanitizeDockerHostEnv,
@@ -688,4 +689,40 @@ test('resolveSandboxLimits supports millisecond-precision CPU limits and rejects
     () => createDockerSandboxRunner({ cleanupTimeoutMs: -5 }),
     /Sandbox option "cleanupTimeoutMs"/,
   );
+});
+
+test('compile phase uses fixed memory limit independent of lab runtime memoryLimitMb', () => {
+  assert.equal(FIXED_COMPILE_MEMORY_LIMIT_MB, 256);
+
+  const compileArgs = buildSandboxDockerArgs({
+    mode: 'compile',
+    containerName: 'leetkob-sbx-compile-64',
+    limits: { memoryLimitMb: 64 },
+    statusToken: 'tok-cmp',
+  }).join(' ');
+  assert.match(compileArgs, /--memory 256m --memory-swap 256m/);
+
+  const runArgs = buildSandboxDockerArgs({
+    mode: 'run',
+    containerName: 'leetkob-sbx-run-64',
+    limits: { memoryLimitMb: 64 },
+    statusToken: 'tok-run',
+  }).join(' ');
+  assert.match(runArgs, /--memory 64m --memory-swap 64m/);
+
+  const customCompileArgs = buildSandboxDockerArgs({
+    mode: 'compile',
+    containerName: 'leetkob-sbx-compile-512',
+    limits: { memoryLimitMb: 64, compileMemoryLimitMb: 512 },
+    statusToken: 'tok-cmp-512',
+  }).join(' ');
+  assert.match(customCompileArgs, /--memory 512m --memory-swap 512m/);
+
+  for (const invalid of [
+    { compileMemoryLimitMb: 0 },
+    { compileMemoryLimitMb: -1 },
+    { compileMemoryLimitMb: 128.5 },
+  ]) {
+    assert.throws(() => resolveSandboxLimits(invalid), /Sandbox limit/);
+  }
 });
