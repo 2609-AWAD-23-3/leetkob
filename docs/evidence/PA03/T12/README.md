@@ -13,7 +13,7 @@
 
 - **Host:** VM Azure `leetkob-vm` (`70.153.86.114`, Ubuntu 24.04.5 LTS, Docker `29.10.0`, Docker Compose `v5.8.0`).
 - **Commit đang chạy trên VPS (`/home/deploy/leetkob`):** `7b4b89a` (nhánh `feat/pa03-t12-deploy`; các commit từ `999a91f` trở về sau chỉ cập nhật docs/evidence).
-- **Site cấu hình cho Caddy HTTPS:** `https://70.153.86.114.sslip.io` (reverse proxy trong mạng bridge cố định `172.28.0.0/24` khớp `TRUST_PROXY=172.28.0.0/24`).
+- **Site cấu hình cho Caddy HTTPS:** Hiện dùng `https://app.flytest.io.vn` (đổi ngày 24/11/2026 qua bản ghi `A` chế độ `DNS only` trỏ về `70.153.86.114`, thay cho URL khởi tạo ban đầu `https://70.153.86.114.sslip.io`), reverse proxy trong mạng bridge cố định `172.28.0.0/24` khớp `TRUST_PROXY=172.28.0.0/24`.
 - **4 container Compose (`leetkob-prod`):** `postgres` (`postgres:17-alpine`), `api` (`leetkob-prod-api`, healthy), `worker` (`leetkob-prod-worker`), `caddy` (`caddy:2.10-alpine`).
 - **5 tài khoản test cô lập (không dùng `password123` hay bộ 113 tài khoản dev):**
   - `pa3.admin` (`admin`)
@@ -52,6 +52,8 @@
      - Bài vi phạm (`882c00e5-ea61-4944-95f7-bd53e9d3748d`, `pa3.student2`): `c1` `violation` (`hard_rule`, dòng 7 `std::sort`), `c2` `violation` (`model`, request `req_011ChLK6e2648XNXS2jfAJ2R`, `1207` in / `85` out, `$0.0001632`, dòng 7).
      - Bài injection (`d92904e5-5d2f-49f9-825c-c0e7b4e6763e`, `pa3.student2`): `c1` `pass` (`hard_rule`), `c2` `violation` (`model`, request `req_011ChLK6yzPGnCJCWbT6b4wh`, `1307` in / `99` out, `$0.0001802`, dòng 4–7).
    - `pa3.student1` nhận `403` khi gọi `/labs/{labId}/review-queue` và không thấy `verdicts` trong `/submissions/{id}`; `pa3.ta1` nhận `200` với 4 mục hàng đợi (bài `AC` mới nhất của mỗi sinh viên theo FAQ-03/04: `6bb1160e` và `d92904e5`), đủ verdict, dòng evidence và mức trừ (`3` và `4`).
+3. **Cập nhật domain chính thức sang `https://app.flytest.io.vn` (24/11/2026):**
+   - Chuyển `LEETKOB_SITE=app.flytest.io.vn` trên VPS (`DNS only` ➔ `70.153.86.114`) và recreate container `caddy`: `http://app.flytest.io.vn/health` ➔ `308`, `https://app.flytest.io.vn/health` ➔ `200 {"status":"ok"}` (TLS Let's Encrypt hợp lệ), `https://app.flytest.io.vn/docs/` ➔ `200`, `4/4` container running/healthy.
 
 ## 4. Rủi ro vận hành & lý do chấp nhận (PA03)
 
