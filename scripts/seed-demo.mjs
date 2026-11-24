@@ -1,4 +1,5 @@
 import {
+  assertDevSeedAllowed,
   createDemoAccounts,
   seedDemoAccounts,
 } from '../dist/db/seeds/demo-accounts.js';
@@ -9,6 +10,7 @@ import { loadDatabaseUrl } from '../dist/shared/config.js';
 // declared beside the account template. No private JSON file is required.
 try {
   if (process.argv.length > 2) throw new Error('Usage: npm run db:seed');
+  assertDevSeedAllowed(process.env);
   const pool = createPool(loadDatabaseUrl());
   try {
     await migrate(pool);

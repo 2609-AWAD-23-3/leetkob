@@ -1,0 +1,6 @@
+{$LEETKOB_SITE} {
+	encode zstd gzip
+	reverse_proxy api:3000 {
+		header_up X-Forwarded-For {remote_host}
+	}
+}
