@@ -32,4 +32,4 @@ Các hạn dưới đây theo brief năm 2026, đều 22:00 trừ seminar/oral l
 
 Repo code, stack/runtime, persistence, queue, sandbox/provider cụ thể, deployment và model/cost configuration được chốt theo nhu cầu checkpoint và ghi trong [architecture](../architecture/overview.md). Không triển khai toàn bộ hạ tầng chỉ để chuẩn bị PA02.
 
-A/B/C và ba modules hiện là phân công PA02 trong PA02.md; không mặc định giữ nguyên toàn bộ phân công đó cho mọi checkpoint. Chỉ PA02 đã có rubric trong bộ tài liệu hiện dùng.
+A/B/C và ba modules hiện là phân công PA02 trong PA02.md; không mặc định giữ nguyên toàn bộ phân công đó cho mọi checkpoint. Rubric PA02–PA06 có trong [reference](../reference/README.md).
