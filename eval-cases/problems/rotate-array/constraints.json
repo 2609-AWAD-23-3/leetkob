@@ -1,0 +1,17 @@
+[
+  {
+    "id": "C1",
+    "text": "Do not use these library facilities: `std::rotate`, `std::rotate_copy`, `std::reverse`, `std::reverse_copy`, `std::vector`, `std::deque`.",
+    "deduction": 3
+  },
+  {
+    "id": "C2",
+    "text": "Rotate the numbers inside the block that holds them, holding only a constant number of the values anywhere else at any time. Extra memory here means memory that holds the array's values: a few scalar variables are fine, and so is the call stack of a helper that never holds the values (for example a recursion on indices or counts). Holding more than a constant number of the values outside the block does not satisfy this constraint, whether they sit in a second array, buffer, string or container (allocated, on the stack or static) or are spread across recursive calls.",
+    "deduction": 4
+  },
+  {
+    "id": "C3",
+    "text": "Keep the numbers in a block allocated with `new[]` or `malloc`, sized from `n`. Every block the program allocates must be released with the matching `delete[]` or `free` on every path before the program ends. Whether a second buffer is allowed at all is decided by C2, not by this constraint.",
+    "deduction": 2
+  }
+]
