@@ -1,6 +1,6 @@
 # LeeTKOB
 
-Nền backend từ PA02: **POST /labs/{labId}/publish** có contract, implementation và tests. T06/T07 (submissions/review-queue) deferred, không phải Done. PA03-T00 sắp xếp lại mã và test để chuẩn bị cho các task tiếp theo. Xem [cấu trúc project](docs/architecture/project-structure.md) cho entry point, ranh giới và phần dự kiến theo từng mốc.
+Backend chấm bài C++ có kiểm tra constraint bằng LLM. Từ PA03 toàn bộ pipeline chạy trên deployment public `https://app.flytest.io.vn`: TA tạo lab có constraints, student nộp bài, bài vào queue Postgres, worker riêng compile và chạy trong sandbox Docker, bài Accepted qua hard rules rồi model, verdict kèm evidence chỉ vào review queue của TA; Publish bị chặn khi còn verdict chưa review. Hồ sơ nộp PA03: [PA3.md](PA3.md). Xem [cấu trúc project](docs/architecture/project-structure.md) cho entry point (API, worker, checker) và ranh giới module.
 
 ## Cài đặt và checks
 
@@ -16,14 +16,14 @@ npm run type-check
 npm test
 ```
 
-Bản nộp được đánh dấu bằng tag `pa2`; checkout tag trước khi cài/chạy. PowerShell có thể cần `npm.cmd`.
+Bản nộp PA03 được đánh dấu bằng tag `pa3` (PA02: `pa2`); checkout tag trước khi cài/chạy. PowerShell có thể cần `npm.cmd`.
 
-Local và [CI](.github/workflows/ci.yml) dùng cùng bốn commands; `quality-gate` là required check trên `main`.
+Local và [CI](.github/workflows/ci.yml) dùng cùng bốn commands; `quality-gate` là required check trên `main`. `npm test` không cần network, Docker hay Postgres; các suite cần hạ tầng chạy bằng lệnh riêng và trong CI: `npm run test:db` (cần `TEST_DATABASE_URL`, job `postgres-store`) và `npm run test:sandbox` (cần Docker, job `sandbox-attacks` với 9 bài tấn công trong `sandbox/attacks/`).
 
 - Lint: Oxlint trên src/tests/scripts.
 - Format: Prettier chỉ kiểm tra; [.prettierignore](.prettierignore) loại docs, .github, CONTRIBUTING, dependencies và build output. Báo cáo root mới vẫn được kiểm tra.
 - Type-check: TypeScript strict/noEmit cho source và tests TypeScript.
-- Tests: build rồi discovery `tests/**/*.test.{mjs,js,ts}`; build/assertion lỗi hoặc không có test đều trả nonzero. Baseline có 83 tests: 40 store (unit), 16 contract và 27 integration (18 auth/error, 7 app, 2 lifecycle).
+- Tests: build rồi discovery `tests/**/*.test.{mjs,js,ts}`; build/assertion lỗi hoặc không có test đều trả nonzero. Tại `develop` `b237d1d`: 570 tests, 567 pass, 3 skip (ba suite Postgres tự bỏ qua khi không có `TEST_DATABASE_URL`).
 
 ## Chạy ứng dụng
 
@@ -67,11 +67,11 @@ Test auth và lab trực tiếp tại [Swagger UI](http://127.0.0.1:3000/docs/) 
 
 TA `ta01` tạo lab bằng POST `/classes/demo-class-1/labs`: nhập JSON hoặc chọn multipart để upload bộ test/constraint JSON. Bắt buộc `Idempotency-Key` UUID v4; giữ key cho retry, key mới cho ý định tạo mới. Cùng key/payload trong 24 giờ trả cùng lab. Student chỉ xem lab lớp mình đã mở, không thấy bộ test. Xem [contract lab](docs/contract/labs.md), [mẫu JSON](docs/examples/labs/tests.json) và [quy trình test Swagger từng bước](docs/evidence/PA03/T04/README.md#phase-2). Không cần seed lại để dùng API mới; runtime tự chạy migration 0004 trước khi listen.
 
-Phase 3: student nộp qua POST `/labs/{labId}/submissions` bằng JSON code hoặc một file `.cpp` tối đa 64 KiB; cần key UUID v4 mới cho mỗi lần nộp, giữ key khi retry. GET `/labs/{labId}/submissions/mine` xem lịch sử của mình; TA cùng lớp dùng GET `/labs/{labId}/submissions` với studentId/status/limit/cursor. GET `/submissions/{id}` xem code và trạng thái. Runtime tự áp dụng thêm migration 0005. Bài mới và job được lưu atomic, trạng thái queued; phase này chưa chạy worker/chấm bài. Xem [contract submissions](docs/contract/submissions.md), [file C++ mẫu](docs/examples/submissions/sum.cpp) và [runbook phase 3](docs/evidence/PA03/T04/README.md#phase-3).
+Student nộp qua POST `/labs/{labId}/submissions` bằng JSON code hoặc một file `.cpp` tối đa 64 KiB; cần key UUID v4 mới cho mỗi lần nộp, giữ key khi retry. GET `/labs/{labId}/submissions/mine` xem lịch sử của mình; TA cùng lớp dùng GET `/labs/{labId}/submissions` với studentId/status/limit/cursor. GET `/submissions/{id}` xem code, trạng thái và kết quả chấm test. Bài mới và job được lưu atomic ở trạng thái queued; `npm run worker` claim job, chấm trong sandbox rồi chạy hard rules và model ([evidence T11](docs/evidence/PA03/T11/README.md)). TA xem verdict ở review queue và Publish: [contract review queue](docs/contract/review-queue.md). Xem [contract submissions](docs/contract/submissions.md), [file C++ mẫu](docs/examples/submissions/sum.cpp) và [runbook phase 3](docs/evidence/PA03/T04/README.md#phase-3).
 
 Xem/sửa dữ liệu bằng **Prisma Studio**: bật PostgreSQL Docker, bảo đảm `.env` có DATABASE_URL rồi chạy `npm.cmd run db:studio` ở terminal riêng. Mở [Studio](http://localhost:5555), chọn bảng `users`, `classes` hoặc `class_memberships`. Backend không cần chạy. Studio đọc schema PostgreSQL trực tiếp qua cấu hình `scripts/prisma-studio.config.ts`; không dùng Prisma Client hoặc chuyển quyền quản lý migration sang Prisma. Thay đổi trong Studio ghi trực tiếp vào database dev. `Ctrl+C` tại terminal Studio để dừng. Có thể dùng cổng khác bằng `npm.cmd run db:studio -- --port 5556` nếu cổng mặc định đã được sử dụng.
 
-**npm start mount auth, labs và submissions với PostgreSQL; Publish vẫn chưa được nối runtime (T09).** Xem [contract auth](docs/contract/auth.md) và [hướng dẫn seed 113 tài khoản](docs/evidence/PA03/T04/README.md). Để kiểm chứng endpoint, chạy `npm test`. Để thử Publish HTTP với fixtures, sau build lưu block sau thành file `.mjs` tạm ở root, chạy `node <file>.mjs`:
+`npm start` mount auth, labs, submissions, review queue và Publish với PostgreSQL. Xem [contract auth](docs/contract/auth.md) và [hướng dẫn seed 113 tài khoản](docs/evidence/PA03/T04/README.md). Demo Publish PA02 với fixtures in-memory vẫn chạy được: sau build lưu block sau thành file `.mjs` tạm ở root, chạy `node <file>.mjs`:
 
 ```js
 import { createPublishApp } from './dist/api/modules/publish/index.js';
@@ -109,16 +109,27 @@ Fixture token là dữ liệu test công khai, không phải credential producti
 
 ## Security, model và chi phí
 
-[AGENTS.md](AGENTS.md) là rules file; [permissions](docs/security/permissions.md) chia allowed / ask first / never. Không secrets trong sandbox/prompt/log, không model thật trong unit tests, không sửa tests/eval/labels chỉ để xanh. [Scan T05](docs/evidence/PA02/T05/security-scan.md) ghi phạm vi history/refs/config và triage digest false positives. Kết quả scan áp dụng cho snapshot được ghi trong hồ sơ.
+[AGENTS.md](AGENTS.md) là rules file; [permissions](docs/security/permissions.md) chia allowed / ask first / never. Không secrets trong sandbox/prompt/log, không model thật trong unit tests, không sửa tests/eval/labels chỉ để xanh. Sandbox: 9 minimums của brief, mỗi minimum một bài tấn công ([evidence T05](docs/evidence/PA03/T05/README.md)).
 
-PA02 chưa tích hợp model/provider, không cần API key để chạy. **Chưa có bằng chứng spending cap; không nhận đã đáp ứng phần cap của rubric.** [Model/cost T05](docs/evidence/PA02/T05/model-cost.md) chỉ là estimate tham chiếu: 80 bài, 3 constraints, 20% retry khoảng **1,73 USD/lab**; kịch bản 5 constraints/input-output lớn hơn khoảng **5,76 USD/lab**. Provider/model tham chiếu chưa phải lựa chọn triển khai; chưa có measured cost/lab. Không có model calls trong tests. Theo brief, LLM tương lai chỉ nhận đề, constraints và code đã bỏ tên/StudentID; luồng gửi này chưa triển khai.
+### Model và chi phí
+
+Model: `claude-haiku-5-5` (Anthropic Claude API, gọi trực tiếp; [ADR 0001](docs/architecture/decisions/0001-host-model-and-spending-cap.md)). Giá $0.10 / 1M token input, $0.50 / 1M token output. Mỗi bài nộp Accepted có ít nhất một constraint semantic mà hard rules chưa quyết thì gọi model **một lần** cho mọi constraint semantic đó; bài không Accepted hoặc chỉ có constraint ban-list thì không gọi. Output qua schema check và timeout; sai schema hoặc timeout thành `unsure`. Spending cap: workspace $5/tháng, Auto-reload tắt ([evidence T02](docs/evidence/PA03/T02/README.md)).
+
+Chi phí một lab 80 bài nộp, tính từ dev run thật ([evidence T10](docs/evidence/PA03/T10/README.md#6-dev-run-model-thật-23112026)):
+
+- Dev run: 39 call, 64 725 token input và 5 369 token output, tổng $0.009157 (cộng `costUsd` từng call trong `call-log.jsonl`).
+- Trung bình một call: $0.009157 / 39 ≈ $0.000235 (≈ 1 660 token input, 138 token output).
+- Lab 80 bài, giả định cả 80 bài đều Accepted và đều gọi model một lần: 80 × $0.000235 ≈ **$0.019**.
+- Độ nhạy: bài dài gấp đôi (≈ 3 300 input, 280 output mỗi call) thì 80 × (3 300 × 0.10 + 280 × 0.50) / 1e6 ≈ $0.038; mỗi job retry thêm một lần thì nhân tối đa 2. Lượt đo riêng của T08 (2 call, $0.0154/lab) cùng bậc độ lớn ([evidence T08](docs/evidence/PA03/T08/README.md#9-phép-tính-chi-phí-một-lab-80-bài)).
+
+Call bị timeout được ghi chi phí 0 trong call log dù provider có thể vẫn tính tiền; cost cap theo lab thuộc PA04.
 
 ## Hồ sơ và giới hạn
 
-- [PA2.md](PA2.md): repository/protection, PR đỏ/fix xanh, deliberate break, tag-run.
-- [AI-LOG.md](AI-LOG.md): AI assistance theo task, không phải transcript.
-- [SELF_ASSESSMENT_REPORT.md](SELF_ASSESSMENT_REPORT.md): bảy tiêu chí, điểm tự chấm và phần chưa hoàn thành.
-- [Evidence T11](docs/evidence/PA02/T11/README.md): nguồn tham chiếu và kết quả kiểm chứng.
-- [Plan PA02](docs/plans/PA02.md), [requirement](docs/reference/PA02/requirement.md), [rubric gốc](docs/reference/PA02/PA%232%20rubric%20%E2%80%94%20Harness%20and%20quality%20gate.pdf).
+- [PA3.md](PA3.md): URL deployment, tài khoản test, CI run của tag `pa3`, lệnh checker, dev run, video.
+- [SELF_ASSESSMENT_REPORT.md](SELF_ASSESSMENT_REPORT.md): tám tiêu chí PA03, điểm tự chấm, evidence và phần chưa làm.
+- [AI-LOG.md](AI-LOG.md): AI assistance PA03 theo task, hợp nhất từ `docs/evidence/PA03/T*/AI-LOG.md`.
+- [Plan PA03](docs/plans/PA03.md), [requirement](docs/reference/PA03/requirement.md), [rubric gốc](docs/reference/PA03/PA%233%20rubric%20%E2%80%94%20Prototype%20with%20the%20LLM%20feature%20running.pdf).
+- Hồ sơ PA02 ([PA2.md](PA2.md); AI-LOG và tự chấm PA02 xem tại tag `pa2`).
 
-Publish demo PA02 dùng Store in-memory, reset khi restart; runtime auth PA03 dùng PostgreSQL. Summary thống kê quyết định TA, không phải pipeline tính điểm. Chưa có API admin provisioning hoặc runtime wiring Publish mặc định; auth đã có persistence và đăng ký student.
+Sản phẩm PA03 chưa có frontend; mọi thao tác qua API/Swagger. Chưa có ngưỡng eval, đủ 5 guardrails, cost cap theo lab, lấy mẫu 10% `pass` (PA04), publishing hoàn chỉnh cho student và appeals (PA05).
