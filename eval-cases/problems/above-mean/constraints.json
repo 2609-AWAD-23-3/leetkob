@@ -1,0 +1,12 @@
+[
+  {
+    "id": "C1",
+    "text": "Do not use the loop keywords `for`, `while`, `do-while` or `goto` anywhere in the program.",
+    "deduction": 3
+  },
+  {
+    "id": "C2",
+    "text": "Every recursive function that walks the numbers (reading, summing or counting them) must split its range into two parts of about equal size and recurse on both, so the recursion depth grows with log n, not with n. A recursion that peels off one element, or a constant number of elements, per call does not satisfy this constraint, however the split is written. This constraint is about the shape of the recursion only; loops are covered by C1.",
+    "deduction": 4
+  }
+]
