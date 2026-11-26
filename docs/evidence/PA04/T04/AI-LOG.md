@@ -44,3 +44,12 @@ Kept: Label `s01` C2 vẫn `pass`: `gcd_of` chỉ đệ quy trên số đếm, k
 Changed: Câu C2 định nghĩa "bộ nhớ phụ" là bộ nhớ giữ giá trị của mảng: biến vô hướng và call stack của hàm phụ không giữ giá trị thì được; giữ nhiều hơn một số hằng giá trị ngoài khối thì vi phạm, kể cả khi rải qua các lần gọi đệ quy (để đệ quy giữ mỗi tầng một giá trị không lọt). Đối chiếu lại 5 lời giải: không label nào đổi. Thêm tag `trap` cho `s01` C2 vì đây đúng là code hợp lệ mà một kiểm tra đọc theo nghĩa đen sẽ trừ oan. Lỗi nằm ở câu chữ do Claude viết; đây là lần thứ hai một câu constraint tả hình thức thay vì ý định (lần đầu là C2 của `mod-power`).
 Rejected: Đổi label `s01` C2 thành `violation` (trừ oan một lời giải đúng); viết lại `gcd_of` thành vòng lặp.
 By hand: Vượng tìm ra lỗi. Claude sửa `constraints.json`, tag trong `labels.jsonl`, evidence, rồi chạy lại các kiểm tra (kết quả ở mục 5 của README).
+
+## 2026-11-27 — Commit hai bài mới và chạy model thật trên cả 49 cặp
+
+Tool: Claude Code (desktop app).
+Asked for: Vượng review xong hai bài mới, cho commit rồi chạy model thật.
+Kept: Commit mỗi bài thành hai commit (đề; lời giải và label) rồi một commit evidence, trước khi chạy model, để case có trước kết quả. `labels.jsonl` được tách theo bài khi commit để mỗi commit lời giải chỉ thêm label của bài đó. Chạy một lần trên cả 49 cặp, lưu ở thư mục mới `model-run-full/`, giữ nguyên `model-run/` của lần trước.
+Changed: Trước khi commit, Claude thấy commit docs trước đã được làm lại thành `19c1a92` (Vượng sửa câu "Asked for" trong AI-LOG), nên sửa SHA trong mục 6 của README thay vì dẫn tới `c60522e` không còn trên nhánh. Khi kiểm call log, ghi thêm so sánh verdict giữa hai lần chạy trên 24 cặp chung và các chỗ evidence của model rộng hơn label.
+Rejected: Gộp hai bài vào một commit; ghi đè `model-run/` bằng lần chạy mới; coi hai lần chạy là bằng chứng ổn định thay cho ba lần chạy lặp của T05.
+By hand: Vượng review và quyết định chạy. Claude commit, chạy `npm run build`, checker với `node --env-file=.env` (không in key), `eval.mjs`, script kiểm call log: 22 call `ok`, 22 request id `req_…` khác nhau, `eval.mjs` exit 0 (`PASS`), 0 khấu trừ sai, recall 100% (15/15), unsure 0% (0/49), chi phí $0.005519.
