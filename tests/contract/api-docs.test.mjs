@@ -186,3 +186,4 @@ test('Swagger request examples execute successfully and error examples match han
       .invalidJson.value,
   );
 });
+// PR thử kiểm CODEOWNERS (PA04-T01), không merge.
