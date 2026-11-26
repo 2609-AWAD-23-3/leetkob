@@ -7,7 +7,7 @@
 | [leetkob/](leetkob/README.md) | Class project brief và bản dịch, dùng chung toàn project | Đã có nguồn |
 | [PA02/](PA02/README.md) | Requirement và rubric riêng PA02, kèm bản dịch | Đã có nguồn |
 | [PA03/](PA03/README.md) | Requirement, rubric PA03 và bản dịch tiếng Việt | Đã có nguồn |
-| [PA04/](PA04/README.md) | Rubric PA04 và bản dịch tiếng Việt | Đã có rubric; chưa có requirement riêng |
+| [PA04/](PA04/README.md) | Requirement, rubric PA04 và bản dịch tiếng Việt | Đã có nguồn |
 | [PA05/](PA05/README.md) | Rubric PA05 và bản dịch tiếng Việt | Đã có rubric; chưa có requirement riêng |
 | [PA06/](PA06/README.md) | Rubric final demo/individual oral và bản dịch tiếng Việt | Đã có rubric |
 | [final-project/](final-project/README.md) | Thông báo, milestones, features F1–F11 và tổng quan rubrics | Đã có nguồn và bản dịch |
