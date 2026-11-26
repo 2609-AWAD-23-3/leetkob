@@ -32,3 +32,8 @@
 - Test memory của sandbox phải đọc lại vùng nhớ đã cấp phát để compiler không bỏ được việc cấp phát.
 - Không dùng `-v /var/run/docker.sock`, `--privileged`, `--env-file` hay `-e MODEL_API_KEY` trên lệnh chạy sandbox.
 - Không gọi một lần chạy là model thật nếu call log không có request id của provider.
+- Eval gate trong CI không đọc `predictions.jsonl` có sẵn trong repo; predictions phải do checker tạo ngay trong job bằng model thật. Nguồn: rubric PA04, "Catching the assistant".
+- Không dùng `continue-on-error`, `|| true` hay bỏ qua exit code trong eval gate; mọi exit code khác 0 của `eval.mjs` làm job fail.
+- Không đổi label của case riêng trong `eval-cases/` trong commit hoặc PR làm gate xanh; muốn gate xanh thì sửa checker.
+- Guardrail test phải fail khi xoá guardrail; không viết test chỉ kiểm fake model.
+- Không chặn Publish chỉ bằng cách ẩn nút; API phải từ chối Publish khi còn verdict chưa review.

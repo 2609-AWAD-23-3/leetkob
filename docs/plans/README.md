@@ -13,8 +13,9 @@ Baseline cấu trúc/phân công/checklist của PA02 được ghi nhận ngày 
 | [PROJECT.md](PROJECT.md) | Roadmap toàn project và ranh giới checkpoint | Theo brief; chưa phải kế hoạch chi tiết tất cả PA |
 | [PA02.md](PA02.md) | Harness, quality gate, endpoint contract/tests | Plan hiện hành, 12 task và checkbox theo dõi |
 | [PA03.md](PA03.md) | Prototype có LLM chạy được | Plan hiện hành, 14 task (T00–T13); Issues #29, #31–#43 trong [milestone PA03](https://github.com/2609-AWAD-23-3/leetkob/milestone/2) |
-| [PA04.md](PA04.md) | Eval, guardrails, human gate, red-team | Khung roadmap; cần rubric/requirement riêng |
-| [PA05.md](PA05.md) | Final build, deployment, load, observability | Khung roadmap; cần rubric/requirement riêng |
+| [PA04.md](PA04.md) | Eval, guardrails, human gate, red-team | Plan hiện hành, 11 task (T01–T11); Issues trong milestone PA04 |
+| [PA05.md](PA05.md) | Final build, deployment, load, observability | Plan, 11 task (T01–T11), rà lại sau PA04 (PA05-T01); Issues trong milestone PA05 |
+| [PA06.md](PA06.md) | Final demo và vấn đáp cá nhân | Plan, 3 task (T01–T03); Issues trong milestone PA06 |
 
 ## Cách dùng
 
