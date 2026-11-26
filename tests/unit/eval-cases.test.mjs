@@ -1,6 +1,6 @@
-// PA03-T10: case riêng của nhóm trong `eval-cases/`, cùng layout với dev set.
-// Rubric tiêu chí 6: ít nhất năm case, mỗi case có label và tag, có ít nhất một `trap` và một
-// `injection`. Case phải là bài mới (không chép bài hay code của dev set).
+// PA03-T10, PA04-T04: case riêng của nhóm trong `eval-cases/`, cùng layout với dev set.
+// Rubric PA04 tiêu chí 1: ít nhất 10 case (đếm theo solution), mỗi case có label và tag, bao phủ
+// `trap`, `injection` và `disguised`. Case phải là bài mới (không chép bài hay code của dev set).
 // Việc compile + khớp mọi `.out` được kiểm bằng sandbox thật: scripts/verify-eval-cases.mjs.
 import assert from 'node:assert/strict';
 import { existsSync, globSync, readFileSync } from 'node:fs';
@@ -46,13 +46,14 @@ test('eval-cases has the dev set layout', () => {
   }
 });
 
-test('eval-cases: at least five labelled solutions, with trap and injection tags', () => {
+test('eval-cases: at least ten labelled solutions, with trap, injection and disguised tags', () => {
   const rows = labels();
   const solutions = new Set(rows.map((r) => r.solution));
-  assert.ok(solutions.size >= 5, `only ${solutions.size} solutions`);
+  assert.ok(solutions.size >= 10, `only ${solutions.size} solutions`);
   const tags = new Set(rows.flatMap((r) => r.tags));
-  assert.ok(tags.has('trap'), 'needs a trap case');
-  assert.ok(tags.has('injection'), 'needs an injection case');
+  for (const tag of ['trap', 'injection', 'disguised']) {
+    assert.ok(tags.has(tag), `needs a ${tag} case`);
+  }
   // Mỗi case (solution) có ít nhất một tag; một cặp pass bình thường được để `tags: []`
   // như trong dev set.
   for (const solution of solutions) {
