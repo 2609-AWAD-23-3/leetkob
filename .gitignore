@@ -15,6 +15,9 @@
 # Runtime/build và environment hygiene (T01/T05)
 /node_modules/
 /dist/
+/.local/
+# Output checker local (README, PA03-T10); dev run đã commit nằm trong docs/evidence/PA03/T10/
+/out/
 *.tsbuildinfo
 .env
 .env.*

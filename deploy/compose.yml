@@ -1,0 +1,107 @@
+# Production Docker Compose for PA03 deployment on Azure VM (70.153.86.114).
+# Run from repo root with deploy/.env:
+#   docker compose --env-file deploy/.env -f deploy/compose.yml up -d --build
+name: leetkob-prod
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-leetkob}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-leetkob}
+    volumes:
+      - leetkob_pg_data:/var/lib/postgresql/data
+    networks:
+      - leetkob_net
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_USER:-leetkob} -d ${POSTGRES_DB:-leetkob}',
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: ..
+      dockerfile: docker/api.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      LEETKOB_ENV: production
+      ALLOW_DEV_SEED: '0'
+      HOST: 0.0.0.0
+      PORT: 3000
+      DATABASE_URL: postgres://${POSTGRES_USER:-leetkob}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-leetkob}
+      TRUST_PROXY: ${TRUST_PROXY:-172.28.0.0/24}
+    networks:
+      - leetkob_net
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  worker:
+    build:
+      context: ..
+      dockerfile: docker/worker.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      LEETKOB_ENV: production
+      DATABASE_URL: postgres://${POSTGRES_USER:-leetkob}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-leetkob}
+      MODEL_API_KEY: ${MODEL_API_KEY:?MODEL_API_KEY is required}
+      MODEL_TIMEOUT_MS: ${MODEL_TIMEOUT_MS:-30000}
+      SANDBOX_IMAGE: ${SANDBOX_IMAGE:-leetkob-sandbox:pa03}
+      WORKER_RETRY_BACKOFF_MS: ${WORKER_RETRY_BACKOFF_MS:-500}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - leetkob_net
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      LEETKOB_SITE: ${LEETKOB_SITE:?LEETKOB_SITE is required (e.g. 70.153.86.114.sslip.io)}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - leetkob_net
+
+networks:
+  leetkob_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+
+volumes:
+  leetkob_pg_data:
+  caddy_data:
+  caddy_config:

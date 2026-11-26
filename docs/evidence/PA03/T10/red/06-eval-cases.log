@@ -1,0 +1,113 @@
+$ node --import tsx --test --test-reporter=tap tests/unit/eval-cases.test.mjs tests/integration/checker-eval.test.mjs
+TAP version 13
+# Subtest: dev set, MODEL_OFF=1: eval.mjs accepts the file (exit 0 or 1), 0 wrongful, every ban-list pair decided
+ok 1 - dev set, MODEL_OFF=1: eval.mjs accepts the file (exit 0 or 1), 0 wrongful, every ban-list pair decided
+  ---
+  duration_ms: 753.7409
+  type: 'test'
+  ...
+# Subtest: eval-cases, MODEL_OFF=1: eval.mjs accepts the file (exit 0 or 1) with 0 wrongful deductions
+not ok 2 - eval-cases, MODEL_OFF=1: eval.mjs accepts the file (exit 0 or 1) with 0 wrongful deductions
+  ---
+  duration_ms: 486.8911
+  type: 'test'
+  location: '<repo>\\tests\\integration\\checker-eval.test.mjs:87:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    checker: dataset error: dataset folder eval-cases has no problems/ folder (expected problems/<id>/statement.md and constraints.json)
+    
+    
+    2 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 2
+  operator: 'strictEqual'
+  stack: |-
+    checkAndScore (<repo>/tests/integration/checker-eval.test.mjs:28:10)
+    TestContext.<anonymous> (<repo>/tests/integration/checker-eval.test.mjs:88:32)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+    Test.postRun (node:internal/test_runner/test:1542:19)
+    Test.run (node:internal/test_runner/test:1467:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+# Subtest: eval-cases has the dev set layout
+not ok 3 - eval-cases has the dev set layout
+  ---
+  duration_ms: 4.9138
+  type: 'test'
+  location: '<repo>\\tests\\unit\\eval-cases.test.mjs:27:1'
+  failureType: 'testCodeFailure'
+  error: 'false == true'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (<repo>/tests/unit/eval-cases.test.mjs:28:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+# Subtest: eval-cases: at least five labelled solutions, with trap and injection tags
+not ok 4 - eval-cases: at least five labelled solutions, with trap and injection tags
+  ---
+  duration_ms: 0.6599
+  type: 'test'
+  location: '<repo>\\tests\\unit\\eval-cases.test.mjs:49:1'
+  failureType: 'testCodeFailure'
+  error: "ENOENT: no such file or directory, open '<repo>\\eval-cases\\labels.jsonl'"
+  code: 'ENOENT'
+  stack: |-
+    readFileSync (node:fs:483:20)
+    labels (<repo>/tests/unit/eval-cases.test.mjs:17:3)
+    TestContext.<anonymous> (<repo>/tests/unit/eval-cases.test.mjs:50:16)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+    Test.postRun (node:internal/test_runner/test:1542:19)
+    Test.run (node:internal/test_runner/test:1467:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+# Subtest: eval-cases: every (solution, constraint) pair has exactly one valid label
+not ok 5 - eval-cases: every (solution, constraint) pair has exactly one valid label
+  ---
+  duration_ms: 0.9556
+  type: 'test'
+  location: '<repo>\\tests\\unit\\eval-cases.test.mjs:62:1'
+  failureType: 'testCodeFailure'
+  error: "ENOENT: no such file or directory, open '<repo>\\eval-cases\\labels.jsonl'"
+  code: 'ENOENT'
+  stack: |-
+    readFileSync (node:fs:483:20)
+    labels (<repo>/tests/unit/eval-cases.test.mjs:17:3)
+    TestContext.<anonymous> (<repo>/tests/unit/eval-cases.test.mjs:63:16)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+    Test.postRun (node:internal/test_runner/test:1542:19)
+    Test.run (node:internal/test_runner/test:1467:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+  ...
+# Subtest: eval-cases are new problems, not copies of the dev set
+ok 6 - eval-cases are new problems, not copies of the dev set
+  ---
+  duration_ms: 24.3797
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 2
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1524.5326
+
+# exit code: 1

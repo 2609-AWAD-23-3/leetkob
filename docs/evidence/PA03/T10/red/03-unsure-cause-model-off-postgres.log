@@ -1,0 +1,578 @@
+$ node --import tsx --test --test-reporter=tap tests/integration/postgres-store.test.mjs
+TAP version 13
+# Subtest: postgres store: invalid display text is rejected before storing an account
+ok 1 - postgres store: invalid display text is rejected before storing an account
+  ---
+  duration_ms: 592.6001
+  type: 'test'
+  ...
+# Subtest: postgres store: registration normalizes usernames and atomically prevents duplicates
+ok 2 - postgres store: registration normalizes usernames and atomically prevents duplicates
+  ---
+  duration_ms: 472.3072
+  type: 'test'
+  ...
+# Subtest: postgres store: normalized lookup also covers legacy mixed-case and padded usernames
+ok 3 - postgres store: normalized lookup also covers legacy mixed-case and padded usernames
+  ---
+  duration_ms: 430.5458
+  type: 'test'
+  ...
+# Subtest: postgres store: an unknown lab creator is rejected without replacing state
+ok 4 - postgres store: an unknown lab creator is rejected without replacing state
+  ---
+  duration_ms: 438.2877
+  type: 'test'
+  ...
+# Subtest: postgres store: login lookup returns the hash apart from the public user
+ok 5 - postgres store: login lookup returns the hash apart from the public user
+  ---
+  duration_ms: 432.4939
+  type: 'test'
+  ...
+# Subtest: postgres store: sessions expire by the store clock and can be deleted
+ok 6 - postgres store: sessions expire by the store clock and can be deleted
+  ---
+  duration_ms: 448.9105
+  type: 'test'
+  ...
+# Subtest: postgres store: memberships scope the labs a user sees
+ok 7 - postgres store: memberships scope the labs a user sees
+  ---
+  duration_ms: 401.3327
+  type: 'test'
+  ...
+# Subtest: postgres store: createLab stores a valid lab and rejects bad limits or deductions
+ok 8 - postgres store: createLab stores a valid lab and rejects bad limits or deductions
+  ---
+  duration_ms: 493.3147
+  type: 'test'
+  ...
+# Subtest: postgres store: opensAt defaults to createdAt and must be before the deadline
+ok 9 - postgres store: opensAt defaults to createdAt and must be before the deadline
+  ---
+  duration_ms: 435.5531
+  type: 'test'
+  ...
+# Subtest: postgres store: createLab rejects an unknown field on the lab
+ok 10 - postgres store: createLab rejects an unknown field on the lab
+  ---
+  duration_ms: 438.1285
+  type: 'test'
+  ...
+# Subtest: postgres store: createLab rejects an unknown field as a client-chosen id
+ok 11 - postgres store: createLab rejects an unknown field as a client-chosen id
+  ---
+  duration_ms: 427.0722
+  type: 'test'
+  ...
+# Subtest: postgres store: createLab rejects an unknown field on the limits
+ok 12 - postgres store: createLab rejects an unknown field on the limits
+  ---
+  duration_ms: 408.8367
+  type: 'test'
+  ...
+# Subtest: postgres store: createLab rejects an unknown field on a test
+ok 13 - postgres store: createLab rejects an unknown field on a test
+  ---
+  duration_ms: 417.6019
+  type: 'test'
+  ...
+# Subtest: postgres store: createLab rejects an unknown field on a constraint
+ok 14 - postgres store: createLab rejects an unknown field on a constraint
+  ---
+  duration_ms: 387.5906
+  type: 'test'
+  ...
+# Subtest: postgres store: returned objects are copies
+ok 15 - postgres store: returned objects are copies
+  ---
+  duration_ms: 386.682
+  type: 'test'
+  ...
+# Subtest: postgres store: submit keeps its receive time when the clock crosses the deadline before it resolves
+ok 16 - postgres store: submit keeps its receive time when the clock crosses the deadline before it resolves
+  ---
+  duration_ms: 371.4378
+  type: 'test'
+  ...
+# Subtest: postgres store: submit stores a queued submission and exactly one job
+ok 17 - postgres store: submit stores a queued submission and exactly one job
+  ---
+  duration_ms: 401.3049
+  type: 'test'
+  ...
+# Subtest: postgres store: an expired lease is reclaimed and only the holder can complete
+ok 18 - postgres store: an expired lease is reclaimed and only the holder can complete
+  ---
+  duration_ms: 485.5389
+  type: 'test'
+  ...
+# Subtest: postgres store: a stale claim cannot touch a newer lease, even from the same worker
+ok 19 - postgres store: a stale claim cannot touch a newer lease, even from the same worker
+  ---
+  duration_ms: 469.9289
+  type: 'test'
+  ...
+# Subtest: postgres store: complete stores an unsure verdict with cause model_unsure
+ok 20 - postgres store: complete stores an unsure verdict with cause model_unsure
+  ---
+  duration_ms: 450.7661
+  type: 'test'
+  ...
+# Subtest: postgres store: complete stores an unsure verdict with cause schema_error
+ok 21 - postgres store: complete stores an unsure verdict with cause schema_error
+  ---
+  duration_ms: 462.3017
+  type: 'test'
+  ...
+# Subtest: postgres store: complete stores an unsure verdict with cause evidence_mismatch
+ok 22 - postgres store: complete stores an unsure verdict with cause evidence_mismatch
+  ---
+  duration_ms: 434.4104
+  type: 'test'
+  ...
+# Subtest: postgres store: complete stores an unsure verdict with cause timeout
+ok 23 - postgres store: complete stores an unsure verdict with cause timeout
+  ---
+  duration_ms: 485.094
+  type: 'test'
+  ...
+# Subtest: postgres store: complete stores an unsure verdict with cause cost_cap
+ok 24 - postgres store: complete stores an unsure verdict with cause cost_cap
+  ---
+  duration_ms: 443.8599
+  type: 'test'
+  ...
+# Subtest: postgres store: complete stores an unsure verdict with cause model_off
+not ok 25 - postgres store: complete stores an unsure verdict with cause model_off
+  ---
+  duration_ms: 434.8065
+  type: 'test'
+  location: '<repo>\\tests\\support\\store-conformance.mjs:495:5'
+  failureType: 'testCodeFailure'
+  error: 'An unsure verdict needs a supported unsureCause'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    validateNewVerdict (<repo>\src\db\validation.ts:234:13)
+    <anonymous> (<repo>\src\db\postgres\job-queue.ts:148:11)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async transaction (<repo>\src\db\postgres\client.ts:45:20)
+    async TestContext.<anonymous> (<repo>/tests/support/store-conformance.mjs:510:9)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+  ...
+# Subtest: postgres store: complete rejects verdicts for a non-AC result and writes nothing
+ok 26 - postgres store: complete rejects verdicts for a non-AC result and writes nothing
+  ---
+  duration_ms: 445.2114
+  type: 'test'
+  ...
+# Subtest: postgres store: complete rejects an unknown judge verdict and writes nothing
+ok 27 - postgres store: complete rejects an unknown judge verdict and writes nothing
+  ---
+  duration_ms: 427.7843
+  type: 'test'
+  ...
+# Subtest: postgres store: complete rejects an AC batch missing a constraint and writes nothing
+ok 28 - postgres store: complete rejects an AC batch missing a constraint and writes nothing
+  ---
+  duration_ms: 446.3571
+  type: 'test'
+  ...
+# Subtest: postgres store: complete rejects a duplicate pair in one batch and writes nothing
+ok 29 - postgres store: complete rejects a duplicate pair in one batch and writes nothing
+  ---
+  duration_ms: 435.9623
+  type: 'test'
+  ...
+# Subtest: postgres store: complete rejects an unknown constraint and writes nothing
+ok 30 - postgres store: complete rejects an unknown constraint and writes nothing
+  ---
+  duration_ms: 471.6887
+  type: 'test'
+  ...
+# Subtest: postgres store: complete rejects an unknown verdict value and writes nothing
+ok 31 - postgres store: complete rejects an unknown verdict value and writes nothing
+  ---
+  duration_ms: 470.9565
+  type: 'test'
+  ...
+# Subtest: postgres store: complete rejects evidence that is not an array and writes nothing
+ok 32 - postgres store: complete rejects evidence that is not an array and writes nothing
+  ---
+  duration_ms: 447.565
+  type: 'test'
+  ...
+# Subtest: postgres store: complete rejects evidence line 0 and writes nothing
+ok 33 - postgres store: complete rejects evidence line 0 and writes nothing
+  ---
+  duration_ms: 453.6703
+  type: 'test'
+  ...
+# Subtest: postgres store: complete rejects a violation without evidence and writes nothing
+ok 34 - postgres store: complete rejects a violation without evidence and writes nothing
+  ---
+  duration_ms: 478.0313
+  type: 'test'
+  ...
+# Subtest: postgres store: complete rejects an unknown source and writes nothing
+ok 35 - postgres store: complete rejects an unknown source and writes nothing
+  ---
+  duration_ms: 450.3555
+  type: 'test'
+  ...
+# Subtest: postgres store: complete rejects a numeric reason and writes nothing
+ok 36 - postgres store: complete rejects a numeric reason and writes nothing
+  ---
+  duration_ms: 426.3001
+  type: 'test'
+  ...
+# Subtest: postgres store: complete rejects an unsure verdict without a cause and writes nothing
+ok 37 - postgres store: complete rejects an unsure verdict without a cause and writes nothing
+  ---
+  duration_ms: 455.7415
+  type: 'test'
+  ...
+# Subtest: postgres store: complete rejects an unknown unsure cause and writes nothing
+ok 38 - postgres store: complete rejects an unknown unsure cause and writes nothing
+  ---
+  duration_ms: 438.4339
+  type: 'test'
+  ...
+# Subtest: postgres store: complete rejects an unsureCause on a pass verdict and writes nothing
+ok 39 - postgres store: complete rejects an unsureCause on a pass verdict and writes nothing
+  ---
+  duration_ms: 446.1647
+  type: 'test'
+  ...
+# Subtest: postgres store: complete rejects an unknown field on a verdict and writes nothing
+ok 40 - postgres store: complete rejects an unknown field on a verdict and writes nothing
+  ---
+  duration_ms: 485.6924
+  type: 'test'
+  ...
+# Subtest: postgres store: complete rejects an unknown field on evidence and writes nothing
+ok 41 - postgres store: complete rejects an unknown field on evidence and writes nothing
+  ---
+  duration_ms: 430.7389
+  type: 'test'
+  ...
+# Subtest: postgres store: complete rejects an unknown field on the judge result and writes nothing
+ok 42 - postgres store: complete rejects an unknown field on the judge result and writes nothing
+  ---
+  duration_ms: 446.6588
+  type: 'test'
+  ...
+# Subtest: postgres store: complete rejects an unknown field on a test result and writes nothing
+ok 43 - postgres store: complete rejects an unknown field on a test result and writes nothing
+  ---
+  duration_ms: 453.2122
+  type: 'test'
+  ...
+# Subtest: postgres store: a worker that crashes on every attempt ends the submission as failed
+ok 44 - postgres store: a worker that crashes on every attempt ends the submission as failed
+  ---
+  duration_ms: 483.0366
+  type: 'test'
+  ...
+# Subtest: postgres store: claim and fail reject a missing or invalid maxAttempts
+ok 45 - postgres store: claim and fail reject a missing or invalid maxAttempts
+  ---
+  duration_ms: 448.7946
+  type: 'test'
+  ...
+# Subtest: postgres store: fail retries, then marks the submission failed until requeued
+ok 46 - postgres store: fail retries, then marks the submission failed until requeued
+  ---
+  duration_ms: 476.7266
+  type: 'test'
+  ...
+# Subtest: postgres store: the counted submission is the last one received before the deadline
+ok 47 - postgres store: the counted submission is the last one received before the deadline
+  ---
+  duration_ms: 407.4818
+  type: 'test'
+  ...
+# Subtest: postgres store: a submission received before opensAt is never counted
+ok 48 - postgres store: a submission received before opensAt is never counted
+  ---
+  duration_ms: 451.5096
+  type: 'test'
+  ...
+# Subtest: postgres store: the queue holds every verdict of counted AC submissions only
+ok 49 - postgres store: the queue holds every verdict of counted AC submissions only
+  ---
+  duration_ms: 509.3231
+  type: 'test'
+  ...
+# Subtest: postgres store: an unreviewed pass blocks until confirmed in bulk
+ok 50 - postgres store: an unreviewed pass blocks until confirmed in bulk
+  ---
+  duration_ms: 574.0759
+  type: 'test'
+  ...
+# Subtest: postgres store: unfinished counted submissions count as pending
+ok 51 - postgres store: unfinished counted submissions count as pending
+  ---
+  duration_ms: 472.6886
+  type: 'test'
+  ...
+# Subtest: postgres store: decide and confirmPasses reject an unknown reviewer or bad evidence
+ok 52 - postgres store: decide and confirmPasses reject an unknown reviewer or bad evidence
+  ---
+  duration_ms: 529.1938
+  type: 'test'
+  ...
+# Subtest: postgres store: every decision change is logged
+ok 53 - postgres store: every decision change is logged
+  ---
+  duration_ms: 665.1307
+  type: 'test'
+  ...
+# Subtest: postgres store: verdicts of a replaced submission leave the queue
+ok 54 - postgres store: verdicts of a replaced submission leave the queue
+  ---
+  duration_ms: 508.3614
+  type: 'test'
+  ...
+# Subtest: postgres store: model calls are logged per submission
+ok 55 - postgres store: model calls are logged per submission
+  ---
+  duration_ms: 423.4903
+  type: 'test'
+  ...
+# Subtest: postgres store: invalid model call metrics write no log and zero metrics are valid
+ok 56 - postgres store: invalid model call metrics write no log and zero metrics are valid
+  ---
+  duration_ms: 448.2616
+  type: 'test'
+  ...
+# Subtest: postgres store: isTaAssignedToClass only accepts a TA of that class
+ok 57 - postgres store: isTaAssignedToClass only accepts a TA of that class
+  ---
+  duration_ms: 425.426
+  type: 'test'
+  ...
+# Subtest: postgres store: publish follows the PA02 order of checks
+ok 58 - postgres store: publish follows the PA02 order of checks
+  ---
+  duration_ms: 646.4367
+  type: 'test'
+  ...
+# Subtest: postgres store: a published lab no longer accepts review changes
+ok 59 - postgres store: a published lab no longer accepts review changes
+  ---
+  duration_ms: 562.5041
+  type: 'test'
+  ...
+# Subtest: postgres store: a lab without submissions publishes an empty summary
+ok 60 - postgres store: a lab without submissions publishes an empty summary
+  ---
+  duration_ms: 430.7108
+  type: 'test'
+  ...
+# Subtest: postgres labs: idempotent lab creation is atomic, scoped and expires at 24 hours
+ok 61 - postgres labs: idempotent lab creation is atomic, scoped and expires at 24 hours
+  ---
+  duration_ms: 540.6249
+  type: 'test'
+  ...
+# Subtest: postgres labs: replay survives deadline while valid and reset clears keys
+ok 62 - postgres labs: replay survives deadline while valid and reset clears keys
+  ---
+  duration_ms: 614.1011
+  type: 'test'
+  ...
+# Subtest: postgres submissions: atomic intake, scope, TTL, persistence-safe reset
+ok 63 - postgres submissions: atomic intake, scope, TTL, persistence-safe reset
+  ---
+  duration_ms: 688.0816
+  type: 'test'
+  ...
+# Subtest: postgres submissions: receipt time boundaries, post-deadline replay and last attempt counted
+ok 64 - postgres submissions: receipt time boundaries, post-deadline replay and last attempt counted
+  ---
+  duration_ms: 492.0648
+  type: 'test'
+  ...
+# Subtest: postgres submissions: restart preserves replay and projection excludes source
+ok 65 - postgres submissions: restart preserves replay and projection excludes source
+  ---
+  duration_ms: 644.0741
+  type: 'test'
+  ...
+# Subtest: postgres submissions: job/key write failures roll back every intake row
+ok 66 - postgres submissions: job/key write failures roll back every intake row
+  ---
+  duration_ms: 529.8961
+  type: 'test'
+  ...
+# Subtest: postgres submissions: receipt time survives scope lock waiting past deadline
+ok 67 - postgres submissions: receipt time survives scope lock waiting past deadline
+  ---
+  duration_ms: 532.0636
+  type: 'test'
+  ...
+# Subtest: postgres labs: idempotency survives reopening and summary never loads test tables
+ok 68 - postgres labs: idempotency survives reopening and summary never loads test tables
+  ---
+  duration_ms: 536.3229
+  type: 'test'
+  ...
+# Subtest: postgres labs: failure persisting idempotency rolls back all lab data
+ok 69 - postgres labs: failure persisting idempotency rolls back all lab data
+  ---
+  duration_ms: 497.7692
+  type: 'test'
+  ...
+# Subtest: postgres auth: invalid text returns 400 and valid Unicode still logs in
+ok 70 - postgres auth: invalid text returns 400 and valid Unicode still logs in
+  ---
+  duration_ms: 1405.7544
+  type: 'test'
+  ...
+# Subtest: postgres pool: losing an idle connection keeps the process alive and reconnects
+ok 71 - postgres pool: losing an idle connection keeps the process alive and reconnects
+  ---
+  duration_ms: 278.5738
+  type: 'test'
+  ...
+# Subtest: postgres auth: real HTTP flow stores only token hash
+ok 72 - postgres auth: real HTTP flow stores only token hash
+  ---
+  duration_ms: 1056.593
+  type: 'test'
+  ...
+# Subtest: postgres auth: seed is repeatable, concurrent-safe and preserves credentials
+ok 73 - postgres auth: seed is repeatable, concurrent-safe and preserves credentials
+  ---
+  duration_ms: 72566.5485
+  type: 'test'
+  ...
+# Subtest: postgres auth: normalized migration refuses collisions without deleting users
+ok 74 - postgres auth: normalized migration refuses collisions without deleting users
+  ---
+  duration_ms: 291.0626
+  type: 'test'
+  ...
+# Subtest: postgres store: data survives closing and reopening the store
+ok 75 - postgres store: data survives closing and reopening the store
+  ---
+  duration_ms: 485.8298
+  type: 'test'
+  ...
+# Subtest: postgres store: concurrent first starts create schema and apply migrations once
+ok 76 - postgres store: concurrent first starts create schema and apply migrations once
+  ---
+  duration_ms: 503.7886
+  type: 'test'
+  ...
+# Subtest: postgres store: upgrading an existing initial schema preserves its data
+ok 77 - postgres store: upgrading an existing initial schema preserves its data
+  ---
+  duration_ms: 465.9824
+  type: 'test'
+  ...
+# Subtest: postgres store: Publish sees one snapshot when a worker completes during its reads
+ok 78 - postgres store: Publish sees one snapshot when a worker completes during its reads
+  ---
+  duration_ms: 523.8603
+  type: 'test'
+  ...
+# Subtest: postgres store: submit keeps receive time across a connection wait at the deadline
+ok 79 - postgres store: submit keeps receive time across a connection wait at the deadline
+  ---
+  duration_ms: 455.5921
+  type: 'test'
+  ...
+# Subtest: postgres store: extendLease rejects a lease expiring during a connection wait
+ok 80 - postgres store: extendLease rejects a lease expiring during a connection wait
+  ---
+  duration_ms: 504.566
+  type: 'test'
+  ...
+# Subtest: postgres store: extendLease rejects a lease expiring during a job lock wait
+ok 81 - postgres store: extendLease rejects a lease expiring during a job lock wait
+  ---
+  duration_ms: 526.1024
+  type: 'test'
+  ...
+# Subtest: postgres store: complete rejects a lease expiring during a connection wait
+ok 82 - postgres store: complete rejects a lease expiring during a connection wait
+  ---
+  duration_ms: 516.5596
+  type: 'test'
+  ...
+# Subtest: postgres store: complete rejects a lease expiring during a job lock wait
+ok 83 - postgres store: complete rejects a lease expiring during a job lock wait
+  ---
+  duration_ms: 455.7831
+  type: 'test'
+  ...
+# Subtest: postgres store: complete rejects a lease expiring during a submission lock wait
+ok 84 - postgres store: complete rejects a lease expiring during a submission lock wait
+  ---
+  duration_ms: 476.8345
+  type: 'test'
+  ...
+# Subtest: postgres store: fail rejects a lease expiring during a connection wait
+ok 85 - postgres store: fail rejects a lease expiring during a connection wait
+  ---
+  duration_ms: 547.1578
+  type: 'test'
+  ...
+# Subtest: postgres store: fail rejects a lease expiring during a job lock wait
+ok 86 - postgres store: fail rejects a lease expiring during a job lock wait
+  ---
+  duration_ms: 479.7578
+  type: 'test'
+  ...
+# Subtest: postgres store: database constraints reject invalid model call metrics
+ok 87 - postgres store: database constraints reject invalid model call metrics
+  ---
+  duration_ms: 445.2989
+  type: 'test'
+  ...
+# Subtest: postgres store: a job held by a crashed process is recovered once
+ok 88 - postgres store: a job held by a crashed process is recovered once
+  ---
+  duration_ms: 852.675
+  type: 'test'
+  ...
+# Subtest: postgres store: decide waits for a concurrent Publish
+ok 89 - postgres store: decide waits for a concurrent Publish
+  ---
+  duration_ms: 821.4894
+  type: 'test'
+  ...
+# Subtest: postgres store: confirmPasses waits for a concurrent Publish
+ok 90 - postgres store: confirmPasses waits for a concurrent Publish
+  ---
+  duration_ms: 827.8556
+  type: 'test'
+  ...
+# Subtest: postgres store: concurrent workers claim different jobs
+ok 91 - postgres store: concurrent workers claim different jobs
+  ---
+  duration_ms: 460.0376
+  type: 'test'
+  ...
+# Subtest: postgres store: a concurrent publish creates one publication
+ok 92 - postgres store: a concurrent publish creates one publication
+  ---
+  duration_ms: 402.0351
+  type: 'test'
+  ...
+1..92
+# tests 92
+# suites 0
+# pass 91
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 138316.7097
+
+# exit code: 1

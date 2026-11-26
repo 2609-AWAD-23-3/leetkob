@@ -1,4 +1,4 @@
-import { createApp } from '../../dist/app.js';
+import { createApp } from '../../dist/api/app.js';
 
 // Đăng ký cleanup trước ready để app vẫn đóng khi bootstrap/test thất bại.
 export async function createTestApp(t, options = {}) {

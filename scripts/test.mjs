@@ -1,6 +1,7 @@
 import { globSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
+// Discovery đệ quy bao phủ unit, contract, integration và e2e khi được thêm.
 // Node runner giữ nguyên isolation/process và assertion reporting; không tạo framework riêng.
 const files = globSync('tests/**/*.test.{mjs,js,ts}').sort();
 if (files.length === 0) {

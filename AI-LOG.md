@@ -1,225 +1,169 @@
-# AI-LOG — PA02
+# AI-LOG — PA03
 
-Tổng hợp theo task từ các fragments có sẵn; không phải transcript. Các thao tác assistant thực hiện không được chuyển thành công việc sinh viên làm tay. By hand dưới đây chỉ ghi đóng góp đã có nguồn; các khai báo của đồng đội được dẫn nguồn, không phải quan sát trực tiếp của người tổng hợp. T06/T07 deferred; Chưa có hoạt động release được ghi nhận trong bản log này.
+Hợp nhất từ các bản ghi theo task trong `docs/evidence/PA03/T*/AI-LOG.md` (bản đầy đủ, ghi ngay khi làm). Đây không phải transcript. Mỗi mục ghi công cụ, phần việc, phần giữ lại, phần nhóm sửa hoặc bác, và phần người làm. AI-LOG của PA02 nằm ở tag `pa2`.
 
-## 2026-11-02–07 — Setup và scope PA02
+## Công cụ đã dùng
 
-Tool: OpenClaw assistant.
-Asked for: tổ chức plan/workflow và xác định phạm vi harness/quality gate theo đề.
-Kept: task có executor/reviewer, workflow PR, một endpoint publish và các hồ sơ bắt buộc.
-Changed: giảm phạm vi về publish; bỏ dependencies vào submissions/review-queue đã hoãn, giữ CI required trên main.
-Rejected: nhân số endpoints theo số thành viên, database/login production và coi deferred là hoàn thành.
-By hand: nhóm lựa chọn/chấp thuận scope; assistant soạn tài liệu/workflow, không khai là code sinh viên tự viết.
-Nguồn: [setup fragment](docs/evidence/PA02/SETUP-AI-LOG.md), [scope fragment](docs/evidence/PA02/scope-2026-11-07.md).
+| Công cụ                                          | Phần việc                                                                                                                                                                  |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Claude Code (desktop app)                        | Plan và Issues (T01), host/model (T02), dữ liệu/Postgres (T03), hard rules (T07), model (T08), review queue (T09), checker và dev run (T10), review PR cho Vỹ, hồ sơ (T13) |
+| Codex                                            | Skeleton (T00), auth/lab/nộp bài (T04)                                                                                                                                     |
+| Antigravity assistant (Gemini)                   | Sandbox (T05), queue/worker (T06), tích hợp (T11), deployment (T12)                                                                                                        |
+| GitHub CLI, Docker, Azure Portal, Claude Console | PR/Issue, chạy Postgres/sandbox, dựng VM, đặt spending cap (người làm tay)                                                                                                 |
 
-## 2026-11-02–08 — T01: skeleton
+## Model và chi phí
 
-Tool: OpenClaw assistant; worker QA chỉ đọc, không dùng Codex CLI trong triển khai T01.
-Asked for: xây app factory, listener/config riêng và nền TypeScript/Fastify kiểm thử được.
-Kept: module seams, lockfile, health route và smoke tests.
-Changed: assistant sửa regex content-type trong smoke test, thêm noEmitOnError.
-Rejected: business responses giả thành công, auth/store tự suy diễn và coi smoke checks là CI evidence.
-By hand: không có nguồn xác nhận implementation viết tay; không gán edits/tests của assistant cho sinh viên.
-Nguồn: [fragment T01](docs/evidence/PA02/T01/AI-LOG.md), [PR #14](https://github.com/2609-AWAD-23-3/leetkob/pull/14).
+Sản phẩm gọi `claude-haiku-5-5` (Anthropic), $0.10 / $0.50 cho 1M token input / output, một call cho mỗi bài nộp Accepted còn constraint semantic. Dev run thật trên dev set: 39 call, 64 725 token input, 5 369 token output, $0.009157, tức ≈ $0.000235 một call. Một lab 80 bài: 80 × $0.000235 ≈ **$0.019** (bài dài gấp đôi ≈ $0.038). Phép tính đầy đủ: [README](README.md#model-và-chi-phí). Spending cap: workspace $5/tháng, Auto-reload tắt.
 
-## 2026-11-09 — T02: state/fixtures
+## Lỗi của assistant nhóm bắt được
 
-Tool: Codex assistant.
-Asked for: thiết kế và triển khai store/fixtures tối thiểu phục vụ publish.
-Kept: in-memory store đồng bộ, seed/reset riêng theo instance và data tests.
-Changed: summary thống kê quyết định TA thay snapshot điểm; ghi rõ giới hạn restart/concurrency.
-Rejected: coi verdict model là quyết định TA, pipeline tính điểm và endpoints deferred.
-By hand: nguồn T02 ghi Vỹ review PR; implementation/tests/docs do assistant viết.
-Nguồn: [fragment T02](docs/evidence/PA02/T02/AI-LOG.md), [PR #18](https://github.com/2609-AWAD-23-3/leetkob/pull/18).
+| Lỗi                                                                                                                                          | Cách phát hiện                                                                    | Xử lý                                                                                                                                 |
+| -------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| T08: che danh tính thay mảnh tên "Mai" ở mọi nơi nên `main` thành `STUDENTn` trong prompt (cùng loại: "Nam"/`namespace`, "Long"/`long long`) | Đọc prompt thật trong call log của lượt gọi model đầu tiên; test offline chưa bắt | Mảnh tên 3–4 chữ chỉ thay khi đứng riêng, không thay trong từ khoá C++; thêm 3 test; giữ log lượt lỗi ở `real-calls-run1-before-fix/` |
+| T08: bỏ retry của SDK (`maxRetries: 0`) với lý do sai là retry nhân thời gian chờ                                                            | Review của Vượng trên PR #52                                                      | Test đỏ trước (`f7070f0`), rồi bật `maxRetries: 2` trong cùng deadline (`383d53a`)                                                    |
+| T05: mọi exit `137` bị coi là hết memory, bài tự `kill(getpid(), SIGKILL)` bị báo nhầm MLE                                                   | Ca kiểm thử bài tự gửi SIGKILL trong T05                                          | Runner đọc `memory.events` (`oom_kill`) để trả mã riêng; thêm test                                                                    |
+| T05: CPU limit chỉ áp cho process chính, cây `fork()` vượt tổng budget                                                                       | Review của Vượng trên PR #46                                                      | Giám sát `cpu.stat` của cgroup, kill cả cây; thêm test fork                                                                           |
+| T07: test viết trước chạy lần đầu 8 test đỏ (lỗi đọc `#define`, tên tham số bị tính là lần dùng)                                             | Chạy test trước code                                                              | Sửa theo lớp cú pháp tổng quát, không theo bài; không đưa id hay code dev set vào rule                                                |
+| T10: image checker chạy bằng user `node` không ghi được `/out` thuộc root trên Linux                                                         | Review của Vượng; Docker Desktop trên Windows không lộ lỗi                        | Script tái hiện chạy đỏ trước, rồi ghi prediction ra stdout và chạy image bằng root                                                   |
+| T10: redirect `>` của PowerShell ghi BOM nên `eval.mjs` exit 2                                                                               | Assistant thử lại lệnh README trên máy dev                                        | README tách lệnh PowerShell dùng mount `--out`                                                                                        |
+| T11: compile dùng memory limit của lab, lab 64 MiB với `<bits/stdc++.h>` báo CE giả                                                          | Review của Vỹ trên PR #80                                                         | Compile dùng giới hạn cố định 256 MiB; test đỏ trước (`d7643d8`)                                                                      |
+| T12: hash commit trong evidence là hash trước rebase, không có trong nhánh                                                                   | Review của Vỹ trên PR #82                                                         | Sửa hash theo nhánh sau rebase                                                                                                        |
+| T01/T10: `core.autocrlf` làm SHA-256 file dev set sai                                                                                        | So SHA với rubric                                                                 | Xuất từng git blob, thêm `leetkob-eval/** -text`, test so manifest                                                                    |
 
-## 2026-11-09 — T03: identity/ownership/errors
+## Nhật ký theo task
 
-Tool: Antigravity assistant (Gemini), theo fragment của executor.
-Asked for: xây trusted Bearer identity, TA/class ownership và errors RFC 9457.
-Kept: token resolver, test identity mặc định tắt, error mapping và 18 auth tests.
-Changed: khớp PublishResult của T02; kiểm tra role trước lookup lab để chống dò tài nguyên.
-Rejected: lấy role/userId từ body/query, bật test headers mặc định hoặc xây OAuth ngoài scope.
-By hand: fragment ghi executor rà soát kết quả; source/tests/docs do assistant viết, không khai viết tay.
-Nguồn: [fragment T03](docs/evidence/PA02/T03/AI-LOG.md), [PR #19](https://github.com/2609-AWAD-23-3/leetkob/pull/19).
+### 17–18/11 — T01: plan PA03, quy ước và Issues
 
-## 2026-11-08–10 — T04: quality harness
+Tool: Claude Code; GitHub CLI.
+Asked for: đọc rubric, brief, FAQ, dev set; lập plan vừa đủ rubric, chia task theo độ phức tạp, tạo milestone và Issues.
+Kept: cấu trúc plan/Issue của PA02; quyết định Postgres, phân loại constraint theo README dev set.
+Changed: Task ID kèm milestone (`PA03-Txx`) vì trùng PA02; thêm T00 theo phản hồi nhóm. Sửa theo review của Vượng: Publish chặn khi còn bất kỳ verdict nào chưa review (plan cũ chỉ chặn `violation`/`unsure`), `npm test` không cần network/Docker/Postgres.
+Rejected: Judge0; checker cấu hình theo từng bài; tạo prediction từ `labels.jsonl`; đưa lấy mẫu 10% vào PA03.
+By hand: Vỹ chốt Postgres, quy ước ngôn ngữ, phân công; Vượng tìm 4 điểm review. Nguồn: [T01](docs/evidence/PA03/T01/AI-LOG.md).
 
-Tool: OpenClaw/Codex (GPT-6), shell/npm.
-Asked for: commands lint/format/type-check/test, discovery và cleanup/isolation.
-Kept: quality configs/scripts, real-app helper và negative probes.
-Changed: chuyển ESLint/typescript-eslint sang Oxlint do peer conflict TS7; thêm guard không có test, giữ exit/signal failure; thêm .gitattributes LF theo feedback review.
-Rejected: ép peer deps, downgrade TypeScript, fake publish handler hoặc coi local tests là CI.
-By hand: người dùng báo tự chạy checks pass, không cung cấp terminal log; không coi đó là independent review. Edits/commands/logs do assistant thực hiện.
-Nguồn: [fragment T04](docs/evidence/PA02/T04/AI-LOG.md), [PR #17](https://github.com/2609-AWAD-23-3/leetkob/pull/17).
+### 17/11 — T00: cấu trúc thư mục cuối
 
-## 2026-11-10–11 — T05: rules/security/cost
+Tool: Codex.
+Asked for: chuyển code và test PA02 sang cấu trúc `src/api|worker|pipeline|sandbox|db|shared|cli` không đổi hành vi.
+Kept: một package, ba entry point API/worker/checker; 83 test PA02 vẫn xanh.
+Changed: giữ RFC 9457 trong cụm auth của API vì đang gắn Fastify; dùng Node 24.22.1 ở thư mục tạm.
+Rejected: tạo thư mục rỗng cho phần chưa làm; siết glob lint/format.
+By hand: Vỹ viết prompt và review nội bộ PR #44. Nguồn: [T00](docs/evidence/PA03/T00/AI-LOG.md).
 
-Tool: Codex assistant, Gitleaks 8.30.1, formatter theo lockfile.
-Asked for: rules bốn phần, permissions ba mức, env hygiene, scan/triage và model/cost records.
-Kept: rules truy vết hai sự cố thật; scan history/refs/config và redacted reports.
-Changed: làm rõ kiểm tra đúng worktree và ranh giới publication trong rules; triage chỉ nhận digest khi khớp source/hash cụ thể; sửa formatting không đổi AST; ghi cost estimate thay vì measured usage.
-Rejected: suppress findings để ép scan xanh, coi budget alert/estimate là spending cap, bịa usage hoặc gọi model trong tests.
-By hand: nguồn ghi Vỹ review kỹ thuật; collector/edits/checks do assistant thực hiện. Chưa có bằng chứng cap từ người quản lý key.
-Nguồn: [fragment và hai rule incidents T05](docs/evidence/PA02/T05/AI-LOG.md), [scan](docs/evidence/PA02/T05/security-scan.md), [cost](docs/evidence/PA02/T05/model-cost.md), [PR #21](https://github.com/2609-AWAD-23-3/leetkob/pull/21).
+### 18–19/11 — T02: host, model và spending cap
 
-## 2026-11-10–11 — T08: publish contract/implementation/tests
+Tool: Claude Code, SSH, Azure Portal, Claude Console.
+Asked for: so sánh host và model, dựng VM, cài Docker, viết ADR.
+Kept: VM Ubuntu 24.04 (cgroup v2) trên Azure for Students; `claude-haiku-5-5`; spend limit workspace và Auto-reload tắt làm hard cap.
+Changed: region East/Southeast Asia bị policy chặn nên chọn Indonesia Central; lệnh `ssh-keygen -f ~/.ssh/...` hỏng trên PowerShell 5.1, đổi sang `$HOME`; ảnh billing/key được che thông tin.
+Rejected: PaaS (không có Docker daemon cho sandbox); DeepSeek (đắt hơn ~2.5 lần, dữ liệu ra ngoài); OpenRouter; model free tier.
+By hand: Vượng tạo VM, đặt limit organization, tạo key không qua assistant; Vỹ nạp $5 và đặt limit workspace. Nguồn: [T02](docs/evidence/PA03/T02/AI-LOG.md).
 
-Tool: Antigravity assistant (Gemini), theo fragment của executor.
-Asked for: contract theo IA03, publish module và HTTP-boundary tests.
-Kept: natural idempotency, immutable publication metadata, deadline/pending gate và ownership.
-Changed: đồng bộ summary/pendingCount với T02; theo feedback review bổ sung 413/415, precedence parser/auth/role và nâng contract suite từ 11 lên 16 tests (toàn bộ 83).
-Rejected: body override identity/state, mock endpoint và triển khai endpoints deferred.
-By hand: fragment ghi executor duyệt kế hoạch, kiểm tra diff và chạy checks; chưa có xác nhận riêng về phần code viết tay.
-Nguồn: [fragment T08](docs/evidence/PA02/T08/AI-LOG.md), [PR #20](https://github.com/2609-AWAD-23-3/leetkob/pull/20).
+### 19–21/11 — T03: dữ liệu dùng chung và Postgres
 
-## 2026-11-11 — T09: CI/protection
+Tool: Claude Code, Docker Desktop, Postgres 17.
+Asked for: kiểu dữ liệu, interface `Store`/`Queue`, bản fake, schema verdict; rồi adapter Postgres, migration, job CI.
+Kept: tầng của T00 (`src/pipeline` không import `src/db`); store PA02 và 83 test giữ nguyên.
+Changed: sau 7 điểm tự review của Vượng: `claim` có `maxAttempts` để job crash mãi không chặn Publish; `complete` từ chối verdict sai dạng hoặc thiếu; store chỉ chép field đã định nghĩa (chặn `deduction` lọt vào verdict); thêm `opensAt` theo FAQ. Test Postgres sửa để luôn xoá schema test.
+Rejected: ORM; thư viện JSON Schema; dùng `now()` của DB; đổi `PublishStore` PA02 sang async trong T03.
+By hand: Vượng review code, chỉ ra dòng lỗi, chọn chạy Postgres local. Nguồn: [T03](docs/evidence/PA03/T03/AI-LOG.md).
 
-Tool: Antigravity assistant (Gemini), theo fragment của executor.
-Asked for: CI dùng bốn commands chung, required quality-gate và main protection.
-Kept: Node 24/Ubuntu, minimal contents:read, PR/push/tag triggers và stable check name.
-Changed: bổ sung live settings/protection evidence và làm rõ .github nằm ngoài format-check.
-Rejected: matrix từng module, đổi scripts/tests chỉ để CI pass hoặc coi YAML là protection đã enforce.
-By hand: fragment ghi executor gọi/kiểm tra GitHub API và chạy local commands; người tổng hợp chưa quan sát độc lập các thao tác làm tay đó.
-Nguồn: [fragment T09](docs/evidence/PA02/T09/AI-LOG.md), [PR #22](https://github.com/2609-AWAD-23-3/leetkob/pull/22).
+### 21–22/11 — T04: auth, lab và API nộp bài
 
-## 2026-11-11 — T10: deliberate break/fix
+Tool: Codex, PostgreSQL, Swagger.
+Asked for: đăng ký/login/session, TA tạo lab (JSON hoặc file), student nộp bài, chống tạo trùng.
+Kept: session phía server, token chỉ lưu hash; idempotency key TTL 24 giờ; bài nộp và job ghi nguyên tử.
+Changed: multipart đếm byte trên stream gốc và kiểm UTF-8 thay vì chỉ dựa `bodyLimit`; sửa sau review: pool idle, password Unicode lỗi.
+Rejected: JWT/refresh token; ZIP nhiều file; coi bài `queued` là đã chấm.
+By hand: Vượng chốt luồng auth, giới hạn một file/64 KiB và chính sách seed dev. Nguồn: [T04](docs/evidence/PA03/T04/AI-LOG.md).
 
-Tool: Antigravity assistant (Gemini), theo fragment của executor.
-Asked for: chứng minh contract assertion bắt implementation break và merge policy từ chối PR đỏ.
-Kept: cùng PR #24, break 934af86e, fix 65097bab, contract/tests không đổi và run permalinks.
-Changed: cố tình bỏ pending gate để nhận 200 thay 409, rồi khôi phục gate; evidence ghi rõ lúc blocked còn đồng thời thiếu approval.
-Rejected: lỗi syntax/setup thay contract assertion, sửa test để xanh, bypass hoặc squash mất break/fix history.
-By hand: fragment ghi executor probe merge policy/chạy checks; review cuối được GitHub ghi bởi tranquocvy, không nhận approval đã dismissed là review cuối.
-Nguồn: [fragment T10](docs/evidence/PA02/T10/AI-LOG.md), [PR #24](https://github.com/2609-AWAD-23-3/leetkob/pull/24).
+### 20–22/11 — T05: sandbox và 9 bài tấn công
 
-## 2026-11-08 — Scope: tích hợp PR #16
+Tool: Antigravity assistant; Docker Engine 29.10 trên Ubuntu 24.04 qua SSH tunnel.
+Asked for: runner compile/run C++17 trong container đạt 9 minimums, 9 bài tấn công, job CI `sandbox-attacks`.
+Kept: truyền source/binary qua stdin/stdout, không bind mount; `--pids-limit` theo cgroup; tách `npm test` khỏi `npm run test:sandbox`.
+Changed: phân biệt OOM với SIGKILL; giám sát CPU cả cây process; status frame có nonce để `return 125` của bài không bị coi là lỗi Docker; fallback kill có giới hạn; CPU limit theo millisecond. Siết M7 (`CapEff` 0), M8 (`/` read-only, `/tmp` tmpfs), M9 (canary `#include`).
+Rejected: Judge0; mount thư mục code từ host; truyền token qua env.
+By hand: Phúc duyệt kế hoạch sửa và chạy lại trên Docker thật; Vượng review. Nguồn: [T05](docs/evidence/PA03/T05/AI-LOG.md).
 
-Tool: OpenClaw/Codex assistant.
-Asked for: tích hợp scope publish-only với develop và bảo toàn tiến độ đã có.
-Kept: một endpoint, 12 task IDs, phần T01 đã tích hợp và review provenance theo source SHA.
-Changed: resolve conflict tại section T01 để giữ acceptance publish-only cùng kết quả/evidence đã tích hợp; sửa trạng thái PR #14 trong hồ sơ scope.
-Rejected: khôi phục scope ba endpoints, mất tiến độ T01 hoặc nhận review cũ là review cho head mới.
-By hand: fragment ghi người thực hiện đã kiểm tra scope; assistant resolve và soạn tài liệu, không có business code mới.
-Nguồn: [scope, bổ sung tích hợp](docs/evidence/PA02/scope-2026-11-07.md).
+### 22/11 — T06: queue và worker chấm đúng một lần
 
-## 2026-11-02 — T01: bổ sung kiểm chứng và khôi phục tài liệu
+Tool: Antigravity assistant, Postgres 17.
+Asked for: worker process riêng với claim/lease/retry, lưu đúng một bộ verdict; test dừng worker → nộp → khởi động lại.
+Kept: `Store`/`JobQueue` của T03, `runHardRules` của T07; test tiến trình OS riêng trên Postgres thật.
+Changed: sau review của Vượng: worker fail-closed khi chưa cấu hình judge (bản đầu mặc định chấm giả `AC`); giữ timer poll để daemon không tự thoát; outbox cho `modelCalls` thay vì gọi `fail` sau `complete`.
+Rejected: chạy lại cả lượt chấm khi ghi call log lỗi (tốn chi phí, sai trạng thái).
+By hand: Phúc chỉ đạo thứ tự sửa PR #46 rồi #50. Nguồn: [T06](docs/evidence/PA03/T06/AI-LOG.md).
 
-Tool: OpenClaw assistant.
-Asked for: giữ bản tài liệu English và bổ sung hồ sơ build/smoke/setup sạch.
-Kept: README/architecture/comments tại 738b183, logic, manifest, lockfile và trạng thái acceptance.
-Changed: hoàn tác 12 file bản dịch; sửa escaping newline của collector để parse được, kiểm tra syntax rồi chạy lại.
-Rejected: dùng lỗi collector/smoke syntax làm evidence deliberate implementation-only contract break của T10.
-By hand: nguồn T01 ghi quyết định giữ ngôn ngữ English của người thực hiện; assistant hoàn tác, soạn records và chạy checks.
-Nguồn: [fragment T01](docs/evidence/PA02/T01/AI-LOG.md), [verification](docs/evidence/PA02/T01/verification.json).
+### 21/11 — T07: hard rules cho constraint ban-list
 
-## 2026-11-11 — T05: rút gọn rules
+Tool: Claude Code.
+Asked for: spike cách phân tích C++, viết test trước, implement hard rules, chạy model-off trên dev set.
+Kept: lexer tự viết có scope và khai triển macro, không thêm dependency; API `classifyConstraint`, `checkBanList`, `runHardRules`.
+Changed: 8 test đỏ lần đầu (lỗi lệch chỉ số khi đọc `#define`, tên tham số bị tính là lần dùng, vài số dòng kỳ vọng đếm sai); thêm nhãn `goto` và hằng enum là tên sinh viên khai báo. Prompt ghi 18 vi phạm ban-list, đếm thật là 15, evidence ghi 15.
+Rejected: tree-sitter-cpp; đồng nhất `std::string` với `std::basic_string`; mô phỏng ADL; id hay code dev set trong rule/test.
+By hand: Vỹ viết prompt và đọc lại code. Nguồn: [T07](docs/evidence/PA03/T07/AI-LOG.md).
 
-Tool: Codex assistant.
-Asked for: rút gọn rules đúng bốn sections, gắn với repo và giữ trace hai sự cố thật.
-Kept: stack/commands/conventions/never, hai incident references T02.
-Changed: bỏ chi tiết phân công/checkpoint/store khỏi rules root; dẫn scope theo task và rules trực tiếp tới incident anchors.
-Rejected: dùng kết quả scan cũ để nhận đã kiểm chứng bản rules mới.
-By hand: nguồn T05 ghi người thực hiện đối chiếu rubric; assistant chỉnh file rules.
-Nguồn: [fragment T05](docs/evidence/PA02/T05/AI-LOG.md).
+### 22/11 — T08: model cho constraint semantic, schema và timeout
 
-## 2026-11-11 — T05: đồng bộ baseline
+Tool: Claude Code; `@anthropic-ai/sdk`.
+Asked for: test với fake model trước, implement sanitize/prompt/schema/client/evaluate, gọi model thật tối đa 10 call.
+Kept: một call mỗi bài nộp; schema `additionalProperties: false` và validate trong code; timeout hai lớp; evidence lấy từ dòng gốc; lỗi provider ném để worker retry.
+Changed: lỗi "Mai"/`main` ở bảng trên; call log ghi model provider báo thay vì model của client; sau review của Vượng: retry trong deadline, `retryable` theo status, fail-closed khi không có danh tính.
+Rejected: `zod`/thư viện schema; biến lỗi provider tạm thời thành `unsure`; xoá log lượt gọi lỗi.
+By hand: Vỹ viết prompt, tự đặt key vào `.env` local, cho phép 3 call (tổng 6 call, $0.0011). Nguồn: [T08](docs/evidence/PA03/T08/AI-LOG.md).
 
-Tool: Codex assistant, Git.
-Asked for: đồng bộ develop mà không mất các thay đổi tài liệu hiện có.
-Kept: incident sources, nội dung AI-log T02 và các JSON verification lịch sử.
-Changed: sao lưu 16 file, fast-forward từ 2dfff8f tới 09245d7 bằng autostash rồi áp lại; cập nhật commands từ T04, phân biệt snapshot lịch sử với baseline mới.
-Rejected: sửa thủ công SHA/ngày/kết quả JSON để giả nhận đã scan baseline mới.
-By hand: assistant đồng bộ và kiểm tra bảo toàn nội dung; không khai các edits này là sinh viên viết tay.
-Nguồn: [fragment T05](docs/evidence/PA02/T05/AI-LOG.md).
+### 23/11 — T09: review queue và chặn Publish
 
-## 2026-11-11 — T05: scan và quality checks
+Tool: Claude Code.
+Asked for: bốn endpoint review queue theo session T04, chặn Publish khi còn verdict chưa review, test trước.
+Kept: TA lớp khác nhận `404` như API labs (FAQ-01); code đầy đủ chỉ ở trang chi tiết; student không có endpoint nào trả verdict (FAQ-08).
+Changed: bắt buộc chỉ dòng khi chọn `violation` làm ngay ở PA03 (Vượng chọn); server lấy text dòng từ code đã nộp; 2 test đỏ do lỗi của chính test (`call(undefined)` vẫn gửi token TA), sửa thành `call(null)`. Status Publish cho TA lớp khác: đã đổi sang `404` rồi hoàn lại `403` khi assistant chỉ ra contract v1 cấm đổi status; Vượng chốt phương án B.
+Rejected: `/v2` cho Publish; nhận `taId` từ body.
+By hand: Vượng tìm hai lỗi (`confirm-passes` race với Publish, lộ lab qua `403`) và ra quyết định cuối; Vỹ review PR #79. Nguồn: [T09](docs/evidence/PA03/T09/AI-LOG.md).
 
-Tool: Codex assistant, Node 24.22.1/npm 11.19.1, Gitleaks 8.30.1.
-Asked for: kiểm chứng rules/security và các commands trên baseline 09245d7.
-Kept: exit codes gốc, kể cả format-check thất bại và scanner có findings.
-Changed: phân loại 10 findings history và 2 working tree là file digests; đối chiếu snapshot bằng hash. Lint/type-check và 67 tests pass; format-check lỗi 15 file ở checkout local và 7 file ở checkout sạch cùng SHA.
-Rejected: nhận full gate đạt khi format-check còn lỗi, đổi ignore để giấu findings hoặc ghi cap/usage chưa có nguồn.
-By hand: assistant chạy kiểm tra và cập nhật hồ sơ; không ghi nhận code sinh viên viết tay.
-Nguồn: [fragment T05](docs/evidence/PA02/T05/AI-LOG.md), [verification](docs/evidence/PA02/T05/verification.json).
+### 23/11 — T10: checker, case riêng và dev run
 
-## 2026-11-11 — T05: sửa formatting
+Tool: Claude Code.
+Asked for: lệnh checker + Dockerfile + `MODEL_OFF=1`, dev set nguyên byte, ≥5 case riêng, dev run thật.
+Kept: quyết định của Vượng: `UnsureCause` `model_off` kèm migration mới; identity có kiểu cho dataset không có sinh viên; lỗi provider một bài thành `unsure` và chạy tiếp.
+Changed: lỗi `/out` thuộc root và BOM của PowerShell (bảng trên); regex `+` chưa escape trong model giả của test.
+Rejected: chạy dev run nhiều lần để chọn lần đẹp; chỉnh prompt theo cặp khấu trừ sai của dev set; dùng `labels.jsonl` hay `tests/` trong checker.
+By hand: Vượng cấp key qua `.env`, chốt 5 quyết định thiết kế; Vỹ review PR #81. Nguồn: [T10](docs/evidence/PA03/T10/AI-LOG.md).
 
-Tool: Codex assistant, Prettier theo lockfile, Gitleaks 8.30.1.
-Asked for: sửa formatting nhưng giữ nguyên logic và assertions.
-Kept: bản sao trước format, kết quả failed checks và evidence T03 lịch sử.
-Changed: format 15 file, bảy file có Git diff style; dùng parser TypeScript của Prettier đối chiếu AST sau khi loại metadata vị trí. Bốn quality commands exit 0, 67 tests pass; cập nhật scan snapshot theo bytes mới.
-Rejected: sửa source semantics/assertions hoặc viết lại digest lịch sử để ép khớp source đã format. API JavaScript TypeScript 7 không dùng được cho helper nên đổi parser, không đổi kỳ vọng kiểm chứng.
-By hand: assistant format, đối chiếu AST và chạy checks; không khai thao tác này là code sinh viên tự viết.
-Nguồn: [fragment T05](docs/evidence/PA02/T05/AI-LOG.md).
+### 23/11 — T11: tích hợp pipeline end-to-end
 
-## 2026-11-11 — T05: cost estimate
+Tool: Antigravity assistant.
+Asked for: nối submit → worker → sandbox → hard rules → model → verdict → review queue; e2e offline cho ba bài tiêu chí 1.
+Kept: ranh giới module; `npm test` offline với fake sandbox và fake model.
+Changed: resolver danh tính đọc `studentId` từ store thay vì sửa interface T08; e2e đỏ `401` ở Publish do đẩy clock quá TTL session, sửa cửa sổ deadline của test; sau review của Vỹ: compile dùng memory cố định.
+Rejected: thêm `studentId` vào interface đã merge của T08; tự retry lỗi `401`.
+By hand: Phúc điều phối và yêu cầu xử lý dứt điểm review PR #80. Nguồn: [T11](docs/evidence/PA03/T11/AI-LOG.md).
 
-Tool: Codex assistant, tài liệu giá chính thức và phép tính local; không gọi model API.
-Asked for: ước tính chi phí khi chưa có model key hoặc measured usage.
-Kept: phân biệt model tham chiếu với model triển khai, estimate với số đo thực tế.
-Changed: lập hai kịch bản 80 bài, 3/5 constraints, ngân sách input/output và 20% retry; kết quả khoảng 1,73/5,76 USD mỗi lab theo giá tham chiếu ngày 11/11/2026. Output budget tính cả reasoning bị tính phí nếu có.
-Rejected: dùng estimate thay spending cap, bịa billing/usage hoặc gọi model thật để tạo số đo trong tests.
-By hand: nguồn T05 ghi Vỹ là người dự kiến giữ key; assistant tra nguồn, tính và viết hồ sơ. Chưa có bằng chứng key/cap hoạt động.
-Nguồn: [model-cost](docs/evidence/PA02/T05/model-cost.md), [fragment T05](docs/evidence/PA02/T05/AI-LOG.md).
+### 23–24/11 — T12: deployment public
 
-## 2026-11-11 — T05: chỉnh sửa theo review PR #21
+Tool: Antigravity assistant; Docker Compose trên VM Azure.
+Asked for: `trustProxy` theo IP/CIDR của proxy, chặn seed dev trên production, Compose + Caddy HTTPS + runbook, chạy tiêu chí 1 thật qua URL public.
+Kept: chỉ Caddy mở `80`/`443`; key và password chỉ trong `deploy/.env` quyền 600; sandbox không nhận env của worker.
+Changed: test trước cho `loadTrustProxy` (từ chối `true`, `*`, `0.0.0.0/0`); seed 5 tài khoản riêng; Docker CLI trong worker lấy từ image `docker:29-cli`; truyền password seed qua stdin thay vì `-e`; hash commit sửa theo review.
+Rejected: `TRUST_PROXY=true`; mở cổng 3000/5432.
+By hand: Vượng mở NSG; Phúc cấp key và đổi domain sang `app.flytest.io.vn`; Vỹ chạy độc lập 48/48 kiểm tra tiêu chí 1 qua public HTTPS bằng script tự chạy trên máy mình và kiểm sandbox trên VPS. Nguồn: [T12](docs/evidence/PA03/T12/AI-LOG.md).
 
-Tool: Codex assistant, Gitleaks 8.30.1 và formatter local.
-Asked for: làm rõ cap evidence và khả năng chạy lại scan/triage sau commit 444add2.
-Kept: scan exit codes, file digests và source/revision của từng manifest.
-Changed: helper kiểm chứng từng digest T03/T05 với snapshot đúng; 13 findings history và 2 working tree được xác minh. Bốn negative probes ngoài manifest/dòng sai/snapshot sai/digest sai đều bị từ chối; thêm phiếu cap, làm rõ formatter local trong AGENTS.md.
-Rejected: suppress report/rule, bịa cap, gọi model hoặc chốt production model chỉ để có evidence.
-By hand: Vỹ cung cấp review kỹ thuật; assistant sửa helper/docs và chạy probes.
-Nguồn: [fragment T05](docs/evidence/PA02/T05/AI-LOG.md), [PR #21](https://github.com/2609-AWAD-23-3/leetkob/pull/21).
+### 17–24/11 — Review PR cho Vỹ
 
-## 2026-11-11 — T08: bổ sung theo review PR #20
+Tool: Claude Code.
+Asked for: đọc diff, chạy lint/type-check/test trên head của PR, soạn review có file:line và mức độ để Vỹ đăng.
+Kept: chỉ review, không viết code của task người khác; verdict theo mức độ (lỗi phải sửa trước merge thì Request changes).
+Changed: review PR #82 lần đầu là Request changes vì hash commit cũ, plan ghi sai trạng thái và runbook kéo `main`; Approve sau khi sửa.
+Rejected: tự nhập password để đăng nhập deployment production; viết script kiểm tra để Vỹ tự chạy với 5 tài khoản test.
+By hand: Vỹ quyết định đăng từng review và tự chạy script kiểm tiêu chí 1.
 
-Tool: Antigravity assistant (Gemini), theo fragment executor.
-Asked for: xử lý lỗi import/format, làm rõ precedence, bổ sung 413/415 và demo tích hợp.
-Kept: TA role check trước lab lookup; fixtures/store và repeat safety đã có.
-Changed: bỏ import thừa; thêm bodyLimit 65536, lỗi/test payload quá lớn và unsupported media type; loại text/plain parser mặc định, test malformed JSON/media type trước auth và role trước lookup. Contract suite tăng từ 11 lên 16, tổng 83; đồng bộ verification và demo truyền cả store/identityResolver.
-Rejected: sửa server.ts ngoài file ownership hoặc đảo role check làm lộ existence của lab cho student/admin.
-By hand: fragment executor ghi kiểm tra diff và chạy commands; source/tests/docs do assistant hỗ trợ, không khai riêng phần code viết tay chưa có nguồn.
-Nguồn: [fragment T08](docs/evidence/PA02/T08/AI-LOG.md), [PR #20](https://github.com/2609-AWAD-23-3/leetkob/pull/20).
+### 24/11 — T13: hồ sơ và bản nộp
 
-## 2026-11-11 — T09: live protection và sửa theo review
-
-Tool: Antigravity assistant (Gemini), theo fragment executor.
-Asked for: xác minh main protection trên repo public và làm rõ phạm vi formatter.
-Kept: workflow và bốn quality commands đã được review, không thay scripts/tests.
-Changed: cấu hình strict quality-gate, một approving review, dismiss stale reviews và enforce admins; lưu API snapshot. Sửa mô tả format-check để phản ánh .github nằm trong .prettierignore.
-Rejected: đổi formatter scope chỉ để đưa workflow vào check hoặc thực hiện deliberate break trong T09 thay vì T10.
-By hand: fragment ghi executor gọi/đọc GitHub API và chạy checks; đây là khai báo của executor, không phải quan sát trực tiếp của người tổng hợp.
-Nguồn: [fragment T09](docs/evidence/PA02/T09/AI-LOG.md), [PR #22](https://github.com/2609-AWAD-23-3/leetkob/pull/22).
-
-## 2026-11-11 — T11: hồ sơ nộp
-
-Tool: Codex (GPT-6) trong OpenClaw, GitHub CLI, Node.js/npm và Prettier theo lockfile.
-Asked for: đối chiếu T11 với requirement, rubric và class brief gốc; hoàn thiện README, PA2.md, AI-LOG.md và SELF_ASSESSMENT_REPORT.md.
-Kept: evidence kỹ thuật theo task; contract publish; links PR/commit/CI; metadata ba thành viên; bảng tự chấm bảy tiêu chí và phần chưa làm được.
-Changed: thay README skeleton lỗi thời bằng setup/commands/publish demo hiện tại; tổng hợp AI fragments theo task thay sao chép toàn bộ log; phân biệt estimate với measured cost và cap; sửa tên reviewer trong hồ sơ T08; đồng bộ trạng thái/checklist plan với Issues/PR đã xác nhận; bỏ câu dẫn bản nháp và nội dung điều phối khỏi báo cáo nộp, giữ giới hạn kỹ thuật thực tế.
-Rejected: tự điền thông tin sinh viên, gán phần assistant viết thành code làm tay, chép trao đổi riêng, coi estimate là cap hoặc dùng PR run thay CI run của tag.
-By hand: Vỹ cung cấp ba họ tên và StudentID, kiểm tra nội dung hồ sơ. Assistant soạn/chỉnh tài liệu và thực hiện các commands; không ghi nhận code T11 do sinh viên viết tay.
-
-Kiểm chứng: clone local sạch trên baseline b9fcd4c, cài từ lockfile, bốn quality commands exit 0 và 83/83 tests pass; demo README xác minh initial/repeat publish, body không đổi và replay header. Sau các chỉnh sửa báo cáo, format-check và diff-check đều đạt; không đổi source/tests.
-Nguồn: [evidence T11](docs/evidence/PA02/T11/README.md), [README](README.md), [PA2.md](PA2.md), [self-assessment](SELF_ASSESSMENT_REPORT.md).
-
-## 2026-11-11 — T11: sửa tính nhất quán hồ sơ theo review PR #26
-
-Tool: Codex (GPT-6) trong OpenClaw, GitHub CLI và Prettier theo lockfile.
-Asked for: xử lý các phát hiện về trạng thái task, tiêu chí checklist và các liên kết evidence.
-Kept: R2 tự chấm 8/10, tổng 95/100 và khai báo spending cap chưa xác minh.
-Changed: đổi summary T05 thành chưa hoàn tất do thiếu evidence cap; khôi phục câu gốc của checklist PA2/tag-run và bỏ tick; chuyển phương án tag-run sang phần evidence của plan; dùng snapshot protection công khai làm nguồn chính; diễn đạt liên kết tag CI trung tính để phù hợp commit freeze.
-Rejected: thay câu tiêu chí để đánh dấu đạt, dùng Issue Closed thay acceptance hoặc mô tả trạng thái tag-run tạm thời trong bản freeze.
-By hand: Vượng cung cấp nhận xét kỹ thuật tại PR #26; assistant chỉnh tài liệu và chạy kiểm tra. Không thay source/tests.
-Nguồn: [review comment](https://github.com/2609-AWAD-23-3/leetkob/pull/26#issuecomment-6795965312), [plan](docs/plans/PA02.md), [PA2.md](PA2.md).
-
-## 2026-11-11 — T12: audit trước release
-
-Tool: Codex trong OpenClaw, GitHub CLI, Git, Node/npm và Gitleaks 8.30.1.
-Asked for: kiểm chứng baseline đã tích hợp trước khi freeze, tag và đóng gói bản nộp PA02.
-Kept: hồ sơ T11 đã review, self-assessment 95/100, commands/contract/tests và break/fix history.
-Changed: clone mới baseline 8d79ba1, cài/chạy bốn quality commands; kiểm tra lại public/main protection và security tree/history/refs/config. Phân loại riêng 7 public fixture headers và 26 file digests sau khi helper T05 từ chối findings mới hoặc source hash đã format. Đồng bộ hoàn tất T11 theo approval đúng head và merge PR #26; giữ các mục tag/ZIP/submission T12 chưa đạt.
-Rejected: ép scanner exit 0, suppress findings, coi model cost estimate là cap, lấy PR run thay tag CI hoặc đóng ZIP từ workspace có dependencies/private configuration.
-By hand: Vượng review độc lập T11 trên PR #26. Assistant thực hiện audit và soạn records; chưa ghi nhận thao tác tag/đóng gói/nộp đã hoàn thành.
-Nguồn: [evidence T12](docs/evidence/PA02/T12/README.md), [verification](docs/evidence/PA02/T12/verification.json).
+Tool: Claude Code.
+Asked for: đối chiếu requirement, rubric, plan và 14 Issues; soạn `PA3.md`, `SELF_ASSESSMENT_REPORT.md`, hợp nhất AI-LOG, cập nhật README (model, chi phí lab 80 bài).
+Kept: số liệu lấy từ evidence đã commit; chấm lại `predictions.jsonl` của dev run bằng `eval.mjs` ra đúng 1 / 100% / 0%; chạy lại lint, format-check, type-check, `npm test` trên bản `git archive` sạch của `develop`.
+Changed: README còn mô tả PA02 ("T06/T07 deferred", "Publish chưa nối runtime", "phase này chưa chạy worker"); cập nhật theo trạng thái PA03. Chi phí lab 80 bài tính lại từ dev run (39 call) thay vì chỉ 2 call của T08.
+Theo yêu cầu của Vỹ, kiểm chứng các ô review còn trống trên Issue #32, #34, #35, #37 (chạy test model với preload chặn network 116/116, đọc lệnh Docker của sandbox, test restart worker, schema output) rồi tick, ghi rõ trên Issue là Vỹ kiểm chứng thay reviewer.
+Rejected: ghi password test do assistant điền (Vỹ tự điền); trừ điểm theo những điểm yếu rubric không chấm (Vỹ yêu cầu chấm đúng theo từng mức của rubric; tiêu chí 7 Vỹ chốt 5/5).
+By hand: Vỹ điền password, quay video, promote `develop` → `main`, gắn và push tag `pa3`, đóng gói ZIP và nộp.

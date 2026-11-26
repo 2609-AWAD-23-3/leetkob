@@ -1,5 +1,7 @@
 # LeeTKOB architecture baseline
 
+Tài liệu này ghi lại kiến trúc ban đầu của PA02. Xem [cấu trúc project PA03-T00](project-structure.md) để tra đường dẫn và ownership hiện hành; đường dẫn và phân công bên dưới thuộc snapshot PA02.
+
 **Trạng thái 08/11/2026:** skeleton tại `738b183a` đã được @BHVPhuc review trên [PR #14](https://github.com/2609-AWAD-23-3/leetkob/pull/14). Người yêu cầu đã chốt publish-only ngày 07/11 và xác nhận đã kiểm tra/duyệt phần conflict trong hội thoại; không suy ra independent approval cho bản tài liệu mới này hoặc cho một resolution commit chưa tồn tại. Bổ sung wiring bên dưới là candidate local chờ review và đầu vào T02, chưa phải implementation hay acceptance T01.
 
 Executor: @tranquocvy. Source: [class brief](../reference/leetkob/LeeTKOB%20%E2%80%94%20class%20project%20brief.pdf), sections 3-5 and 7; [PA02 requirements](../reference/PA02/requirement.md); [task T01](../plans/PA02.md#t01--architecture-baseline-v%C3%A0-skeleton).

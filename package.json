@@ -10,21 +10,42 @@
   },
   "packageManager": "npm@11.19.1",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "node --env-file-if-exists=.env --import tsx --watch src/api/server.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/server.js",
+    "start": "node --env-file-if-exists=.env dist/api/server.js",
+    "worker": "node dist/worker/index.js",
+    "checker": "node dist/cli/checker.js",
     "lint": "oxlint --deny-warnings src tests scripts",
     "format-check": "prettier --check .",
     "type-check": "tsc -p tsconfig.check.json",
-    "test": "npm run build && node scripts/test.mjs"
+    "test": "npm run build && node scripts/test.mjs",
+    "db:migrate": "npm run build && node --env-file-if-exists=.env scripts/db-migrate.mjs",
+    "test:db": "npm run build && node scripts/test-db.mjs",
+    "db:seed": "npm run build && node --env-file-if-exists=.env scripts/seed-demo.mjs",
+    "db:seed:deploy": "npm run build && node --env-file-if-exists=.env scripts/seed-deploy.mjs",
+    "db:studio": "node --env-file-if-exists=.env node_modules/prisma/build/index.js studio --config scripts/prisma-studio.config.ts --browser none --port 5555",
+    "test:sandbox": "npm run build && node scripts/test-sandbox.mjs",
+    "test:checker-image": "node scripts/test-checker-image.mjs"
   },
   "dependencies": {
-    "fastify": "5.12.8"
+    "@anthropic-ai/sdk": "1.12.0",
+    "@fastify/multipart": "10.1.9",
+    "@fastify/swagger": "9.9.5",
+    "@fastify/swagger-ui": "6.1.5",
+    "fastify": "5.12.8",
+    "pg": "8.23.1"
+  },
+  "overrides": {
+    "@prisma/config": {
+      "effect": "3.22.1"
+    }
   },
   "devDependencies": {
     "@types/node": "24.19.2",
+    "@types/pg": "8.23.1",
     "oxlint": "1.92.0",
     "prettier": "3.9.10",
+    "prisma": "7.10.1",
     "tsx": "4.23.15",
     "typescript": "7.0.2"
   }

@@ -1,0 +1,12 @@
+{"solution":"digit-sum/s01","constraint":"C1","verdict":"violation","evidence":[{"line":10,"text":"    std::string digits = std::to_string(n);"}]}
+{"solution":"digit-sum/s01","constraint":"C2","verdict":"violation","evidence":[{"line":10,"text":"    std::string digits = std::to_string(n);"},{"line":12,"text":"    for (char c : digits) sum += c - '0';"}]}
+{"solution":"digit-sum/s02","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"digit-sum/s02","constraint":"C2","verdict":"pass","evidence":[{"line":7,"text":"  while (n > 0) {"},{"line":8,"text":"    sum += static_cast<int>(n % 10);"},{"line":9,"text":"    n /= 10;"}]}
+{"solution":"digit-sum/s03","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"digit-sum/s03","constraint":"C2","verdict":"violation","evidence":[{"line":10,"text":"    std::string n;"},{"line":11,"text":"    std::cin >> n;"},{"line":13,"text":"    for (std::size_t i = 0; i < n.size(); ++i) sum += n[i] - '0';"}]}
+{"solution":"digit-sum/s04","constraint":"C1","verdict":"violation","evidence":[{"line":3,"text":"using std::to_string;"},{"line":6,"text":"  const auto text = to_string(n);"}]}
+{"solution":"digit-sum/s04","constraint":"C2","verdict":"violation","evidence":[{"line":6,"text":"  const auto text = to_string(n);"},{"line":8,"text":"  for (char c : text) sum += c - '0';"}]}
+{"solution":"digit-sum/s05","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"digit-sum/s05","constraint":"C2","verdict":"pass","evidence":[{"line":4,"text":"  return n < 10 ? static_cast<int>(n) : static_cast<int>(n % 10) + digit_sum(n / 10);"}]}
+{"solution":"digit-sum/s06","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"digit-sum/s06","constraint":"C2","verdict":"violation","evidence":[{"line":9,"text":"    while ((c = std::getchar()) != EOF && c != '\\n') {"},{"line":10,"text":"      if (c >= '0' && c <= '9') sum += c - '0';"}]}

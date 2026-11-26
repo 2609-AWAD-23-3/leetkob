@@ -1,0 +1,148 @@
+$ node --import tsx --test --test-reporter=tap tests/contract/review-queue.test.mjs
+TAP version 13
+# Subtest: review queue: the class TA sees every submission x constraint with verdict, evidence, deduction and unsure cause
+ok 1 - review queue: the class TA sees every submission x constraint with verdict, evidence, deduction and unsure cause
+  ---
+  duration_ms: 383.9391
+  type: 'test'
+  ...
+# Subtest: review item: detail adds the whole submission code for the TA (FAQ-09)
+ok 2 - review item: detail adds the whole submission code for the TA (FAQ-09)
+  ---
+  duration_ms: 23.0141
+  type: 'test'
+  ...
+# Subtest: review queue: unauthenticated callers get 401, students and admins 403, a TA of another class 404
+ok 3 - review queue: unauthenticated callers get 401, students and admins 403, a TA of another class 404
+  ---
+  duration_ms: 29.4526
+  type: 'test'
+  ...
+# Subtest: review queue: unknown or malformed IDs return 404 or 400
+ok 4 - review queue: unknown or malformed IDs return 404 or 400
+  ---
+  duration_ms: 19.251
+  type: 'test'
+  ...
+# Subtest: decision: violation needs evidence lines inside the code; the text comes from the code (FAQ-09)
+ok 5 - decision: violation needs evidence lines inside the code; the text comes from the code (FAQ-09)
+  ---
+  duration_ms: 30.0848
+  type: 'test'
+  ...
+# Subtest: decision: evidence text is read from the stored code for CRLF files too
+ok 6 - decision: evidence text is read from the stored code for CRLF files too
+  ---
+  duration_ms: 15.5887
+  type: 'test'
+  ...
+# Subtest: confirm passes: bulk-confirms only the unreviewed pass verdicts
+ok 7 - confirm passes: bulk-confirms only the unreviewed pass verdicts
+  ---
+  duration_ms: 16.652
+  type: 'test'
+  ...
+# Subtest: publish: refused while any verdict, a pass included, is unreviewed; then publishes once
+ok 8 - publish: refused while any verdict, a pass included, is unreviewed; then publishes once
+  ---
+  duration_ms: 22.5137
+  type: 'test'
+  ...
+# Subtest: publish: contract v1 statuses hold with session tokens
+ok 9 - publish: contract v1 statuses hold with session tokens
+  ---
+  duration_ms: 21.2975
+  type: 'test'
+  ...
+# Subtest: publish: a TA of another class keeps the contract v1 403 without lab details
+ok 10 - publish: a TA of another class keeps the contract v1 403 without lab details
+  ---
+  duration_ms: 13.5471
+  type: 'test'
+  ...
+# Subtest: review queue: a TA of another class gets the same 404 for a real and a missing lab or item
+ok 11 - review queue: a TA of another class gets the same 404 for a real and a missing lab or item
+  ---
+  duration_ms: 17.8477
+  type: 'test'
+  ...
+# Subtest: confirm passes: a Publish that commits during the call returns 409
+ok 12 - confirm passes: a Publish that commits during the call returns 409
+  ---
+  duration_ms: 14.7213
+  type: 'test'
+  ...
+# Subtest: after publish: review decisions are locked
+ok 13 - after publish: review decisions are locked
+  ---
+  duration_ms: 18.7047
+  type: 'test'
+  ...
+# Subtest: students never receive verdicts before publish (FAQ-08)
+ok 14 - students never receive verdicts before publish (FAQ-08)
+  ---
+  duration_ms: 16.821
+  type: 'test'
+  ...
+# Subtest: API docs list the review queue and Publish operations
+ok 15 - API docs list the review queue and Publish operations
+  ---
+  duration_ms: 14.7189
+  type: 'test'
+  ...
+# Subtest: API docs list every unsure cause of a review item, including model_off
+not ok 16 - API docs list every unsure cause of a review item, including model_off
+  ---
+  duration_ms: 15.8513
+  type: 'test'
+  location: '<repo>\\tests\\contract\\review-queue.test.mjs:521:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      [
+        'model_unsure',
+        'schema_error',
+        'evidence_mismatch',
+        'timeout',
+        'cost_cap',
+    -   'model_off',
+        null
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'model_unsure'
+    1: 'schema_error'
+    2: 'evidence_mismatch'
+    3: 'timeout'
+    4: 'cost_cap'
+    5: 'model_off'
+    6: ~
+  actual:
+    0: 'model_unsure'
+    1: 'schema_error'
+    2: 'evidence_mismatch'
+    3: 'timeout'
+    4: 'cost_cap'
+    5: ~
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (<repo>/tests/contract/review-queue.test.mjs:524:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1409:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 15
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1290.486
+
+# exit code: 1

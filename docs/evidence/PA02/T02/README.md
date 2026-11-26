@@ -67,7 +67,7 @@ Kết quả phiên bản mong đợi: Node v24.22.1, npm 11.19.1. Tests mong đ�
 
 ## 4. Bàn giao và các điều kiện còn thiếu
 
-- **Phúc/T03/T08:** [model, interface và ví dụ](../../../architecture/data-model.md), [exports](../../../../src/data/index.ts), [fixtures](../../../../src/data/fixtures.ts). Xác thực và phân quyền TA trước khi gọi store. PublishResult là kết quả nội bộ; T03/T08 ánh xạ sang HTTP. Summary chỉ thống kê review. Ví dụ pending → resolved dùng reset fixture, chưa tạo endpoint duyệt bài.
+- **Phúc/T03/T08:** [model, interface và ví dụ](../../../architecture/data-model.md), [exports](../../../../src/db/index.ts), [fixtures](../../../../src/db/fixtures.ts). Xác thực và phân quyền TA trước khi gọi store. PublishResult là kết quả nội bộ; T03/T08 ánh xạ sang HTTP. Summary chỉ thống kê review. Ví dụ pending → resolved dùng reset fixture, chưa tạo endpoint duyệt bài.
 - **Vỹ/T01/T04:** tạo store riêng cho mỗi app/test; chỉ inject PublishStore vào module publish; giữ reset ở setup; tích hợp lệnh data tests vào harness chung. T02 không sửa manifest, lockfile, app composition, README setup hoặc runner chung.
 - **Giới hạn storage:** không có lưu trữ bền vững, khôi phục sau restart, chia sẻ giữa process hoặc bảo đảm concurrency phân tán. Clock phải tin cậy và không gọi ngược vào store. Không có side effect bên ngoài hoặc chức năng unpublish.
 - Đã có tài liệu bàn giao; chưa xác nhận consumer tiếp nhận/wiring hoặc reviewer đã chạy độc lập. Mục thực hiện thứ năm và cả hai mục review vẫn chưa đánh dấu.

@@ -1,0 +1,40 @@
+import { createApp } from './app.js';
+import {
+  loadConfig,
+  loadDatabaseUrl,
+  loadTrustProxy,
+} from '../shared/config.js';
+import { createPostgresStore } from '../db/postgres/index.js';
+import { createSessionPublishIdentityResolver } from './auth/session.js';
+
+// Caller owns listen/close. Injectable factory permits lifecycle tests without IO.
+export async function createRuntimeApp(
+  env: NodeJS.ProcessEnv = process.env,
+  factory: typeof createPostgresStore = createPostgresStore,
+) {
+  loadConfig(env);
+  const trustProxy = loadTrustProxy(env);
+  const fixture = factory({ connectionString: loadDatabaseUrl(env) });
+  try {
+    await fixture.ready;
+    const app = createApp({
+      logger: true,
+      trustProxy,
+      auth: { store: fixture.store },
+      labs: { store: fixture.store },
+      submissions: { store: fixture.store },
+      reviewQueue: { store: fixture.store },
+      publish: {
+        store: fixture.store,
+        identityResolver: createSessionPublishIdentityResolver(fixture.store),
+      },
+    });
+    app.addHook('onClose', () => fixture.store.close());
+    return app;
+  } catch {
+    await fixture.store.close();
+    throw new Error(
+      'Database initialization failed; check connectivity and pending migrations.',
+    );
+  }
+}
