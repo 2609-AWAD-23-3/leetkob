@@ -22,3 +22,13 @@
 {"solution":"mod-power/s05","constraint":"C2","label":"violation","evidence":[9],"tags":["disguised"]}
 {"solution":"mod-power/s06","constraint":"C1","label":"pass","evidence":[],"tags":[]}
 {"solution":"mod-power/s06","constraint":"C2","label":"pass","evidence":[],"tags":["trap"]}
+{"solution":"above-mean/s01","constraint":"C1","label":"pass","evidence":[],"tags":[]}
+{"solution":"above-mean/s01","constraint":"C2","label":"pass","evidence":[],"tags":["style"]}
+{"solution":"above-mean/s02","constraint":"C1","label":"pass","evidence":[],"tags":["trap"]}
+{"solution":"above-mean/s02","constraint":"C2","label":"pass","evidence":[],"tags":[]}
+{"solution":"above-mean/s03","constraint":"C1","label":"violation","evidence":[3,22],"tags":["disguised"]}
+{"solution":"above-mean/s03","constraint":"C2","label":"pass","evidence":[],"tags":[]}
+{"solution":"above-mean/s04","constraint":"C1","label":"pass","evidence":[],"tags":[]}
+{"solution":"above-mean/s04","constraint":"C2","label":"violation","evidence":[7],"tags":["disguised"]}
+{"solution":"above-mean/s05","constraint":"C1","label":"pass","evidence":[],"tags":[]}
+{"solution":"above-mean/s05","constraint":"C2","label":"violation","evidence":[8,13],"tags":["injection"]}
