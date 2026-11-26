@@ -1,3 +1,8 @@
+above-mean/s01 Accepted (6 tests) 01:accepted 02:accepted 03:accepted 04:accepted 05:accepted 06:accepted
+above-mean/s02 Accepted (6 tests) 01:accepted 02:accepted 03:accepted 04:accepted 05:accepted 06:accepted
+above-mean/s03 Accepted (6 tests) 01:accepted 02:accepted 03:accepted 04:accepted 05:accepted 06:accepted
+above-mean/s04 Accepted (6 tests) 01:accepted 02:accepted 03:accepted 04:accepted 05:accepted 06:accepted
+above-mean/s05 Accepted (6 tests) 01:accepted 02:accepted 03:accepted 04:accepted 05:accepted 06:accepted
 digit-sum/s01 Accepted (3 tests) 01:accepted 02:accepted 03:accepted
 digit-sum/s02 Accepted (3 tests) 01:accepted 02:accepted 03:accepted
 digit-sum/s03 Accepted (3 tests) 01:accepted 02:accepted 03:accepted
@@ -10,4 +15,9 @@ mod-power/s03 Accepted (3 tests) 01:accepted 02:accepted 03:accepted
 mod-power/s04 Accepted (3 tests) 01:accepted 02:accepted 03:accepted
 mod-power/s05 Accepted (3 tests) 01:accepted 02:accepted 03:accepted
 mod-power/s06 Accepted (3 tests) 01:accepted 02:accepted 03:accepted
-12 solutions checked, 0 not Accepted
+rotate-array/s01 Accepted (6 tests) 01:accepted 02:accepted 03:accepted 04:accepted 05:accepted 06:accepted
+rotate-array/s02 Accepted (6 tests) 01:accepted 02:accepted 03:accepted 04:accepted 05:accepted 06:accepted
+rotate-array/s03 Accepted (6 tests) 01:accepted 02:accepted 03:accepted 04:accepted 05:accepted 06:accepted
+rotate-array/s04 Accepted (6 tests) 01:accepted 02:accepted 03:accepted 04:accepted 05:accepted 06:accepted
+rotate-array/s05 Accepted (6 tests) 01:accepted 02:accepted 03:accepted 04:accepted 05:accepted 06:accepted
+22 solutions checked, 0 not Accepted

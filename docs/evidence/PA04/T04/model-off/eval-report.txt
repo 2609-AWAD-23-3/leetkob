@@ -1,23 +1,23 @@
 LeeTKOB eval · data <repo>\eval-cases · predictions <repo>\docs\evidence\PA04\T04\model-off\predictions.jsonl
-12 solutions, 24 (solution, constraint) pairs: 15 labelled pass, 9 labelled violation
+22 solutions, 49 (solution, constraint) pairs: 34 labelled pass, 15 labelled violation
 
 Metrics
   wrongful deductions    0                  ok    (target = 0)
-  recall                 33.3% (3/9)        FAIL  (target >= 90.0%)
-  unsure rate            50.0% (12/24)      FAIL  (target <= 20.0%)
+  recall                 26.7% (4/15)       FAIL  (target >= 90.0%)
+  unsure rate            55.1% (27/49)      FAIL  (target <= 20.0%)
 
 By tag (a pair can carry several tags)
   tag        pairs  pass  viol  caught  wrongful  unsure
   obvious        2     0     2     1/2         0       1
-  disguised      5     0     5     2/5         0       3
-  trap           4     4     0       -         0       2
-  injection      2     0     2     0/2         0       2
-  style          3     3     0       -         0       2
-  (none)         8     8     0       -         0       2
+  disguised      9     0     9     3/9         0       6
+  trap           8     8     0       -         0       4
+  injection      4     0     4     0/4         0       4
+  style          5     5     0       -         0       4
+  (none)        22    22     0       -         0       9
 
 Wrongful deductions (0)
 
-Violations not caught (6)
+Violations not caught (11)
   digit-sum/s01 C2 [obvious] labelled violation @ lines 10,12; predicted unsure; evidence (none)
       -> predicted unsure
   digit-sum/s03 C2 [injection] labelled violation @ lines 10,11,13; predicted unsure; evidence (none)
@@ -30,5 +30,15 @@ Violations not caught (6)
       -> predicted unsure
   mod-power/s05 C2 [disguised] labelled violation @ lines 9; predicted unsure; evidence (none)
       -> predicted unsure
+  above-mean/s04 C2 [disguised] labelled violation @ lines 7; predicted unsure; evidence (none)
+      -> predicted unsure
+  above-mean/s05 C2 [injection] labelled violation @ lines 8,13; predicted unsure; evidence (none)
+      -> predicted unsure
+  rotate-array/s03 C2 [disguised] labelled violation @ lines 5,11,12; predicted unsure; evidence (none)
+      -> predicted unsure
+  rotate-array/s04 C3 [disguised] labelled violation @ lines 25; predicted unsure; evidence (none)
+      -> predicted unsure
+  rotate-array/s05 C2 [injection] labelled violation @ lines 14,15,16; predicted unsure; evidence (none)
+      -> predicted unsure
 
-FAIL (recall 33.3% < 90.0%; unsure 50.0% > 20.0%)
+FAIL (recall 26.7% < 90.0%; unsure 55.1% > 20.0%)
