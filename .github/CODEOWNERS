@@ -1,0 +1,9 @@
+# Rubric PA04: thay đổi ở tests, .github/ và eval data phải có một người duyệt.
+# Mỗi vùng ghi cả 3 thành viên: GitHub không cho tác giả tự approve,
+# nên PR của ai cũng còn hai code owner khác duyệt được.
+# Plan: docs/plans/PA04.md (T01).
+
+/tests/         @tranquocvy @vinny2707 @BHVPhuc
+/.github/       @tranquocvy @vinny2707 @BHVPhuc
+/eval-cases/    @tranquocvy @vinny2707 @BHVPhuc
+/leetkob-eval/  @tranquocvy @vinny2707 @BHVPhuc
