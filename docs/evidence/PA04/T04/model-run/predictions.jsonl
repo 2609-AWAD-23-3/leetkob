@@ -1,0 +1,24 @@
+{"solution":"digit-sum/s01","constraint":"C1","verdict":"violation","evidence":[{"line":10,"text":"    std::string digits = std::to_string(n);"}]}
+{"solution":"digit-sum/s01","constraint":"C2","verdict":"violation","evidence":[{"line":10,"text":"    std::string digits = std::to_string(n);"},{"line":12,"text":"    for (char c : digits) sum += c - '0';"}]}
+{"solution":"digit-sum/s02","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"digit-sum/s02","constraint":"C2","verdict":"pass","evidence":[{"line":7,"text":"  while (n > 0) {"},{"line":8,"text":"    sum += static_cast<int>(n % 10);"},{"line":9,"text":"    n /= 10;"}]}
+{"solution":"digit-sum/s03","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"digit-sum/s03","constraint":"C2","verdict":"violation","evidence":[{"line":10,"text":"    std::string n;"},{"line":11,"text":"    std::cin >> n;"},{"line":13,"text":"    for (std::size_t i = 0; i < n.size(); ++i) sum += n[i] - '0';"}]}
+{"solution":"digit-sum/s04","constraint":"C1","verdict":"violation","evidence":[{"line":3,"text":"using std::to_string;"},{"line":6,"text":"  const auto text = to_string(n);"}]}
+{"solution":"digit-sum/s04","constraint":"C2","verdict":"violation","evidence":[{"line":6,"text":"  const auto text = to_string(n);"},{"line":8,"text":"  for (char c : text) sum += c - '0';"}]}
+{"solution":"digit-sum/s05","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"digit-sum/s05","constraint":"C2","verdict":"pass","evidence":[{"line":4,"text":"  return n < 10 ? static_cast<int>(n) : static_cast<int>(n % 10) + digit_sum(n / 10);"}]}
+{"solution":"digit-sum/s06","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"digit-sum/s06","constraint":"C2","verdict":"violation","evidence":[{"line":9,"text":"    while ((c = std::getchar()) != EOF && c != '\\n') {"},{"line":10,"text":"      if (c >= '0' && c <= '9') sum += c - '0';"}]}
+{"solution":"mod-power/s01","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"mod-power/s01","constraint":"C2","verdict":"pass","evidence":[{"line":8,"text":"static u64 even_power(u64 a, u64 b, u64 m) {"},{"line":9,"text":"  if (b == 0) return 1 % m;"},{"line":10,"text":"  const u64 half = (b / 2) % 2 == 0 ? even_power(a, b / 2, m)"},{"line":11,"text":"                                    : odd_power(a, b / 2, m);"},{"line":12,"text":"  return half * half % m;"},{"line":16,"text":"static u64 odd_power(u64 a, u64 b, u64 m) {"},{"line":17,"text":"  return even_power(a, b - 1, m) * (a % m) % m;"}]}
+{"solution":"mod-power/s02","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"mod-power/s02","constraint":"C2","verdict":"pass","evidence":[{"line":11,"text":"  while (exponent > 0) {"},{"line":12,"text":"    if (exponent & 1) result = result * base % m;"},{"line":13,"text":"    base = base * base % m;"},{"line":14,"text":"    exponent >>= 1;"}]}
+{"solution":"mod-power/s03","constraint":"C1","verdict":"violation","evidence":[{"line":8,"text":"  return static_cast<u64>(std::llround(std::exp(k * std::log(2.0))));"}]}
+{"solution":"mod-power/s03","constraint":"C2","verdict":"pass","evidence":[{"line":15,"text":"  for (int k = 20; k >= 0; --k) {"},{"line":16,"text":"    result = result * result % m;"},{"line":17,"text":"    if (b & bit_value(k)) result = result * a % m;"}]}
+{"solution":"mod-power/s04","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"mod-power/s04","constraint":"C2","verdict":"violation","evidence":[{"line":15,"text":"    for (u64 i = 0; i < b; ++i) result = result * (a % m) % m;"}]}
+{"solution":"mod-power/s05","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"mod-power/s05","constraint":"C2","verdict":"violation","evidence":[{"line":8,"text":"  if (b % 2 == 1) return power_mod(a, b - 1, m) * (a % m) % m;"},{"line":9,"text":"  return power_mod(a, b / 2, m) * power_mod(a, b / 2, m) % m;"}]}
+{"solution":"mod-power/s06","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"mod-power/s06","constraint":"C2","verdict":"pass","evidence":[{"line":10,"text":"  for (a %= m; b != 0; b /= 2, a = a * a % m) {"},{"line":11,"text":"    if (b % 2 != 0) result = result * a % m;"}]}

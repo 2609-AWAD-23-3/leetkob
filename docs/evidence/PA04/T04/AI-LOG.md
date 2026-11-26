@@ -17,3 +17,12 @@ Kept: Label `s03` C2 vẫn là `pass`. Tiêu chí thật của C2 là số phép
 Changed: Câu C2 lấy số phép nhân làm tiêu chí chính và liệt kê ba thứ tự hợp lệ (bình phương base và chia đôi số mũ; bình phương kết quả và đọc bit từ cao xuống; bình phương nửa lũy thừa tính một lần). Đối chiếu lại cả 6 lời giải với câu mới: không label nào đổi. Lỗi nằm ở câu chữ do Claude viết: bản đầu tả một cách cài đặt thay vì tiêu chí, và Claude không đối chiếu lại câu chữ với từng lời giải sau khi viết xong `s03`.
 Rejected: Đổi label `s03` C2 thành `violation` cho khớp chữ (sai bản chất, sẽ thành khấu trừ oan một lời giải đúng); sửa `s03` cho giống câu C2 cũ (làm mất thứ tự cài đặt thứ hai khỏi bộ case).
 By hand: Vượng tìm ra lỗi. Claude sửa `constraints.json` và evidence, chạy lại: lint, format-check, type-check, `git diff --check` exit 0; `npm test` 570 test, 567 pass, 3 skipped; checker `MODEL_OFF=1` rồi `eval.mjs` cho kết quả giống lần trước.
+
+## 2026-11-27 — Chạy checker với model thật trên case riêng
+
+Tool: Claude Code (desktop app).
+Asked for: Vượng hỏi có nên chạy model thật để cập nhật evidence không và chạy test với model thật.
+Kept: Chạy một lần, sau khi case và label đã commit (`ef753a2`), để evidence có source SHA và lịch sử cho thấy case có trước kết quả. Kết quả chỉ ghi vào evidence, không dùng để đổi case hay label.
+Changed: Khi kiểm call log, Claude thấy mọi prompt đều đã bỏ comment, nên injection và trap nằm trong comment không tới được model. Evidence ghi rõ phần này do sanitizer chặn, chỉ chuỗi injection của `mod-power/s04` thật sự thử model, để không báo "model chống được injection" quá mức.
+Rejected: Chạy nhiều lần để lấy số đẹp nhất; ba lần chạy lặp để đo độ ổn định là việc của T05.
+By hand: Vượng quyết định chạy. Claude chạy `npm run build`, checker với `node --env-file=.env` (không in key), `eval.mjs`, và script kiểm call log: 12 call `ok`, 12 request id `req_…` khác nhau, `eval.mjs` exit 0 (`PASS`), 0 khấu trừ sai, recall 100%, unsure 0%, chi phí $0.002991.
