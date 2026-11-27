@@ -62,3 +62,21 @@ Kept: Không sửa code G3: `callWithDeadline` từ PA03-T08 đã giữ hạn c�
 Changed: Thêm giới hạn 2 s cho mỗi test G3, vì khi bỏ hạn cứng thì test "model không bao giờ trả lời" sẽ treo thay vì đỏ. Đổi tên bốn test timeout PA03 thêm tiền tố `G3`, giữ nguyên nội dung kiểm. Thêm test một `violation` hợp lệ đến sau hạn không được dùng. Hai lần thử xoá guardrail: bỏ hạn (4/5 đỏ; tiến trình phải dừng bằng giới hạn 120 s của script vì bộ hẹn giờ của bản sửa tạm) và không đổi timeout thành `unsure` (5/5 đỏ).
 Rejected: Sửa code G3 chỉ để commit có code (không có gì cần sửa); dùng giới hạn thời gian toàn cục cho cả file test (ảnh hưởng test khác, che mất test nào treo).
 By hand: Vượng sẽ review trước khi commit. Claude viết test, chạy kiểm xoá guardrail và quality checks.
+
+## 2026-11-28 — Chạy model thật tại commit cuối và tổng kết T02
+
+Tool: Claude Code (desktop app).
+Asked for: Vượng bảo commit G3 rồi chạy model thật chính thức và viết tổng kết evidence T02.
+Kept: Chạy một lần mỗi dataset (`eval-cases`, dev set) tại `4877b86`, working tree sạch, lưu ở `model-run/`. Ghi kết quả như đo được, kể cả khi xấu hơn lần trước.
+Changed: Lần này `eval-cases` có 1 cặp `unsure`: `digit-sum/s06` C2, một vi phạm thật, bị G2 hạ thành `evidence_mismatch` (recall 93.3%, vẫn `PASS`). Claude so với ba lần chạy trước (đều trích đúng dòng 9 và 10) và nhận ra call log của checker không lưu câu trả lời hay `reason` của model, nên không biết dòng nào lệch; ghi giả thuyết escape `\n` là chưa kiểm chứng, và ghi việc thiếu `reason` trong call log là giới hạn, ngoài scope G2. Dev set khác PA03 đúng một cặp (`reverse-words/s04` C2, khấu trừ sai duy nhất của PA03, nay đúng label); không quy cho guardrail vì một lần chạy và prompt đã đổi. Bản nháp tổng kết ghi tổng số cặp sai ("151"); sửa thành 200 cặp của ba lần chạy sau G2 trước khi ghi vào README.
+Rejected: Chạy lại để có lần không bị `evidence_mismatch` (chọn số đẹp); sửa G2 cho lỏng hơn khi chưa biết nguyên nhân; thêm `reason` vào call log của checker trong commit tổng kết (đổi code ngoài G2, cần Vượng quyết).
+By hand: Vượng quyết định chạy. Claude chạy `npm run build`, checker với `node --env-file=.env` (không in key), `eval.mjs`, script kiểm call log và so sánh: `eval-cases` 22 call, dev set 39 call, đều `ok`, mỗi call một request id `req_…`, cả hai `PASS`, tổng $0.016379.
+
+## 2026-11-28 — Quyết định về `evidence_mismatch` và mở PR
+
+Tool: Claude Code (desktop app).
+Asked for: Vượng hỏi có nên sửa điểm `evidence_mismatch` của `digit-sum/s06` không, rồi bảo cập nhật trạng thái commit và PR và mở PR.
+Kept: Không nới G2 khi chưa biết nguyên nhân (G2 hạ về `unsure`, không trừ oan, TA vẫn review); 1 cặp trên 200 cặp chưa đủ lý do đổi quy tắc.
+Changed: Việc ghi `reason` của verdict `unsure` vào call log của checker chuyển sang T08, vì thay đổi nằm ở `src/cli/run.ts` chứ không ở guardrail, và T08 là việc chuẩn bị cho lần chạy held-out. README cập nhật trạng thái (đã push, mở PR) và việc chuyển tiếp này.
+Rejected: Sửa trong PR T02 (trộn phần checker vào PR guardrail); nới G2 ngay (đi ngược "exactly" của rubric và có thể mở lỗ cho dòng bịa).
+By hand: Vượng quyết định hướng xử lý và cho mở PR. Claude cập nhật evidence, commit, push và mở PR.

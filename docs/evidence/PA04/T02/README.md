@@ -1,7 +1,7 @@
 # Evidence PA04-T02 — Guardrails G1, G2, G3, G5
 
 **Thực hiện:** Vượng · **Reviewer:** Vỹ · **Issue:** #55 · **Nhánh:** `feat/pa04-t02-guardrails` (tách từ `develop` `977c2bc`).
-**Trạng thái:** đang làm từng guardrail; mỗi guardrail được Vượng review rồi mới commit. Chưa push, chưa mở PR.
+**Trạng thái:** đã commit G5, G1, G2, G3 và tổng kết (mục 8), đã push nhánh và mở PR vào `develop` (Refs #55), chờ Vỹ review. Chưa merge.
 
 ## 1. Phạm vi
 
@@ -200,3 +200,65 @@ Kết luận cho G2:
 | --- | --- | --- |
 | Bộ hẹn giờ trong `callWithDeadline` đặt 10⁹ ms (coi như không có hạn) | 4/5 test G3: 2 fail, 2 quá giới hạn 2 s. Test "client ném `ModelTimeoutError`" không phụ thuộc bộ hẹn giờ nên vẫn xanh. Tiến trình test bị script dừng sau 120 s (`killed (SIGTERM)` trong log) vì chính bộ hẹn giờ 10⁹ ms của bản sửa tạm giữ tiến trình sống; kết quả test đã in đầy đủ trước đó | `removal/g3-no-deadline.log` |
 | Timeout không đổi thành `unsure` mà ném ra như lỗi provider | 5/5 test G3 | `removal/g3-timeout-not-unsure.log` |
+
+## 6. Chạy với model thật tại commit cuối (28/11/2026)
+
+Một lần mỗi dataset, tại `4877b86` (đủ G5, G1, G2, G3), working tree sạch. Model `claude-haiku-5-5`, key trong `.env` (bị Git ignore, không đọc hay in giá trị). Lệnh, chạy từ root repo sau `npm run build`, với `<dataset>` là `eval-cases` hoặc `leetkob-eval`:
+
+```sh
+node --env-file=.env dist/cli/checker.js <dataset> \
+  --out docs/evidence/PA04/T02/model-run/<dataset>/predictions.jsonl \
+  --call-log docs/evidence/PA04/T02/model-run/<dataset>/call-log.jsonl \
+  2> docs/evidence/PA04/T02/model-run/<dataset>/checker-stderr.txt
+node leetkob-eval/eval.mjs --data <dataset> \
+  --predictions docs/evidence/PA04/T02/model-run/<dataset>/predictions.jsonl \
+  --json docs/evidence/PA04/T02/model-run/<dataset>/eval-summary.json > docs/evidence/PA04/T02/model-run/<dataset>/eval-report.txt
+```
+
+| Dataset | Call | `eval.mjs` | Khấu trừ sai | Recall | Unsure | Token in / out | Chi phí |
+| --- | ---: | --- | ---: | --- | --- | --- | --- |
+| `eval-cases` (49 cặp) | 22 | exit 0 `PASS` | 0 | 93.3% (14/15) | 2.0% (1/49) | 38 170 / 4 498 | $0.006066 |
+| dev set (102 cặp) | 39 | exit 0 `PASS` | 0 | 100% (37/37) | 0% (0/102) | 68 703 / 6 886 | $0.010313 |
+
+Call log (kiểm bằng script): mọi call `outcome: ok`, mỗi call một request id `req_…` riêng (22 và 39 id); mọi quyết định ban-list `route: hard_rule`, `modelCalled: false` (22 và 55); không prompt nào chứa `//` hay `/*`; không file nào chứa key.
+
+**G2 kích hoạt một lần với model thật.** `digit-sum/s06` C2 (vi phạm thật, tag `disguised`, label dòng 9 và 10) bị hạ thành `unsure`/`evidence_mismatch`. Ba lần chạy trước (T04 hai lần, G2 trước commit một lần) model đều trả `violation` với dòng 9 (`while ((c = std::getchar()) != EOF && c != '\n') {`) và dòng 10 khớp. Kết quả đi đúng hướng an toàn: không trừ oan, cặp vào review queue cho TA như mọi `unsure`. Recall vẫn trên ngưỡng 90%.
+
+**Chưa biết dòng nào lệch.** Call log của checker chỉ ghi `unsureCause`, không ghi câu trả lời của model hay lý do (`reason`) của verdict, nên không xem được text model đã trích. Dòng 9 có `'\n'`; một giả thuyết là model viết escape trong JSON sai (`\n` thay vì `\\n`), làm text sau khi parse có ký tự xuống dòng thật. Giả thuyết này **chưa kiểm chứng**.
+
+**So với các lần chạy trước:**
+
+- `eval-cases`: verdict giống lần chạy thử trước commit G2 ở 48/49 cặp; khác đúng cặp `digit-sum/s06` C2 ở trên.
+- Dev set: so với lần chạy PA03-T10 (`docs/evidence/PA03/T10/dev-run/`), khác một cặp: `reverse-words/s04` C2 trước là `violation` (khấu trừ sai duy nhất của PA03), nay là `pass` (đúng label). Không quy việc này cho guardrail: chỉ một lần chạy, và prompt đã đổi (rule 3).
+- Chi phí so với trước T02: `eval-cases` +9.9% ($0.005519 ở T04), dev set +12.6% ($0.009157 ở PA03-T10); token ra tăng 17% và 28% vì model chép text từng dòng.
+
+## 7. Tổng kết đối chiếu rubric tiêu chí 3
+
+| Yêu cầu rubric | T02 | Mục |
+| --- | --- | --- |
+| G1 schema: JSON hỏng, trong code fence, sau văn xuôi, verdict lạ, constraint thiếu/trùng thành `unsure` | Đủ, mỗi trường hợp có test; xoá từng phần guardrail thì test tương ứng đỏ | 3 |
+| G2 evidence: dòng bịa, đúng text sai số dòng, dòng chỉ có trong comment đã bỏ thành `unsure`; ánh xạ số dòng về code gốc | Đủ, có test; xoá so text, kiểm dòng trống, kiểm mọi dòng, đọc key lỏng thì test đỏ | 4 |
+| G3 call hết thời gian thành `unsure` | Đủ, có test có giới hạn thời gian; bỏ hạn hoặc không đổi thành `unsure` thì test đỏ | 5 |
+| G4 cost cap theo lab | Không thuộc T02 (T03) | |
+| G5 field `deduction` hay chỉ dẫn chấm điểm không thay đổi gì; mức trừ hiển thị là mức TA đặt | Đủ, có test đến review queue; quay về kiểm field chặt thì test đỏ | 2 |
+| Test dùng fake model, không network | Mọi test G1, G2, G3, G5 dùng model giả trong `tests/support/model-fakes.mjs` | |
+| Hard rules vẫn quyết ban-list trước | Test PA03 `integration with T07: ban-list constraints never reach the model`; call log mục 6 | |
+| Mỗi guardrail và test trong commit riêng, test không muộn hơn code | Commit PA04 ở mục 8; G5 và G2 test viết trước code (đỏ trước), G1 và G3 chỉ thêm test cho code PA03 có test trước code | 3, 5, 8 |
+
+## 8. Commit
+
+1. `d8c8423` `feat(pa04-t02): G5 ignore model fields outside the schema so a proposed mark changes nothing`
+2. `366f691` `docs(pa04-t02): record the patch and redact local paths in the G5 removal logs`
+3. `3bc2c16` `test(pa04-t02): G1 cover fenced JSON, prose around JSON, unknown verdict, missing and duplicated constraints`
+4. `2fea9f8` `feat(pa04-t02): G2 require every evidence line to quote the code the model saw`
+5. `4877b86` `test(pa04-t02): G3 bound the timeout tests and cover a violation that arrives after the deadline`
+6. `docs(pa04-t02): real-model run at the final commit and T02 summary`: mục 6–9 và log `model-run/`.
+
+## 9. Giới hạn và việc còn lại
+
+- **Commit trộn của PA03.** Code G1, G3 và một phần G2 vào repo ở `d4e93e7` cùng nhiều phần khác của PA03-T08 (test có trước ở `bc2b7d1`). Người chấm có thể chấm G1 và G3 theo commit trộn đó. `SELF_ASSESSMENT_REPORT.md` cần ghi điểm này.
+- **Không xem được lý do `evidence_mismatch` trong checker.** Call log của checker không ghi `reason` hay text model trích, nên lần G2 hạ `digit-sum/s06` không chẩn đoán được. Vượng quyết định (28/11) không nới G2 khi chưa biết nguyên nhân, và chuyển việc ghi `reason` của verdict `unsure` vào call log của checker (`src/cli/run.ts`) sang T08 (sẵn sàng cho held-out): thay đổi nằm ở checker, không thuộc guardrail nào. T08 sẽ chạy lại để xem tần suất và nguyên nhân; nếu là lỗi escape, cách sửa (dặn trong prompt cùng T06, hoặc chuẩn hoá có kiểm soát trong G2) được quyết khi có số liệu, có test trước.
+- **Rủi ro cho held-out (tiêu chí 2).** Code C++ hay có dòng chứa `\` (`'\n'`, `"%d\n"`). Nếu model chép sai escape thường xuyên, G2 sẽ đẩy unsure lên và recall xuống. Ba lần chạy sau G2 (thử trước commit trên `eval-cases`, và hai lần ở mục 6; tổng 200 cặp) có 1 cặp bị hạ; chưa đủ để kết luận tần suất. Ba lần chạy lặp trên cùng commit thuộc T05.
+- **Thay đổi ảnh hưởng T06.** Schema gửi model (`evidence: [{ line, text }]`) và rule 3 của prompt đổi; helper model giả đổi nghĩa (`result(id, verdict, [n])` là "model trích đúng dòng `n`"). Cần báo Vỹ trước khi T06 sửa prompt.
+- Lời dặn chấm điểm trong `reason` vẫn hiện nguyên chữ cho TA (mục 2).
+- G4 (T03) chưa xong; tiêu chí 3 chỉ đủ năm guardrail khi T03 merge.
