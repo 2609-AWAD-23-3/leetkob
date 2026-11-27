@@ -11,6 +11,8 @@ Thay đổi nằm ở `src/pipeline/model/` và test. Không đổi domain, DB, 
 
 Thứ tự làm: G5, G1, G2, G3, rồi phần chạy model thật và tổng kết.
 
+**Log thử bỏ guardrail** (`removal/*.log`): đầu mỗi log ghi việc thử, commit nguồn, lệnh, exit code, danh sách test đỏ và **patch tạm** đã áp vào file nguồn (dạng `git diff`), để người review áp lại và chạy lại được; sau đó là output test. Đường dẫn local được thay bằng `<repo>`. File nguồn được khôi phục và kiểm bằng so sánh nội dung sau mỗi lần thử.
+
 ## 2. G5 — Không lấy mức trừ từ model
 
 **Quy tắc mới.** Bước kiểm output phía nhóm (`parseModelOutput` trong `src/pipeline/model/schema.ts`) chỉ đòi đủ field bắt buộc (`hasRequiredKeys`). Field ngoài schema, ở cấp ngoài cùng hay trên từng kết quả (ví dụ `deduction`, `score`, `penalty`), bị bỏ qua và không bao giờ được đọc; verdict của model được giữ. Thiếu field bắt buộc hoặc sai kiểu vẫn là `schema_error` (G1).
