@@ -89,3 +89,12 @@ Kept: Không sửa code hay test. Số liệu đã ghi đều đúng; chỉ thi�
 Changed: Chạy lại `npm test` tại `442b4e8` và lưu log (600 test, 597 pass, 3 skipped vì không có `TEST_DATABASE_URL`); README ghi số test sau từng commit (571, 582, 599, 600) để thấy 599 là sau G2 và 600 là sau G3. Tái hiện lần chạy đỏ của G5 trong một git worktree tạm: test ở `d8c8423`, `schema.ts` lấy từ `977c2bc` (trước G5); kết quả 4 fail đúng như README, lưu ở `red/g5-tests-before-code.txt` và ghi rõ là tái hiện ngày 28/11, lần chạy đỏ ngày 27/11 không được lưu. Worktree tạm dùng liên kết tới `node_modules` của repo; gỡ liên kết trước rồi mới xoá worktree để không đụng thư mục thật.
 Rejected: Ghi log G5 như thể chụp từ lần chạy ngày 27/11; sửa số trong README cho khớp mà không chạy lại.
 By hand: Vỹ tìm ra hai điểm khi review. Claude chạy lại, tái hiện, viết log và sửa README; Vượng sẽ duyệt trước khi commit.
+
+## 2026-11-28 — Test khoá nhánh kiểm phạm vi dòng của G2
+
+Tool: Claude Code (desktop app).
+Asked for: Vỹ approve PR #92 và nêu một nit không chặn merge: bỏ kiểm dòng nằm trong file ở `findEvidenceMismatch` thì không test nào đỏ. Vượng hỏi nên merge luôn hay thêm test, rồi chọn thêm test, nhờ Vỹ review lại và merge nếu đạt.
+Kept: Không sửa code G2; hành vi dòng ngoài file vẫn là `unsure`/`evidence_mismatch`.
+Changed: Thêm test G2 kiểm lý do `line N is outside the file (1..10)` cho dòng 0, 11, -1 với cả ba verdict và cho dòng 99 lẫn giữa dòng đúng. Thử bỏ nhánh kiểm phạm vi: đúng test này đỏ, log có patch ở `removal/g2-no-range-check.log`. README mục G2 thêm dòng vào bảng thử xoá guardrail và đoạn giải thích.
+Rejected: Merge mà không thêm test (rubric trừ điểm khi có test không thể fail, và người chấm có thể xoá đúng nhánh này); sửa test PA03 về dòng ngoài file thay vì thêm test G2 riêng (giữ test PA03 nguyên như lịch sử).
+By hand: Vỹ tìm ra điểm này khi review. Claude viết test, chạy kiểm xoá guardrail, cập nhật evidence, commit và nhờ Vỹ review lại.

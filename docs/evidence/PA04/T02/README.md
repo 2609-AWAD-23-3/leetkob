@@ -139,6 +139,9 @@ Một phần tử lệch là cả verdict thành `unsure`/`evidence_mismatch`, v
 | Cho trích dòng trống sau khi bỏ comment | 2: `G2 schema: a line that only held a removed comment …` và test PA03 tương ứng | `removal/g2-no-blank-line-check.log` |
 | Chỉ kiểm phần tử evidence đầu tiên | 2: `G2 schema: one bad line among good ones …` và test PA03 về dòng ngoài file | `removal/g2-first-line-only.log` |
 | Phần tử evidence phải đúng bộ key (G5 thủng ở tầng dưới) | 1: `G2 schema: an extra field inside an evidence item is ignored …` | `removal/g2-strict-evidence-keys.log` |
+| Bỏ kiểm dòng nằm trong file (thêm sau review của Vỹ trên PR #92) | 1: `G2 schema: a line outside the file is evidence_mismatch and the reason names that check` | `removal/g2-no-range-check.log` |
+
+**Sau review của Vỹ (PR #92).** Vỹ thấy bỏ kiểm `line < 1 || line > codeLines.length` thì không test nào đỏ: dòng ngoài file đọc ra chuỗi rỗng nên vẫn bị bắt ở bước "không còn code", chỉ khác lý do. Hành vi vẫn an toàn, nhưng rubric trừ điểm khi "một test không thể fail", nên thêm test `G2 schema: a line outside the file …` kiểm cả lý do `line N is outside the file (1..10)` cho dòng 0, 11, -1 với mọi verdict và cho một dòng ngoài file lẫn giữa dòng đúng. Bỏ nhánh kiểm đó thì đúng test này đỏ. Commit này chỉ có test, code G2 có từ `2fea9f8`.
 
 **Chạy thử với model thật trước khi commit G2 (27/11/2026).** Test dùng model giả không phát hiện được hai rủi ro: provider từ chối schema mới (mọi call lỗi), và model chép dòng không khớp khiến `evidence_mismatch` đẩy unsure lên. Vì vậy G2 được chạy thử một lần trước khi commit. Source: `3bc2c16` cộng thay đổi G2 trong working tree (chưa commit); `src/` lúc chạy giống hệt bản sẽ commit. Model `claude-haiku-5-5`, key trong `.env` (bị Git ignore, không đọc hay in giá trị). Lệnh, chạy từ root repo sau `npm run build`:
 
@@ -245,7 +248,7 @@ Call log (kiểm bằng script): mọi call `outcome: ok`, mỗi call một requ
 | Hard rules vẫn quyết ban-list trước | Test PA03 `integration with T07: ban-list constraints never reach the model`; call log mục 6 | |
 | Mỗi guardrail và test trong commit riêng, test không muộn hơn code | Commit PA04 ở mục 8; G5 và G2 test viết trước code (đỏ trước), G1 và G3 chỉ thêm test cho code PA03 có test trước code | 3, 5, 8 |
 
-**`npm test` tại commit cuối.** Log: `logs/npm-test-442b4e8.txt` (chạy lại ngày 28/11 khi Vỹ review, `src/` và `tests/` giống hệt `442b4e8`): exit 0, 600 test, 597 pass, 0 fail, 3 skipped (ba bộ test Postgres, vì không đặt `TEST_DATABASE_URL`). Số test tăng theo từng commit: 571 sau G5, 582 sau G1, 599 sau G2 (mục 4), 600 sau G3 (thêm test `violation` đến sau hạn); các commit docs không đổi số test.
+**`npm test` tại commit cuối.** Log: `logs/npm-test-442b4e8.txt` (chạy lại ngày 28/11 khi Vỹ review, `src/` và `tests/` giống hệt `442b4e8`): exit 0, 600 test, 597 pass, 0 fail, 3 skipped (ba bộ test Postgres, vì không đặt `TEST_DATABASE_URL`). Số test tăng theo từng commit: 571 sau G5, 582 sau G1, 599 sau G2 (mục 4), 600 sau G3 (thêm test `violation` đến sau hạn), 601 sau commit test khoá nhánh kiểm phạm vi dòng của G2 (sau review của Vỹ, mục 4; `npm test` 601 test, 598 pass, 3 skipped); các commit docs không đổi số test.
 
 ## 8. Commit
 

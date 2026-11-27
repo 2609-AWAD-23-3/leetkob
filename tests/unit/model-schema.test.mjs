@@ -492,3 +492,32 @@ test('G2 schema: an extra field inside an evidence item is ignored like any fiel
   assert.equal(byId(parsed, 'c1').verdict, 'violation');
   assert.deepEqual(byId(parsed, 'c1').evidenceLines, [7]);
 });
+
+test('G2 schema: a line outside the file is evidence_mismatch and the reason names that check', () => {
+  // Khoá riêng nhánh kiểm phạm vi dòng: nếu bỏ nó, dòng ngoài file vẫn bị bắt ở bước "không còn
+  // code" nhưng lý do sẽ khác, và test này đỏ.
+  for (const line of [0, 11, -1]) {
+    for (const verdict of ['violation', 'pass', 'unsure']) {
+      const parsed = parse(
+        body([
+          result('c1', verdict, [ev(line, 'int n = 0;')]),
+          result('c2', 'pass'),
+        ]),
+      );
+      assertMismatch(parsed);
+      assert.match(
+        byId(parsed, 'c1').reason,
+        new RegExp(`line ${line} is outside the file \\(1\\.\\.10\\)`),
+        `${verdict} line ${line}`,
+      );
+    }
+  }
+  const mixed = parse(
+    body([
+      result('c1', 'violation', [3, ev(99, 'return 0;')]),
+      result('c2', 'pass'),
+    ]),
+  );
+  assertMismatch(mixed);
+  assert.match(byId(mixed, 'c1').reason, /line 99 is outside the file/);
+});
