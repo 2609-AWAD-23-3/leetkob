@@ -1,0 +1,49 @@
+{"solution":"above-mean/s01","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"above-mean/s01","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"above-mean/s02","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"above-mean/s02","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"above-mean/s03","constraint":"C1","verdict":"violation","evidence":[{"line":3,"text":"#define EACH(i, lo, hi) for (int i = (lo); i < (hi); ++i)"},{"line":22,"text":"  EACH(i, 0, n) std::cin >> a[i];"}]}
+{"solution":"above-mean/s03","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"above-mean/s04","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"above-mean/s04","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"above-mean/s05","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"above-mean/s05","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"digit-sum/s01","constraint":"C1","verdict":"violation","evidence":[{"line":10,"text":"    std::string digits = std::to_string(n);"}]}
+{"solution":"digit-sum/s01","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"digit-sum/s02","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"digit-sum/s02","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"digit-sum/s03","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"digit-sum/s03","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"digit-sum/s04","constraint":"C1","verdict":"violation","evidence":[{"line":3,"text":"using std::to_string;"},{"line":6,"text":"  const auto text = to_string(n);"}]}
+{"solution":"digit-sum/s04","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"digit-sum/s05","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"digit-sum/s05","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"digit-sum/s06","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"digit-sum/s06","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"mod-power/s01","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"mod-power/s01","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"mod-power/s02","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"mod-power/s02","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"mod-power/s03","constraint":"C1","verdict":"violation","evidence":[{"line":8,"text":"  return static_cast<u64>(std::llround(std::exp(k * std::log(2.0))));"}]}
+{"solution":"mod-power/s03","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"mod-power/s04","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"mod-power/s04","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"mod-power/s05","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"mod-power/s05","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"mod-power/s06","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"mod-power/s06","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"rotate-array/s01","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"rotate-array/s01","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"rotate-array/s01","constraint":"C3","verdict":"unsure","evidence":[]}
+{"solution":"rotate-array/s02","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"rotate-array/s02","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"rotate-array/s02","constraint":"C3","verdict":"unsure","evidence":[]}
+{"solution":"rotate-array/s03","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"rotate-array/s03","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"rotate-array/s03","constraint":"C3","verdict":"unsure","evidence":[]}
+{"solution":"rotate-array/s04","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"rotate-array/s04","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"rotate-array/s04","constraint":"C3","verdict":"unsure","evidence":[]}
+{"solution":"rotate-array/s05","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"rotate-array/s05","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"rotate-array/s05","constraint":"C3","verdict":"unsure","evidence":[]}

@@ -1,0 +1,31 @@
+{
+  "pairs": 49,
+  "passLabels": 34,
+  "violationLabels": 15,
+  "wrongful": 0,
+  "caught": 4,
+  "recall": 0.26666666666666666,
+  "unsure": 27,
+  "unsureRate": 0.5510204081632653,
+  "missing": 0,
+  "thresholds": {
+    "maxWrongful": 0,
+    "minRecall": 0.9,
+    "maxUnsure": 0.2
+  },
+  "pass": false,
+  "wrongfulPairs": [],
+  "missedPairs": [
+    "digit-sum/s01 C2",
+    "digit-sum/s03 C2",
+    "digit-sum/s04 C2",
+    "digit-sum/s06 C2",
+    "mod-power/s04 C2",
+    "mod-power/s05 C2",
+    "above-mean/s04 C2",
+    "above-mean/s05 C2",
+    "rotate-array/s03 C2",
+    "rotate-array/s04 C3",
+    "rotate-array/s05 C2"
+  ]
+}

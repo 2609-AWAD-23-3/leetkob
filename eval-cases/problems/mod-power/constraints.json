@@ -1,0 +1,12 @@
+[
+  {
+    "id": "C1",
+    "text": "Do not use these library functions: `std::pow`, `pow`, `std::exp`, `std::log`.",
+    "deduction": 3
+  },
+  {
+    "id": "C2",
+    "text": "Compute the power by repeated squaring, in a loop or a recursion you wrote yourself, so that the number of multiplications grows with the number of bits of `b`, not with `b`. Any order is fine: squaring the base while halving the exponent, squaring the running result while reading the bits of `b` from the highest, or squaring a half power that is computed once. Code that still performs about `b` multiplications, however it is structured, does not satisfy this constraint.",
+    "deduction": 4
+  }
+]
