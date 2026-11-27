@@ -63,17 +63,15 @@ export interface ParseModelOutputInput {
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-const hasExactKeys = (
+/**
+ * G5: chỉ đòi đủ field bắt buộc. Field ngoài schema (ví dụ `deduction`, `score`) bị bỏ qua và
+ * không bao giờ được đọc, nên không thể đổi verdict hay mức trừ; mức trừ luôn là mức TA đặt.
+ * Thiếu field bắt buộc hoặc sai kiểu vẫn là `schema_error` (G1).
+ */
+const hasRequiredKeys = (
   value: Record<string, unknown>,
   keys: readonly string[],
-): boolean => {
-  const actual = Object.keys(value).sort();
-  const expected = [...keys].sort();
-  return (
-    actual.length === expected.length &&
-    actual.every((key, index) => key === expected[index])
-  );
-};
+): boolean => keys.every((key) => Object.hasOwn(value, key));
 
 const RESULT_KEYS = ['constraint_id', 'evidence_lines', 'reason', 'verdict'];
 
@@ -85,7 +83,8 @@ interface RawResult {
 }
 
 const readRawResult = (value: unknown): RawResult | null => {
-  if (!isPlainObject(value) || !hasExactKeys(value, RESULT_KEYS)) return null;
+  if (!isPlainObject(value) || !hasRequiredKeys(value, RESULT_KEYS))
+    return null;
   const { constraint_id, verdict, evidence_lines, reason } = value;
   if (typeof constraint_id !== 'string') return null;
   if (typeof reason !== 'string') return null;
@@ -131,7 +130,9 @@ const clip = (value: string): string =>
 
 /**
  * Kiểm output của model theo schema và theo phạm vi dòng. Luôn chạy, kể cả khi API đã ép schema,
- * vì refusal, `max_tokens` và model giả có thể trả output sai. Quy tắc nằm ở README của T08.
+ * vì refusal, `max_tokens` và model giả có thể trả output sai. Quy tắc gốc ở evidence PA03-T08
+ * (`docs/evidence/PA03/T08/README.md`); các guardrail PA04 thay một phần quy tắc đó, ghi ở
+ * `docs/evidence/PA04/T02/README.md` (G5: field ngoài schema bị bỏ qua, không còn là `schema_error`).
  */
 export const parseModelOutput = (
   input: ParseModelOutputInput,
@@ -160,7 +161,7 @@ export const parseModelOutput = (
   }
   if (
     !isPlainObject(parsed) ||
-    !hasExactKeys(parsed, ['results']) ||
+    !hasRequiredKeys(parsed, ['results']) ||
     !Array.isArray(parsed['results'])
   ) {
     return allSchemaError(

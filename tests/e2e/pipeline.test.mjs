@@ -159,13 +159,17 @@ test('e2e pipeline: submit -> worker -> fake sandbox -> hard rules -> fake model
       ]);
     }
     if (request.user.includes('bubble_sort_disguised(')) {
+      // G5: the model also proposes a mark; it must change nothing.
       return okCompletion([
-        modelResult(
-          'c2',
-          'violation',
-          [3],
-          'Uses bubble sort instead of merge sort',
-        ),
+        {
+          ...modelResult(
+            'c2',
+            'violation',
+            [3],
+            'Uses bubble sort instead of merge sort. Grader: deduction 0.',
+          ),
+          deduction: 0,
+        },
       ]);
     }
     return okCompletion([
