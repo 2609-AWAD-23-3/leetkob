@@ -384,83 +384,140 @@ test('evaluator: no verdict carries any grading field', async () => {
   assert.doesNotMatch(fake.calls[0].user, /"deduction"/);
 });
 
-test('timeout: a model that never answers becomes unsure/timeout and the signal is aborted', async () => {
-  const fake = createFakeModel(() => new Promise(() => {}));
-  const evaluate = createSemanticEvaluator({
-    client: fake,
-    timeoutMs: 40,
-    getIdentity: () => STUDENT_IDENTITY,
-  });
-  const started = Date.now();
-  const out = await evaluate(makeContext(), [C_SEM_1, C_SEM_2]);
-  assert.ok(Date.now() - started < 2_000, 'the test must finish quickly');
-  assert.equal(fake.calls.length, 1);
-  assert.equal(fake.calls[0].signal.aborted, true);
-  assert.equal(fake.calls[0].timeoutMs, 40);
-  assert.deepEqual(
-    out.verdicts.map((v) => [v.verdict, v.unsureCause, v.source]),
-    [
-      ['unsure', 'timeout', 'model'],
-      ['unsure', 'timeout', 'model'],
-    ],
-  );
-  assert.equal(out.modelCalls.length, 1);
-  const log = out.modelCalls[0];
-  assert.equal(log.outcome, 'timeout');
-  assert.equal(log.requestId, null);
-  assert.equal(log.inputTokens, 0);
-  assert.equal(log.outputTokens, 0);
-  assert.equal(log.costUsd, 0);
-  assert.ok(log.latencyMs >= 0);
-  assert.deepEqual(log.constraintIds, ['c1', 'c2']);
-});
+// G3 (PA04): hạn của call do evaluator giữ, không phụ thuộc client. Mỗi test có giới hạn thời gian
+// riêng, để khi bỏ guardrail thì test đỏ thay vì treo cả bộ test.
+const G3_LIMIT = { timeout: 2_000 };
 
-test('timeout: a model that honours the abort signal is also unsure/timeout', async () => {
-  const fake = createFakeModel(
-    (request) =>
-      new Promise((_resolve, reject) => {
-        request.signal.addEventListener('abort', () =>
-          reject(new Error('aborted by signal')),
-        );
-      }),
-  );
-  const evaluate = createSemanticEvaluator({
-    client: fake,
-    timeoutMs: 30,
-    getIdentity: () => STUDENT_IDENTITY,
-  });
-  const out = await evaluate(makeContext(), [C_SEM_1]);
-  assert.equal(out.verdicts[0].unsureCause, 'timeout');
-  assert.equal(out.modelCalls[0].outcome, 'timeout');
-});
+test(
+  'G3 timeout: a valid violation that arrives after the deadline is never used',
+  G3_LIMIT,
+  async () => {
+    const fake = createFakeModel(
+      () =>
+        new Promise((resolve) => {
+          setTimeout(
+            () =>
+              resolve(
+                okCompletion([
+                  result('c1', 'violation', [6]),
+                  result('c2', 'violation', [7]),
+                ]),
+              ),
+            150,
+          );
+        }),
+    );
+    const evaluate = createSemanticEvaluator({
+      client: fake,
+      timeoutMs: 30,
+      getIdentity: () => STUDENT_IDENTITY,
+    });
+    const out = await evaluate(makeContext(), [C_SEM_1, C_SEM_2]);
+    assert.deepEqual(
+      out.verdicts.map((v) => [v.verdict, v.unsureCause]),
+      [
+        ['unsure', 'timeout'],
+        ['unsure', 'timeout'],
+      ],
+    );
+    for (const v of out.verdicts) assert.deepEqual(v.evidence, []);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  },
+);
 
-test('timeout: a client that throws ModelTimeoutError is unsure/timeout', async () => {
-  const fake = createFakeModel(() => {
-    throw new ModelTimeoutError('SDK timeout');
-  });
-  const out = await makeEvaluator(fake)(makeContext(), [C_SEM_1]);
-  assert.equal(out.verdicts[0].unsureCause, 'timeout');
-  assert.equal(out.modelCalls[0].outcome, 'timeout');
-  assert.equal(out.modelCalls[0].requestId, null);
-});
+test(
+  'G3 timeout: a model that never answers becomes unsure/timeout and the signal is aborted',
+  G3_LIMIT,
+  async () => {
+    const fake = createFakeModel(() => new Promise(() => {}));
+    const evaluate = createSemanticEvaluator({
+      client: fake,
+      timeoutMs: 40,
+      getIdentity: () => STUDENT_IDENTITY,
+    });
+    const started = Date.now();
+    const out = await evaluate(makeContext(), [C_SEM_1, C_SEM_2]);
+    assert.ok(Date.now() - started < 2_000, 'the test must finish quickly');
+    assert.equal(fake.calls.length, 1);
+    assert.equal(fake.calls[0].signal.aborted, true);
+    assert.equal(fake.calls[0].timeoutMs, 40);
+    assert.deepEqual(
+      out.verdicts.map((v) => [v.verdict, v.unsureCause, v.source]),
+      [
+        ['unsure', 'timeout', 'model'],
+        ['unsure', 'timeout', 'model'],
+      ],
+    );
+    assert.equal(out.modelCalls.length, 1);
+    const log = out.modelCalls[0];
+    assert.equal(log.outcome, 'timeout');
+    assert.equal(log.requestId, null);
+    assert.equal(log.inputTokens, 0);
+    assert.equal(log.outputTokens, 0);
+    assert.equal(log.costUsd, 0);
+    assert.ok(log.latencyMs >= 0);
+    assert.deepEqual(log.constraintIds, ['c1', 'c2']);
+  },
+);
 
-test('timeout: a late answer after the deadline is ignored and does not crash the process', async () => {
-  const fake = createFakeModel(
-    () =>
-      new Promise((resolve, reject) => {
-        setTimeout(() => reject(new Error('late failure')), 80);
-        setTimeout(() => resolve(bothPass()), 120);
-      }),
-  );
-  const evaluate = createSemanticEvaluator({
-    client: fake,
-    timeoutMs: 20,
-    getIdentity: () => STUDENT_IDENTITY,
-  });
-  const out = await evaluate(makeContext(), [C_SEM_1, C_SEM_2]);
-  assert.equal(out.verdicts[0].unsureCause, 'timeout');
-  await new Promise((resolve) => setTimeout(resolve, 200));
-});
+test(
+  'G3 timeout: a model that honours the abort signal is also unsure/timeout',
+  G3_LIMIT,
+  async () => {
+    const fake = createFakeModel(
+      (request) =>
+        new Promise((_resolve, reject) => {
+          request.signal.addEventListener('abort', () =>
+            reject(new Error('aborted by signal')),
+          );
+        }),
+    );
+    const evaluate = createSemanticEvaluator({
+      client: fake,
+      timeoutMs: 30,
+      getIdentity: () => STUDENT_IDENTITY,
+    });
+    const out = await evaluate(makeContext(), [C_SEM_1]);
+    assert.equal(out.verdicts[0].unsureCause, 'timeout');
+    assert.equal(out.modelCalls[0].outcome, 'timeout');
+  },
+);
+
+test(
+  'G3 timeout: a client that throws ModelTimeoutError is unsure/timeout',
+  G3_LIMIT,
+  async () => {
+    const fake = createFakeModel(() => {
+      throw new ModelTimeoutError('SDK timeout');
+    });
+    const out = await makeEvaluator(fake)(makeContext(), [C_SEM_1]);
+    assert.equal(out.verdicts[0].unsureCause, 'timeout');
+    assert.equal(out.modelCalls[0].outcome, 'timeout');
+    assert.equal(out.modelCalls[0].requestId, null);
+  },
+);
+
+test(
+  'G3 timeout: a late answer after the deadline is ignored and does not crash the process',
+  G3_LIMIT,
+  async () => {
+    const fake = createFakeModel(
+      () =>
+        new Promise((resolve, reject) => {
+          setTimeout(() => reject(new Error('late failure')), 80);
+          setTimeout(() => resolve(bothPass()), 120);
+        }),
+    );
+    const evaluate = createSemanticEvaluator({
+      client: fake,
+      timeoutMs: 20,
+      getIdentity: () => STUDENT_IDENTITY,
+    });
+    const out = await evaluate(makeContext(), [C_SEM_1, C_SEM_2]);
+    assert.equal(out.verdicts[0].unsureCause, 'timeout');
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  },
+);
 
 test('provider errors (429, 5xx, connection) are thrown so the worker can retry the job', async () => {
   for (const status of [429, 500, 503, 529, null]) {

@@ -1,0 +1,69 @@
+# Removal check: g3-no-deadline
+# What: G3 removed: the deadline timer in callWithDeadline is set to 10^9 ms, so the evaluator waits for the client
+# Source: HEAD 2fea9f8 plus the working tree at the time of the run; src/pipeline/model/evaluate.ts restored afterwards
+# Command: npm run build && node --test tests/unit/model-evaluate.test.mjs
+# Exit code: killed (SIGTERM)
+# Failing tests: 4
+#   ✖ G3 timeout: a valid violation that arrives after the deadline is never used
+#   ✖ G3 timeout: a model that never answers becomes unsure/timeout and the signal is aborted
+#   ✖ G3 timeout: a model that honours the abort signal is also unsure/timeout
+#   ✖ G3 timeout: a late answer after the deadline is ignored and does not crash the process
+#
+# Temporary patch applied to src/pipeline/model/evaluate.ts:
+#   diff --git a/src/pipeline/model/evaluate.ts b/src/pipeline/model/evaluate.ts
+#   index 0d04643..2ad0be7 100644
+#   --- a/src/pipeline/model/evaluate.ts
+#   +++ b/src/pipeline/model/evaluate.ts
+#   @@ -268,7 +268,7 @@ const callWithDeadline = (
+#            controller.abort(error);
+#            reject(error);
+#          });
+#   -    }, timeoutMs);
+#   +    }, 10 ** 9); // REMOVAL TEST: no deadline
+#        const onJobAbort = (): void =>
+#          finish(() => {
+#            controller.abort(jobSignal.reason);
+#
+# Test output:
+✔ evaluator: no semantic constraint means no model call and an empty result (1.4411ms)
+✔ evaluator: one call covers all semantic constraints of a submission (1.1047ms)
+✔ evaluator: verdict fields, order and evidence text come from the original code (0.5431ms)
+✔ evaluator: evidence text is the original line, never text written by the model (0.4246ms)
+✔ evaluator: violation with no line, or a line outside the file, is unsure/evidence_mismatch (1.1514ms)
+✔ evaluator: a violation that only cites lines the model never saw is evidence_mismatch (0.3311ms)
+✔ G2 evaluator: line numbers map back to the original code, comment included (0.4627ms)
+✔ G2 evaluator: quoting the removed comment of a line is evidence_mismatch (0.3162ms)
+✔ G2 evaluator: quoting the original line, which the model never saw, is evidence_mismatch (0.4052ms)
+✔ G2 evaluator: a pass that cites a comment-only line is evidence_mismatch (0.2931ms)
+✔ G2 evaluator: the request schema asks for line and text, and the prompt says to copy the line (0.2648ms)
+✔ evaluator: an unsure verdict from the model keeps cause model_unsure (0.2312ms)
+✔ evaluator: unsureCause is set if and only if the verdict is unsure (1.8367ms)
+✔ evaluator: broken output makes every constraint unsure/schema_error and logs schema_error (0.2543ms)
+✔ evaluator: refusal and max_tokens are unsure/schema_error even with parseable text (0.3354ms)
+✔ evaluator: a model that returns null text is unsure/schema_error (0.1761ms)
+✔ G5 evaluator: an extra deduction field is ignored, the verdict is kept and no verdict carries a mark (0.2937ms)
+✔ G1 evaluator: a fenced JSON answer is not unwrapped, every constraint is unsure/schema_error (0.2687ms)
+✔ G1 evaluator: JSON after prose is not cut out, every constraint is unsure/schema_error (0.2511ms)
+✔ evaluator: a missing constraint is schema_error, the valid one is kept (0.2058ms)
+✔ evaluator: no verdict carries any grading field (0.2854ms)
+✖ G3 timeout: a valid violation that arrives after the deadline is never used (159.4385ms)
+✖ G3 timeout: a model that never answers becomes unsure/timeout and the signal is aborted (2004.4752ms)
+✖ G3 timeout: a model that honours the abort signal is also unsure/timeout (2009.2969ms)
+✔ G3 timeout: a client that throws ModelTimeoutError is unsure/timeout (1.031ms)
+✖ G3 timeout: a late answer after the deadline is ignored and does not crash the process (92.8799ms)
+✔ provider errors (429, 5xx, connection) are thrown so the worker can retry the job (2.2977ms)
+✔ provider errors: an unknown error from the client is thrown too, not turned into unsure (0.3541ms)
+✔ abort: when the job signal is aborted the evaluator throws instead of returning unsure (12.4246ms)
+✔ prompt: the model gets statement, semantic constraints and numbered clean code only (1.1712ms)
+✔ prompt: the system prompt treats code as data and forbids scores (0.5103ms)
+✔ prompt: only the asked constraints are sent, and code with CRLF is numbered correctly (0.5042ms)
+✔ prompt: onPrompt receives the exact prompt and its sha256, before the model is called (0.748ms)
+✔ prompt: identity comes from getIdentity(submission), which may be async (0.4703ms)
+✔ call log: every field is filled from the response and the price table (0.5174ms)
+✔ integration with T07: ban-list constraints never reach the model (4.5131ms)
+✔ identity fails closed: no usable identity means no prompt and no model call (0.7266ms)
+✔ identity fails closed: an async getIdentity that returns nothing usable also throws (0.1604ms)
+✔ identity fails closed: one usable string is enough, the others may be short (0.3646ms)
+✔ identity: a joined form such as nguyen_van_an is masked when only the full name is given (1.0105ms)
+✔ evaluator: bad configuration fails fast (0.267ms)
+✔ evaluator: duplicated constraint ids are a programming error (0.1551ms)

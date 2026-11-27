@@ -172,3 +172,31 @@ Kết luận cho G2:
 Đây là lần chạy kiểm tra trước commit, không thay lần chạy chính thức trên cả case riêng và dev set ở cuối T02.
 
 **Ảnh hưởng ngoài T02.** Schema gửi model và rule 3 của prompt đổi, nên T06 (Vỹ, chất lượng checker) dựng trên dạng `{ line, text }`. Chi phí mỗi call tăng vì model chép text từng dòng (+7.6% trên `eval-cases` ở lần chạy thử trên); số đo đầy đủ ở phần chạy model thật cuối T02.
+
+## 5. G3 — Timeout
+
+**Quy tắc** (không đổi so với PA03-T08, code ở `callWithDeadline` và `createSemanticEvaluator` trong `src/pipeline/model/evaluate.ts`): evaluator tự giữ hạn cứng `timeoutMs` cho mỗi call, không phụ thuộc client có tôn trọng hạn hay không. Tới hạn thì abort signal đưa cho client, bỏ mọi kết quả đến sau, và mọi constraint của call thành `unsure`/`timeout`; call log ghi `outcome: timeout`, `requestId: null`, token và chi phí 0. Client tự ném `ModelTimeoutError` cũng cho cùng kết quả.
+
+**Không sửa code.** Code đã đáp ứng rubric ("a call that times out becomes `unsure`"). Commit G3 chỉ sửa và thêm test:
+
+- Mỗi test G3 có giới hạn 2 s (`G3_LIMIT`). Trước đó, nếu bỏ hạn cứng thì test "model không bao giờ trả lời" sẽ chờ mãi thay vì đỏ.
+- Bốn test timeout của PA03 đổi tên thêm tiền tố `G3` để đối chiếu với rubric; nội dung kiểm giữ nguyên. Diff của file test lớn chủ yếu vì Prettier thụt lề lại thân test khi thêm tham số giới hạn.
+- Test mới: một `violation` hợp lệ đến **sau** hạn không bao giờ được dùng; cả hai constraint vẫn `unsure`/`timeout`, không có evidence.
+
+**Nguồn gốc code G3 và thứ tự test/code ở PA03.** Như G1: code ở `d4e93e7`, test đầu tiên ở `bc2b7d1`, `bc2b7d1` là tổ tiên của `d4e93e7` (test có trước code). Hai commit đó gộp nhiều phần của PA03-T08, nên người chấm có thể xem đó là commit trộn; commit G3 của PA04 chỉ chạm G3.
+
+**Test:**
+
+| Rubric | Test |
+| --- | --- |
+| Call hết thời gian thành `unsure` | `G3 timeout: a model that never answers becomes unsure/timeout and the signal is aborted` |
+| Client tôn trọng abort | `G3 timeout: a model that honours the abort signal is also unsure/timeout` |
+| Client tự báo timeout | `G3 timeout: a client that throws ModelTimeoutError is unsure/timeout` |
+| Câu trả lời đến muộn | `G3 timeout: a late answer after the deadline is ignored and does not crash the process`; `G3 timeout: a valid violation that arrives after the deadline is never used` |
+
+**Thử bỏ guardrail** (script áp patch tạm vào `evaluate.ts`, chạy test evaluator, ghi log theo định dạng ở mục 1, khôi phục và kiểm lại):
+
+| Sửa tạm | Test đỏ | Log |
+| --- | --- | --- |
+| Bộ hẹn giờ trong `callWithDeadline` đặt 10⁹ ms (coi như không có hạn) | 4/5 test G3: 2 fail, 2 quá giới hạn 2 s. Test "client ném `ModelTimeoutError`" không phụ thuộc bộ hẹn giờ nên vẫn xanh. Tiến trình test bị script dừng sau 120 s (`killed (SIGTERM)` trong log) vì chính bộ hẹn giờ 10⁹ ms của bản sửa tạm giữ tiến trình sống; kết quả test đã in đầy đủ trước đó | `removal/g3-no-deadline.log` |
+| Timeout không đổi thành `unsure` mà ném ra như lỗi provider | 5/5 test G3 | `removal/g3-timeout-not-unsure.log` |

@@ -53,3 +53,12 @@ Kept: Chạy một lần trên `eval-cases` từ working tree G2 (nền `3bc2c16
 Changed: So với lần chạy trước G2 (T04, `4f2c158`) bằng script: verdict giống 49/49, không cặp nào `evidence_mismatch`, chi phí +7.6%, evidence của model hẹp hơn (cặp `pass` có dòng từ 12 xuống 1). Bản nháp evidence đầu ghi sai hai số (0 cặp `pass` có dòng, 12 quyết định ban-list); Claude đếm lại bằng script trước khi ghi vào README (1 và 22).
 Rejected: Quy việc evidence hẹp hơn cho riêng G2 (rule 3 của prompt đổi cùng lúc, và chỉ có một lần chạy).
 By hand: Vượng quyết định chạy thử. Claude chạy checker với `node --env-file=.env` (không in key), `eval.mjs`, script kiểm call log và so sánh: 22 call `ok`, 22 request id `req_…`, `PASS`, $0.005938.
+
+## 2026-11-27 — G3: timeout
+
+Tool: Claude Code (desktop app).
+Asked for: Vượng bảo commit G2 rồi làm G3, dừng lại cho review trước khi commit.
+Kept: Không sửa code G3: `callWithDeadline` từ PA03-T08 đã giữ hạn cứng phía evaluator và đổi timeout thành `unsure`/`timeout`. Commit G3 chỉ sửa và thêm test.
+Changed: Thêm giới hạn 2 s cho mỗi test G3, vì khi bỏ hạn cứng thì test "model không bao giờ trả lời" sẽ treo thay vì đỏ. Đổi tên bốn test timeout PA03 thêm tiền tố `G3`, giữ nguyên nội dung kiểm. Thêm test một `violation` hợp lệ đến sau hạn không được dùng. Hai lần thử xoá guardrail: bỏ hạn (4/5 đỏ; tiến trình phải dừng bằng giới hạn 120 s của script vì bộ hẹn giờ của bản sửa tạm) và không đổi timeout thành `unsure` (5/5 đỏ).
+Rejected: Sửa code G3 chỉ để commit có code (không có gì cần sửa); dùng giới hạn thời gian toàn cục cho cả file test (ảnh hưởng test khác, che mất test nào treo).
+By hand: Vượng sẽ review trước khi commit. Claude viết test, chạy kiểm xoá guardrail và quality checks.
