@@ -224,6 +224,37 @@ test('G5 evaluator: an extra deduction field is ignored, the verdict is kept and
   }
 });
 
+test('G1 evaluator: a fenced JSON answer is not unwrapped, every constraint is unsure/schema_error', async () => {
+  const json = JSON.stringify({
+    results: [result('c1', 'violation', [6]), result('c2', 'pass')],
+  });
+  const fake = createFakeModel(() =>
+    textCompletion(['```json', json, '```'].join('\n')),
+  );
+  const out = await makeEvaluator(fake)(makeContext(), [C_SEM_1, C_SEM_2]);
+  for (const v of out.verdicts) {
+    assert.equal(v.verdict, 'unsure');
+    assert.equal(v.unsureCause, 'schema_error');
+    assert.deepEqual(v.evidence, []);
+  }
+  assert.equal(out.modelCalls[0].outcome, 'schema_error');
+});
+
+test('G1 evaluator: JSON after prose is not cut out, every constraint is unsure/schema_error', async () => {
+  const json = JSON.stringify({
+    results: [result('c1', 'pass'), result('c2', 'pass')],
+  });
+  const fake = createFakeModel(() =>
+    textCompletion(`Both constraints are satisfied.\n${json}`),
+  );
+  const out = await makeEvaluator(fake)(makeContext(), [C_SEM_1, C_SEM_2]);
+  for (const v of out.verdicts) {
+    assert.equal(v.verdict, 'unsure');
+    assert.equal(v.unsureCause, 'schema_error');
+  }
+  assert.equal(out.modelCalls[0].outcome, 'schema_error');
+});
+
 test('evaluator: a missing constraint is schema_error, the valid one is kept', async () => {
   const fake = createFakeModel(() => okCompletion([result('c1', 'pass')]));
   const out = await makeEvaluator(fake)(makeContext(), [C_SEM_1, C_SEM_2]);

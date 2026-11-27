@@ -280,3 +280,54 @@ test('G5 schema: required fields with the wrong type are still schema_error (G1)
     ),
   );
 });
+
+// G1 (PA04): output phải là đúng một object JSON theo schema. Không "cứu" output bằng cách bóc
+// code fence hay cắt phần văn xuôi; không hợp lệ thì mọi constraint thành unsure/schema_error.
+const CLEAN = body([result('c1', 'pass'), result('c2', 'violation', [3])]);
+for (const [name, text] of [
+  ['JSON in a json code fence', ['```json', CLEAN, '```'].join('\n')],
+  ['JSON in a bare code fence', ['```', CLEAN, '```'].join('\n')],
+  ['JSON after prose', `Here is my review of the submission:\n${CLEAN}`],
+  ['JSON followed by prose', `${CLEAN}\nLet me know if you need more.`],
+  ['two JSON objects in a row', `${CLEAN}\n${CLEAN}`],
+]) {
+  test(`G1 schema: ${name} makes every constraint unsure with schema_error`, () => {
+    assertAllSchemaError(parse(text));
+  });
+}
+
+test('G1 schema: the same answer without fence or prose is accepted, so the cases above fail only on the wrapping', () => {
+  const parsed = parse(CLEAN);
+  assert.equal(parsed.hasSchemaError, false);
+  assert.equal(byId(parsed, 'c2').verdict, 'violation');
+});
+
+test('G1 schema: an unknown verdict makes every constraint unsure with schema_error', () => {
+  for (const verdict of ['compliant', 'PASS', 'fail', '']) {
+    assertAllSchemaError(
+      parse(body([{ ...result('c1', 'pass'), verdict }, result('c2', 'pass')])),
+    );
+  }
+});
+
+test('G1 schema: a missing constraint is unsure with schema_error, the other keeps its verdict', () => {
+  const parsed = parse(body([result('c2', 'violation', [4])]));
+  assert.equal(byId(parsed, 'c1').verdict, 'unsure');
+  assert.equal(byId(parsed, 'c1').unsureCause, 'schema_error');
+  assert.equal(byId(parsed, 'c2').verdict, 'violation');
+  assert.equal(parsed.hasSchemaError, true);
+});
+
+test('G1 schema: a duplicated constraint is unsure with schema_error, even when both answers agree', () => {
+  const parsed = parse(
+    body([
+      result('c1', 'violation', [3]),
+      result('c1', 'violation', [3]),
+      result('c2', 'pass'),
+    ]),
+  );
+  assert.equal(byId(parsed, 'c1').verdict, 'unsure');
+  assert.equal(byId(parsed, 'c1').unsureCause, 'schema_error');
+  assert.equal(byId(parsed, 'c2').verdict, 'pass');
+  assert.equal(parsed.hasSchemaError, true);
+});

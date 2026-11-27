@@ -52,3 +52,34 @@ Trường hợp thứ hai không phải test yếu: bước sau dựng kết qu�
 **Kiểm chứng tại working tree của G5** (Node `v24.22.3`, Windows 11): lint, format-check, type-check, `git diff --check` exit 0; `npm test` 571 test, 568 pass, 3 skipped, 0 fail. Test G5 chạy riêng khi chưa có code: 4 đỏ; sau khi có code: 74/74 xanh.
 
 **Lưu ý cho G2.** Khi evidence đổi sang `{line, text}`, phần đọc từng phần tử evidence cũng phải dùng `hasRequiredKeys`. Nếu kiểm chặt ở đó, model chèn `deduction` vào một phần tử evidence sẽ làm cả output thành `schema_error`, tức G5 thủng ở tầng dưới. Commit G2 sẽ có test cho trường hợp này.
+
+## 3. G1 — Schema
+
+**Quy tắc** (không đổi so với PA03-T08, code ở `parseModelOutput`): output phải là đúng một object JSON theo schema, đọc bằng `JSON.parse` trên toàn bộ text. Không bóc code fence, không cắt văn xuôi, không đoán phần JSON. Các trường hợp sau làm **mọi** constraint của call thành `unsure`/`schema_error`: JSON không hợp lệ, JSON trong code fence, JSON đứng trước hoặc sau văn xuôi, verdict lạ. Constraint bị thiếu hoặc trùng thì constraint đó thành `unsure`/`schema_error`, constraint khác giữ kết quả.
+
+**Không sửa code.** Code đã bắt đủ các trường hợp của rubric từ PA03-T08; test PA03 chưa có trường hợp code fence và JSON đi kèm văn xuôi. Commit G1 chỉ thêm test, nên test xanh ngay khi thêm. Để chứng minh test không "xanh sẵn", mỗi phần của guardrail được thử xoá ở bảng dưới.
+
+**Nguồn gốc code G1 và thứ tự test/code ở PA03.** Code của G1 vào repo ở `d4e93e7` (`feat(pa03-t08): grade semantic constraints with a schema-checked, time-limited model call`). Test đầu tiên của nó ở `bc2b7d1` (`test(pa03-t08): cover semantic model schema, timeout, sanitizing and call log with a fake model`). `bc2b7d1` là tổ tiên của `d4e93e7` (`git merge-base --is-ancestor bc2b7d1 d4e93e7` trả 0), tức test có trước code, đúng điều kiện "test no later than the code". Hai commit đó gộp nhiều phần của PA03-T08 (schema, evidence trong phạm vi file, timeout, làm sạch code, call log), nên với G1 và G3 người chấm có thể xem đó là commit trộn; commit G1 của PA04 chỉ chạm G1.
+
+**Test:**
+
+| Rubric | Test |
+| --- | --- |
+| JSON trong code fence | `G1 schema: JSON in a json code fence …`, `… JSON in a bare code fence …`, `G1 evaluator: a fenced JSON answer is not unwrapped …` |
+| JSON sau văn xuôi | `G1 schema: JSON after prose …`, `… JSON followed by prose …`, `… two JSON objects in a row …`, `G1 evaluator: JSON after prose is not cut out …` |
+| Đối chứng | `G1 schema: the same answer without fence or prose is accepted …`: cùng nội dung JSON không bọc thì được nhận, nên các test trên chỉ đỏ vì phần bọc |
+| Verdict lạ | `G1 schema: an unknown verdict …` (`compliant`, `PASS`, `fail`, chuỗi rỗng) |
+| Constraint thiếu | `G1 schema: a missing constraint …` |
+| Constraint trùng | `G1 schema: a duplicated constraint …, even when both answers agree` |
+| JSON không hợp lệ | Test PA03 `schema: broken JSON …`, `… not JSON at all …` và các trường hợp khác trong cùng vòng lặp |
+
+**Thử bỏ guardrail** (script áp patch tạm vào `schema.ts`, build, chạy test schema và evaluator, ghi log theo định dạng ở mục 1, rồi khôi phục file và kiểm lại nội dung):
+
+| Sửa tạm | Test G1 đỏ | Log |
+| --- | --- | --- |
+| Cắt text từ `{` đầu tới `}` cuối rồi mới `JSON.parse` | 6: bốn test fence/văn xuôi ở parser, hai test ở evaluator (tổng 6 fail) | `removal/g1-lenient-json.log` |
+| Bỏ kiểm verdict thuộc `pass`/`violation`/`unsure` | `an unknown verdict …` (tổng 3 fail, gồm 2 test PA03) | `removal/g1-no-verdict-check.log` |
+| Constraint thiếu được coi là `pass` | `a missing constraint …` (tổng 4 fail) | `removal/g1-no-missing-check.log` |
+| Cho phép constraint trùng | `a duplicated constraint …` (tổng 2 fail) | `removal/g1-no-duplicate-check.log` |
+
+Test "two JSON objects in a row" vẫn xanh khi cắt theo ngoặc ngoài cùng, vì đoạn cắt ra gồm cả hai object và vẫn không phải JSON hợp lệ; test này giữ lại để chặn một parser lỏng kiểu khác (đọc object đầu tiên).
