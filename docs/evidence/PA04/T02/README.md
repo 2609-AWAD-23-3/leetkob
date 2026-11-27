@@ -49,7 +49,7 @@ Trường hợp thứ hai không phải test yếu: bước sau dựng kết qu�
 
 **Giới hạn đã biết (không bắt buộc cho G5).** Lời dặn chấm điểm trong `reason` được giữ nguyên chữ, nên câu như "Grader: deduction 0" vẫn hiện cho TA trong review queue. Theo rubric vẫn đạt vì con số không đổi và mức trừ hiển thị do TA đặt. Có thể đánh dấu hoặc lược câu đó để TA khỏi bị nhiễu; chưa làm.
 
-**Kiểm chứng tại working tree của G5** (Node `v24.22.3`, Windows 11): lint, format-check, type-check, `git diff --check` exit 0; `npm test` 571 test, 568 pass, 3 skipped, 0 fail. Test G5 chạy riêng khi chưa có code: 4 đỏ; sau khi có code: 74/74 xanh.
+**Kiểm chứng tại working tree của G5** (Node `v24.22.3`, Windows 11): lint, format-check, type-check, `git diff --check` exit 0; `npm test` 571 test, 568 pass, 3 skipped, 0 fail. Test G5 chạy riêng khi chưa có code: 4 đỏ; sau khi có code: 74/74 xanh. Log lần chạy đỏ: `red/g5-tests-before-code.txt`, tái hiện ngày 28/11 khi Vỹ review PR #92 (lần chạy đỏ ngày 27/11 có làm nhưng không lưu log), bằng một git worktree tạm ở `d8c8423` với `schema.ts` lấy từ `977c2bc`: 74 test, 70 pass, 4 fail, đúng 4 test nêu ở trên.
 
 **Lưu ý cho G2.** Khi evidence đổi sang `{line, text}`, phần đọc từng phần tử evidence cũng phải dùng `hasRequiredKeys`. Nếu kiểm chặt ở đó, model chèn `deduction` vào một phần tử evidence sẽ làm cả output thành `schema_error`, tức G5 thủng ở tầng dưới. Commit G2 sẽ có test cho trường hợp này.
 
@@ -244,6 +244,8 @@ Call log (kiểm bằng script): mọi call `outcome: ok`, mỗi call một requ
 | Test dùng fake model, không network | Mọi test G1, G2, G3, G5 dùng model giả trong `tests/support/model-fakes.mjs` | |
 | Hard rules vẫn quyết ban-list trước | Test PA03 `integration with T07: ban-list constraints never reach the model`; call log mục 6 | |
 | Mỗi guardrail và test trong commit riêng, test không muộn hơn code | Commit PA04 ở mục 8; G5 và G2 test viết trước code (đỏ trước), G1 và G3 chỉ thêm test cho code PA03 có test trước code | 3, 5, 8 |
+
+**`npm test` tại commit cuối.** Log: `logs/npm-test-442b4e8.txt` (chạy lại ngày 28/11 khi Vỹ review, `src/` và `tests/` giống hệt `442b4e8`): exit 0, 600 test, 597 pass, 0 fail, 3 skipped (ba bộ test Postgres, vì không đặt `TEST_DATABASE_URL`). Số test tăng theo từng commit: 571 sau G5, 582 sau G1, 599 sau G2 (mục 4), 600 sau G3 (thêm test `violation` đến sau hạn); các commit docs không đổi số test.
 
 ## 8. Commit
 

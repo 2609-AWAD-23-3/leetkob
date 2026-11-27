@@ -80,3 +80,12 @@ Kept: Không nới G2 khi chưa biết nguyên nhân (G2 hạ về `unsure`, kh�
 Changed: Việc ghi `reason` của verdict `unsure` vào call log của checker chuyển sang T08, vì thay đổi nằm ở `src/cli/run.ts` chứ không ở guardrail, và T08 là việc chuẩn bị cho lần chạy held-out. README cập nhật trạng thái (đã push, mở PR) và việc chuyển tiếp này.
 Rejected: Sửa trong PR T02 (trộn phần checker vào PR guardrail); nới G2 ngay (đi ngược "exactly" của rubric và có thể mở lỗ cho dòng bịa).
 By hand: Vượng quyết định hướng xử lý và cho mở PR. Claude cập nhật evidence, commit, push và mở PR.
+
+## 2026-11-28 — Sửa evidence theo review của Vỹ trên PR #92
+
+Tool: Claude Code (desktop app).
+Asked for: Vượng bảo kiểm review của Vỹ. Vỹ (comment, không chặn merge) nêu hai nit: PR ghi `npm test` tại `442b4e8` là 600/597/3 nhưng không có log, còn README ghi 599 ở G2; README nói test G5 đỏ 4 khi chưa có code nhưng không có log như G2.
+Kept: Không sửa code hay test. Số liệu đã ghi đều đúng; chỉ thiếu log làm bằng chứng.
+Changed: Chạy lại `npm test` tại `442b4e8` và lưu log (600 test, 597 pass, 3 skipped vì không có `TEST_DATABASE_URL`); README ghi số test sau từng commit (571, 582, 599, 600) để thấy 599 là sau G2 và 600 là sau G3. Tái hiện lần chạy đỏ của G5 trong một git worktree tạm: test ở `d8c8423`, `schema.ts` lấy từ `977c2bc` (trước G5); kết quả 4 fail đúng như README, lưu ở `red/g5-tests-before-code.txt` và ghi rõ là tái hiện ngày 28/11, lần chạy đỏ ngày 27/11 không được lưu. Worktree tạm dùng liên kết tới `node_modules` của repo; gỡ liên kết trước rồi mới xoá worktree để không đụng thư mục thật.
+Rejected: Ghi log G5 như thể chụp từ lần chạy ngày 27/11; sửa số trong README cho khớp mà không chạy lại.
+By hand: Vỹ tìm ra hai điểm khi review. Claude chạy lại, tái hiện, viết log và sửa README; Vượng sẽ duyệt trước khi commit.
