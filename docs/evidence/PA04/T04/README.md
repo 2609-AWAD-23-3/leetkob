@@ -1,7 +1,7 @@
 # Evidence PA04-T04 — Case riêng lên ≥ 10 lời giải
 
 **Thực hiện:** Vượng · **Reviewer:** Phúc · **Issue:** #57 · **Nhánh:** `test/pa04-t04-eval-cases` (tách từ `develop` `35dc794`).
-**Trạng thái:** cả ba bài đã commit (mục 6). Đã chạy model thật hai lần: lần 1 trên `digit-sum` và `mod-power` (mục 8), lần 2 trên cả 49 cặp tại `4f2c158` (mục 9). Chưa push, chưa mở PR.
+**Trạng thái:** cả ba bài đã commit (mục 6). Đã chạy model thật hai lần: lần 1 trên `digit-sum` và `mod-power` (mục 8), lần 2 trên cả 49 cặp tại `4f2c158` (mục 9). Đã mở [PR #90](https://github.com/2609-AWAD-23-3/leetkob/pull/90) vào `develop`: Phúc approve sau khi tự chạy lại sandbox (22/22 Accepted), đối chiếu `.in`/`.out` bằng Python và chạy quality checks; Vỹ approve sau khi đối chiếu label và evidence line của 16 lời giải mới. CI `quality-gate`, `postgres-store`, `sandbox-attacks` xanh tại `65bebb7`. Chưa merge.
 
 ## 1. Cách làm
 
