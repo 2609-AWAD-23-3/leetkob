@@ -83,3 +83,92 @@ Trường hợp thứ hai không phải test yếu: bước sau dựng kết qu�
 | Cho phép constraint trùng | `a duplicated constraint …` (tổng 2 fail) | `removal/g1-no-duplicate-check.log` |
 
 Test "two JSON objects in a row" vẫn xanh khi cắt theo ngoặc ngoài cùng, vì đoạn cắt ra gồm cả hai object và vẫn không phải JSON hợp lệ; test này giữ lại để chặn một parser lỏng kiểu khác (đọc object đầu tiên).
+
+## 4. G2 — Evidence
+
+**Quy tắc mới.** Model trả evidence dạng `evidence: [{ line, text }]` thay cho `evidence_lines: [n]`. Với mỗi phần tử, `parseModelOutput` kiểm theo thứ tự:
+
+1. `line` nằm trong file;
+2. dòng đó **sau khi bỏ comment** còn code (dòng chỉ có comment là dòng trống model không thấy);
+3. `text`, bỏ khoảng trắng hai đầu, **bằng đúng** dòng đó của code đã làm sạch (bỏ comment, che danh tính), cũng bỏ khoảng trắng hai đầu.
+
+Một phần tử lệch là cả verdict thành `unsure`/`evidence_mismatch`, với **mọi** verdict có evidence (không riêng `violation`). `violation` không có evidence vẫn là `evidence_mismatch` như PA03. Lý do ghi cho TA nêu dòng lệch và giữ lý do của model.
+
+**Quyết định** (Vượng chốt 27/11):
+
+| Điểm | Chọn | Lý do |
+| --- | --- | --- |
+| Dạng evidence | `{ line, text }` | Chỉ có số dòng thì không phát hiện được dòng bịa hay "đúng text nhưng sai số dòng". |
+| So với bản nào | Code đã làm sạch, đúng thứ model thấy | Model không thấy comment và tên thật (đã thay bằng `STUDENT`), nên so với code gốc sẽ trừ oan cả câu trả lời đúng. |
+| Mức khớp | Chính xác sau khi bỏ khoảng trắng hai đầu | Đúng chữ "match the submitted code exactly" của rubric; khoảng trắng hai đầu có thể mất khi model chép dòng thụt lề. |
+| Phạm vi | Mọi phần tử, mọi verdict | Rubric: "every evidence line". Bản PA03 dùng `some`, nên một dòng có code che được các dòng comment, và chỉ kiểm khi verdict là `violation`. |
+| Ánh xạ số dòng | Không cần bảng ánh xạ | Sanitizer thay comment bằng khoảng trắng và giữ mọi ký tự xuống dòng, nên dòng `n` của bản đã làm sạch là dòng `n` của bản gốc. Text TA thấy lấy từ dòng `n` của code gốc, không phải text model viết. |
+| Field lạ trong phần tử evidence | Bỏ qua (`hasRequiredKeys`) | Giữ G5 ở tầng dưới: model chèn `deduction` vào một phần tử evidence không làm cả output thành `schema_error`. |
+
+**Thay quy tắc của PA03-T08.** Bảng quy tắc ở `docs/evidence/PA03/T08/README.md` có ba dòng về evidence: dòng 77 (`violation` không có dòng, hoặc dòng ngoài file), dòng 78 (`violation` mà mọi dòng dẫn chứng đều trống sau khi bỏ comment) và dòng 79 (`pass`/`unsure` có dòng ngoài file). Các quy tắc đó chỉ kiểm số dòng, và dòng trống chỉ bị bắt khi **mọi** dòng của một `violation` đều trống. G2 thay ba dòng đó bằng quy tắc ở trên.
+
+**Thay đổi code:**
+
+- `schema.ts`: schema gửi model có `evidence` là mảng object `{ line: integer, text: string }`, `required` cả hai, `additionalProperties: false`; parser đọc `evidence`, hàm `findEvidenceMismatch` kiểm ba bước trên; `ParseModelOutputInput.lineCount` thay bằng `codeLines` (các dòng model thấy).
+- `evaluate.ts`: truyền các dòng đã làm sạch vào parser; bỏ phép kiểm "violation chỉ trích dòng trống" trong `toVerdict` vì parser đã kiểm cho mọi verdict.
+- `prompt.ts`: rule 3 dặn model ghi `line` là số in trước `|` và `text` là nguyên văn dòng sau `| `, chỉ trích dòng có code.
+- File prediction của checker, domain, DB và API không đổi: verdict vẫn mang số dòng và text của code gốc.
+
+**Test helper.** `tests/support/model-fakes.mjs`: trong `result(id, verdict, [n])`, số `n` nghĩa là "model trích đúng dòng `n`". Helper ghi chỗ giữ `@@quote:n@@`, và model giả thay bằng đúng dòng `n` lấy từ prompt nó nhận (`promptCodeLines`), nên các test có sẵn ở worker, checker và e2e giữ nguyên ý nghĩa mà không phải biết text từng dòng. Test G2 muốn evidence sai thì truyền thẳng `{ line, text }`.
+
+**Test** (viết trước; `npm test` với test và helper mới nhưng chưa sửa code: 47 test đỏ, danh sách ở `red/g2-tests-before-code.txt`; sau khi sửa code: 599 test, 596 pass, 3 skipped, 0 fail):
+
+| Rubric | Test |
+| --- | --- |
+| Dòng bịa | `G2 schema: a fabricated line (text that is nowhere in the code) …` |
+| Đúng text nhưng sai số dòng | `G2 schema: the right text with the wrong line number …` |
+| Dòng chỉ có trong comment đã bỏ | `G2 schema: a line that only held a removed comment …, whatever the text`; `G2 evaluator: quoting the removed comment of a line …`; `G2 evaluator: a pass that cites a comment-only line …` |
+| Ánh xạ số dòng về code gốc | `G2 evaluator: line numbers map back to the original code, comment included` (dòng có comment cuối dòng, dòng có code sau comment nhiều dòng) |
+| Mọi dòng phải khớp | `G2 schema: one bad line among good ones …`; `… pass and unsure with a bad evidence line …` |
+| Khớp chính xác | `G2 schema: surrounding whitespace is ignored but any change inside the line is a mismatch`; `G2 evaluator: quoting the original line, which the model never saw …` (tên thật thay vì `STUDENT`) |
+| Đối chứng | `G2 schema: evidence that quotes its line exactly is accepted` |
+| Lý do cho TA | `G2 schema: the mismatch reason names the line …` |
+| Schema và prompt | Test hình dạng schema (PA03, cập nhật); `G2 evaluator: the request schema asks for line and text …`; các trường hợp schema sai mới: `evidence` không phải mảng, phần tử là số trơn, `line` không phải số nguyên, thiếu `text` |
+| G5 ở tầng evidence | `G2 schema: an extra field inside an evidence item is ignored like any field outside the schema (G5)` |
+
+**Thử bỏ guardrail** (script áp patch tạm vào `schema.ts`, chạy test schema và evaluator, ghi log theo định dạng ở mục 1, khôi phục và kiểm lại):
+
+| Sửa tạm | Test đỏ | Log |
+| --- | --- | --- |
+| Không so `text` với dòng | 7 test G2 (dòng bịa, sai số dòng, trích comment, trích tên thật, mọi verdict, khoảng trắng, lý do) | `removal/g2-no-text-compare.log` |
+| Cho trích dòng trống sau khi bỏ comment | 2: `G2 schema: a line that only held a removed comment …` và test PA03 tương ứng | `removal/g2-no-blank-line-check.log` |
+| Chỉ kiểm phần tử evidence đầu tiên | 2: `G2 schema: one bad line among good ones …` và test PA03 về dòng ngoài file | `removal/g2-first-line-only.log` |
+| Phần tử evidence phải đúng bộ key (G5 thủng ở tầng dưới) | 1: `G2 schema: an extra field inside an evidence item is ignored …` | `removal/g2-strict-evidence-keys.log` |
+
+**Chạy thử với model thật trước khi commit G2 (27/11/2026).** Test dùng model giả không phát hiện được hai rủi ro: provider từ chối schema mới (mọi call lỗi), và model chép dòng không khớp khiến `evidence_mismatch` đẩy unsure lên. Vì vậy G2 được chạy thử một lần trước khi commit. Source: `3bc2c16` cộng thay đổi G2 trong working tree (chưa commit); `src/` lúc chạy giống hệt bản sẽ commit. Model `claude-haiku-5-5`, key trong `.env` (bị Git ignore, không đọc hay in giá trị). Lệnh, chạy từ root repo sau `npm run build`:
+
+```sh
+node --env-file=.env dist/cli/checker.js eval-cases \
+  --out docs/evidence/PA04/T02/g2-precommit-run/predictions.jsonl \
+  --call-log docs/evidence/PA04/T02/g2-precommit-run/call-log.jsonl \
+  2> docs/evidence/PA04/T02/g2-precommit-run/checker-stderr.txt
+node leetkob-eval/eval.mjs --data eval-cases \
+  --predictions docs/evidence/PA04/T02/g2-precommit-run/predictions.jsonl \
+  --json docs/evidence/PA04/T02/g2-precommit-run/eval-summary.json > docs/evidence/PA04/T02/g2-precommit-run/eval-report.txt
+```
+
+| | Trước G2 (`docs/evidence/PA04/T04/model-run-full/`, `4f2c158`) | Sau G2 (`g2-precommit-run/`) |
+| --- | --- | --- |
+| Call | 22, đều `ok` | 22, đều `ok`, 22 request id `req_…` khác nhau |
+| `eval.mjs` | exit 0 `PASS` | exit 0 `PASS` |
+| Khấu trừ sai / recall / unsure | 0 / 100% (15/15) / 0% | 0 / 100% (15/15) / 0% |
+| `evidence_mismatch` | không áp dụng | 0 cặp |
+| Token in / out | 38 170 / 3 852 | 38 170 / 4 242 |
+| Chi phí | $0.005519 | $0.005938 (+7.6%) |
+
+Kết luận cho G2:
+
+- **Provider chấp nhận schema `{ line, text }`**: không call nào lỗi.
+- **Khớp chính xác không đẩy unsure lên** ở lần chạy này: mọi dòng model trích đều khớp, không cặp nào bị G2 hạ xuống `unsure`.
+- **Verdict giữ nguyên 49/49** so với lần chạy trước G2.
+- **Evidence model đưa ra hẹp hơn.** Trước G2, model hay kèm số dòng cho cả verdict `pass` (12 cặp `pass` có dòng); sau G2 chỉ còn 1 cặp `pass` có dòng. Rule 3 cả trước và sau G2 đều cho `pass` và `unsure` để trống evidence, nên thay đổi này có thể do model phải chép nguyên văn từng dòng; chưa kiểm chứng. Với `violation`, model trích ít dòng hơn và gần label hơn (ví dụ `above-mean/s05` C2: trước 6, 7, 8, 12, 13; sau 8, 13, đúng bằng label), và vẫn luôn gồm dòng vi phạm chính. Không quy riêng cho G2 hay cho câu chữ mới của rule 3: cả hai đổi cùng lúc, và đây là một lần chạy.
+- Call log: 22 quyết định ban-list `route: hard_rule`, `modelCalled: false`; không prompt nào chứa `//` hay `/*`; không file nào chứa key.
+
+Đây là lần chạy kiểm tra trước commit, không thay lần chạy chính thức trên cả case riêng và dev set ở cuối T02.
+
+**Ảnh hưởng ngoài T02.** Schema gửi model và rule 3 của prompt đổi, nên T06 (Vỹ, chất lượng checker) dựng trên dạng `{ line, text }`. Chi phí mỗi call tăng vì model chép text từng dòng (+7.6% trên `eval-cases` ở lần chạy thử trên); số đo đầy đủ ở phần chạy model thật cuối T02.

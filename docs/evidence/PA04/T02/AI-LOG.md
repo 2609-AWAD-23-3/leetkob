@@ -35,3 +35,21 @@ Kept: Không gộp sửa log G5 vào commit G1: sửa ở một commit docs riê
 Changed: Viết script chạy thử xoá guardrail: áp patch tạm, build, chạy test, ghi đầu log gồm việc thử, commit nguồn, lệnh, exit code, test đỏ và patch (`git diff`), thay đường dẫn local bằng `<repo>`, rồi khôi phục file và kiểm nội dung. Tạo lại 2 log G5 (commit docs riêng) và 4 log G1. README ghi định dạng log và, ở mục G1, hai hash PA03 cùng thứ tự test trước code. Trước đó Claude đã nói nhầm với Vượng rằng test PA03 vào sau code; kiểm bằng `git merge-base` cho thấy ngược lại. Commit docs của log G5 lần đầu lọt khoảng trắng cuối dòng vì lệnh commit chạy tiếp dù `git diff --check` báo lỗi; đã sửa script và gộp vào chính commit docs đó (chưa push).
 Rejected: Sửa log G5 trong commit G1 (trộn guardrail); viết lại commit G5.
 By hand: Vượng tìm ra ba điểm khi review và kiểm thứ tự commit PA03. Claude viết script, tạo lại log, sửa README và chạy kiểm tra.
+
+## 2026-11-27 — G2: evidence
+
+Tool: Claude Code (desktop app).
+Asked for: Vượng bảo làm G2 sau khi commit G1, theo quyết định đã chốt: evidence dạng `{line, text}`; lưu ý từ review G5: phần tử evidence phải đọc bằng `hasRequiredKeys` và có test cho `deduction` nằm trong một phần tử evidence.
+Kept: So `text` với dòng đã làm sạch (thứ model thấy), chỉ bỏ khoảng trắng hai đầu; một dòng lệch là cả verdict `unsure`/`evidence_mismatch`, với mọi verdict; text TA thấy lấy từ code gốc cùng số dòng. Phần tử evidence đọc bằng `hasRequiredKeys`.
+Changed: Test viết trước và chạy đỏ (47 test trên toàn bộ, vì worker, checker và e2e dùng chung model giả). Để các test có sẵn không phải biết text từng dòng, helper `result()` hiểu số `n` là "model trích đúng dòng `n`": ghi chỗ giữ `@@quote:n@@`, model giả thay bằng dòng `n` lấy từ prompt. Bỏ phép kiểm dòng trống trong `toVerdict` vì parser đã kiểm cho mọi verdict. Thêm hai lần thử xoá guardrail ngoài so text và dòng trống: chỉ kiểm phần tử đầu tiên, và kiểm chặt key của phần tử evidence (G5 thủng ở tầng dưới); cả hai đều làm test tương ứng đỏ.
+Rejected: So text theo chuỗi con hoặc gộp khoảng trắng bên trong dòng (lỏng hơn chữ "exactly" của rubric); so với dòng gốc (model không thấy comment và tên thật, sẽ trừ oan câu trả lời đúng); sửa từng test có sẵn để ghi text của dòng (nhiều chỗ, dễ sai, và test phải biết chi tiết làm sạch code); chạy model thật ngay ở G2 (để cuối T02, gắn với SHA cuối).
+By hand: Vượng chốt dạng evidence và nêu lưu ý về `hasRequiredKeys`; sẽ review trước khi commit. Claude viết test, helper, code, evidence và chạy: lint, format-check, type-check exit 0; `npm test` 599 test, 596 pass, 3 skipped; 4 lần thử xoá guardrail.
+
+## 2026-11-27 — Chạy thử G2 với model thật trước khi commit
+
+Tool: Claude Code (desktop app).
+Asked for: Vượng hỏi code G2 chưa đo với model thật thì có sao không; Claude nêu hai rủi ro test giả không bắt được (provider từ chối schema `{line, text}`, và `evidence_mismatch` đẩy unsure lên). Vượng cho chạy thử và thêm evidence.
+Kept: Chạy một lần trên `eval-cases` từ working tree G2 (nền `3bc2c16`), lưu ở `g2-precommit-run/`, ghi rõ là kiểm tra trước commit; lần chạy chính thức trên case riêng và dev set vẫn để cuối T02.
+Changed: So với lần chạy trước G2 (T04, `4f2c158`) bằng script: verdict giống 49/49, không cặp nào `evidence_mismatch`, chi phí +7.6%, evidence của model hẹp hơn (cặp `pass` có dòng từ 12 xuống 1). Bản nháp evidence đầu ghi sai hai số (0 cặp `pass` có dòng, 12 quyết định ban-list); Claude đếm lại bằng script trước khi ghi vào README (1 và 22).
+Rejected: Quy việc evidence hẹp hơn cho riêng G2 (rule 3 của prompt đổi cùng lúc, và chỉ có một lần chạy).
+By hand: Vượng quyết định chạy thử. Claude chạy checker với `node --env-file=.env` (không in key), `eval.mjs`, script kiểm call log và so sánh: 22 call `ok`, 22 request id `req_…`, `PASS`, $0.005938.
