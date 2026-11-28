@@ -82,3 +82,41 @@ Lần chạy đỏ cho thấy rủi ro thật: checker vẫn exit 0 và ghi file
 - **Comment trong Dockerfile đã cũ.** Ví dụ ở đầu file chỉ có cách chạy khi tắt model, và một comment ghi người chấm chạy với `--network none`. Đã thêm ví dụ chạy qua proxy (`--env-file marking.env -e HTTPS_PROXY=…`) và sửa comment: lần chạy held-out chỉ ra ngoài qua proxy, lần chạy model tắt dùng `--network none`.
 - **README chưa có hướng dẫn held-out.** Thêm mục "Lần chạy held-out (PA04)" trong phần checker: model host `api.anthropic.com:443`, nội dung `marking.env`, lệnh Linux và PowerShell qua proxy, cách chạy khi không có key (`MODEL_OFF=1`), vì sao `--env-file` dùng được cho checker mà bị cấm cho sandbox, lệnh `npm run test:held-out-proxy`. Dòng hướng dẫn cũ "truyền key bằng `-e MODEL_API_KEY`" cập nhật thêm `--env-file marking.env`. Thời gian chạy và concurrency bổ sung ở bước 4.
 - **Lệnh clone chạy trong repo sẽ lồng thư mục.** Vượng nhắc `git clone … leetkob` chạy ngay trong repo sẽ tạo `leetkob/leetkob`; README ghi thêm là chạy ở thư mục ngoài repo, và tag `pa4` do T10 tạo trước khi nộp (chưa tồn tại lúc này là bình thường).
+
+## 5. Bước 3 — `reason` trong call log của checker
+
+**Vấn đề.** Ở lần chạy model thật cuối T02, G2 hạ `digit-sum/s06` C2 thành `unsure`/`evidence_mismatch`, nhưng call log của checker chỉ ghi `unsureCause`, không ghi lý do, nên không biết dòng nào lệch. Lần chạy held-out cũng chỉ để lại call log này nếu có gì bất thường.
+
+**Thay đổi** (`src/cli/run.ts`): decision `unsure` của đường model có thêm field `reason`:
+
+- verdict `unsure` từ evaluator: `reason` của verdict, tức lý do model đưa ra (`model_unsure`) hoặc lý do bước kiểm output hạ verdict xuống (`schema_error`, `evidence_mismatch`, `timeout`);
+- lỗi provider: thông điệp lỗi (`provider_error`).
+
+Decision `pass`, `violation`, hard rule và `model_off` không có `reason`, để call log không phình. Không ghi nguyên output của model (quyết định 5). File prediction không đổi. README (mục checker) ghi field mới.
+
+**Test** (`tests/unit/checker-run.test.mjs`, model giả, không network):
+
+| Test | Kiểm |
+| --- | --- |
+| `T08 call log: a model unsure and an evidence mismatch record the reason; other decisions do not` | `model_unsure` ghi đúng lý do model; `evidence_mismatch` ghi lý do của bước kiểm evidence kèm lý do model; mọi decision khác không có `reason` |
+| `T08 call log: a schema error records the reason, a pass verdict from the model does not` | `schema_error` có `reason`; `pass` không có |
+| `T08 call log: a provider error records its message as the reason` | `provider_error` có thông điệp lỗi |
+| `T08 call log: model off and hard-rule decisions have no reason field` | Canh hành vi hiện có: `model_off` và hard rule không có `reason` |
+
+**Kiểm chứng.**
+
+| Kiểm tra | Kết quả | Evidence |
+| --- | --- | --- |
+| Test trước khi sửa `run.ts` | Đỏ: 3 test T08 (test thứ tư canh hành vi hiện có nên xanh) | `step3-red.txt` |
+| Test sau khi sửa | 13/13 test của file xanh | |
+| `npm run lint`, `npm run format-check`, `npm run type-check`, `git diff --check` | exit 0 | |
+| `npm test` | exit 0: 576 test, 573 pass, 3 skipped (Postgres), 0 fail | |
+
+**Sửa kỳ vọng của một test trước commit.** Bản đầu của test đầu tiên đòi lý do `evidence_mismatch` chứa số dòng (`999`). Thông điệp có số dòng là của G2 (PR #92), chưa có trên nhánh này; trên `develop` lý do là "its evidence lines are missing or outside the file". Yêu cầu của bước 3 là ghi lại lý do, không phải định dạng lý do, nên test kiểm lý do có chữ `evidence` và lý do của model. Sau khi sửa, kiểm lại hai chiều: bỏ thay đổi ở `run.ts` thì đúng 3 test đỏ như `step3-red.txt`, có thay đổi thì xanh. Khi G2 vào `develop`, lý do sẽ nêu dòng lệch; bước 5 kiểm điều này trên lần chạy thật.
+
+**Sau review của Vượng (bước 3, trước commit).**
+
+- **Lỗi kết nối mất nguyên nhân gốc.** SDK báo lỗi kết nối bằng `APIConnectionError` với thông điệp "Connection error." và giữ lỗi thật trong chuỗi `cause`; client của nhóm (`src/pipeline/model/client.ts`) chỉ chép thông điệp đó vào `ModelProviderError`, nên `reason` của 22 `provider_error` ở lần chạy đỏ bước 2 sẽ không cho biết vì sao. Client giờ nối chuỗi `cause` (tối đa 4 tầng, kèm `code` nếu có) vào thông điệp, qua cùng bước che key như trước. Sửa ở client nên log của worker cũng có nguyên nhân gốc. Test `T08 real client: a connection failure keeps its root cause in the message, without the key` (đỏ trước khi sửa, `step3b-red.txt`): fetch ném `TypeError('fetch failed')` với `cause` là lỗi proxy 403 có chứa key; thông điệp phải có cả ba tầng và không có key.
+- **Thiếu test cho `timeout`.** Thêm `T08 call log: a timeout records the reason` (model không bao giờ trả lời, hạn 30 ms; `reason` có "did not answer within 30 ms"). Test xanh ngay khi thêm vì thay đổi đầu tiên của bước 3 đã ghi `reason` cho mọi `unsure` từ evaluator; test chỉ bổ sung độ phủ cho đủ các loại `unsure`.
+- **Kiểm trên đường mạng thật** (`step3-proxy-refused/`): checker chạy trên máy, đi qua proxy thử cấu hình **từ chối** model host. 22 call đều `provider_error` (không tốn tiền), cả 27 decision `provider_error` có `reason`, và `reason` là: `Anthropic API call failed (no HTTP status): Connection error. (cause: fetch failed <- Request was cancelled. [0] <- Proxy response (403) !== 200 when HTTP Tunneling [UND_ERR_ABORTED])`. Key không xuất hiện trong call log.
+- **Kiểm tra sau khi sửa:** lint, format-check, type-check, `git diff --check` exit 0; `npm test` 578 test, 575 pass, 3 skipped, 0 fail (thêm 2 test so với bảng ở trên).

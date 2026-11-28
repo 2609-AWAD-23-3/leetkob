@@ -407,6 +407,26 @@ test('real client: a connection failure is retried, then a retryable ModelProvid
   assert.equal(fetchFn.seen.length, 3, '1 try + 2 retries');
 });
 
+test('T08 real client: a connection failure keeps its root cause in the message, without the key', async () => {
+  // Như khi proxy từ chối: fetch ném TypeError, nguyên nhân gốc nằm trong `cause`.
+  const root = Object.assign(
+    new Error(`Proxy response (403) !== 200 when HTTP Tunneling ${TEST_KEY}`),
+    { code: 'UND_ERR_ABORTED' },
+  );
+  const fetchFn = makeFetch(() => {
+    throw new TypeError('fetch failed', { cause: root });
+  });
+  await assert.rejects(makeClient(fetchFn).complete(request()), (error) => {
+    assert.ok(error instanceof ModelProviderError);
+    assert.match(error.message, /Connection error/);
+    assert.match(error.message, /fetch failed/);
+    assert.match(error.message, /Proxy response \(403\)/);
+    assert.match(error.message, /UND_ERR_ABORTED/);
+    assert.equal(error.message.includes(TEST_KEY), false);
+    return true;
+  });
+});
+
 test('real client: a hanging request is cut at the deadline with ModelTimeoutError', async () => {
   const fetchFn = makeFetch(
     (_url, init) =>

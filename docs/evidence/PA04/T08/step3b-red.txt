@@ -1,0 +1,5 @@
+# Step 3 (after review) red run: client root-cause test added before src/pipeline/model/client.ts changed
+# Command: npm run build && node --test tests/unit/model-client.test.mjs tests/unit/checker-run.test.mjs
+# Result: exit 1; tests 36, pass 35, fail 1
+T08 real client: a connection failure keeps its root cause in the message, without the key   (message did not match /fetch failed/)
+# Passes at once (reason for timeout already recorded by the first step 3 change): T08 call log: a timeout records the reason

@@ -26,3 +26,21 @@ Kept: Việc tạo zip thuộc T10 (Vỹ); T08 chỉ ghi cách làm an toàn và
 Changed: Thử nén từ một bản clone sạch trước khi ghi lệnh vào README. Lần đầu dùng `tar` trong Git Bash: file ra là tar (GNU tar 1.35), không phải zip, dù đặt đuôi `.zip`; Claude kiểm header file mới thấy. Dùng `tar.exe` của Windows trong PowerShell thì ra zip thật, có `.git`, không có `.env` hay `marking.env`; README chỉ ghi cách này. Sửa hai đoạn comment trong Dockerfile; thêm mục "Lần chạy held-out (PA04)" vào README. Sau review lần hai: README ghi chạy lệnh nén ở thư mục ngoài repo (tránh thư mục lồng `leetkob/leetkob`) và tag `pa4` do T10 tạo.
 Rejected: Viết sẵn script đóng gói bài nộp trong T08 (thuộc T10, Vỹ quyết cách làm); dùng `Compress-Archive` (chưa kiểm cách nó xử lý thư mục ẩn như `.git`).
 By hand: Vượng tìm ra ba điểm khi review. Claude thử nén zip, sửa Dockerfile, README và evidence.
+
+## 2026-11-28 — Bước 3: `reason` trong call log của checker
+
+Tool: Claude Code (desktop app).
+Asked for: Vượng bảo commit bước 2 rồi làm bước 3 theo quyết định 5 (chỉ ghi `reason` của verdict `unsure` vào call log, không ghi nguyên output model); dừng cho review trước khi commit.
+Kept: `reason` là field tuỳ chọn, chỉ có ở decision `unsure` của đường model (kể cả `provider_error`, ghi thông điệp lỗi); không đổi file prediction hay field hiện có, nên test cũ không phải sửa.
+Changed: Viết bốn test trước; ba test đỏ, test còn lại canh hành vi hiện có (model tắt, hard rule không có `reason`). Bản đầu của một test đòi lý do `evidence_mismatch` chứa số dòng, tức thông điệp của G2 chưa có trên nhánh này; sửa assert thành kiểm lý do có chữ `evidence` và lý do của model, rồi kiểm lại hai chiều (bỏ code thì 3 đỏ, có code thì xanh). README ghi field mới.
+Rejected: Ghi `reason` cho mọi decision (call log phình, không cần cho chẩn đoán); ghi nguyên text output của model (dài, lặp lại code sinh viên vốn đã có trong prompt).
+By hand: Vượng chốt quyết định 5 và sẽ review trước khi commit. Claude viết test, sửa `src/cli/run.ts`, README, evidence và chạy kiểm tra.
+
+## 2026-11-28 — Bước 3 sau review của Vượng
+
+Tool: Claude Code (desktop app).
+Asked for: Vượng review bước 3 (chưa commit): lỗi kết nối chỉ ghi "Connection error." nên lần chạy held-out lỗi môi trường khó chẩn đoán, nên ghi thêm `error.cause`; chưa có test cho `timeout`.
+Kept: Che key bằng cùng hàm `redact` của client cho cả phần nguyên nhân gốc.
+Changed: Claude tìm ra nguyên nhân gốc bị mất ở client (`src/pipeline/model/client.ts` chỉ chép `error.message`), không phải ở checker; sửa ở client để cả worker cũng có. Viết test client trước (đỏ), thêm test `timeout` (xanh ngay, chỉ bổ sung độ phủ), rồi kiểm trên đường mạng thật bằng proxy thử từ chối model host: `reason` nêu đúng "Proxy response (403)", không có key. Lúc dọn proxy thử, lệnh `pkill` không tắt được process trên Windows và nhánh dự phòng `taskkill` lọc theo tên `node.exe` có thể đụng process Node khác; Claude kiểm danh sách process (không process nào khác bị tắt) rồi chỉ tắt đúng PID của proxy thử.
+Rejected: Ghép `cause` trong checker (`src/cli/run.ts`) thay vì client (`ModelProviderError` không giữ `cause`, và worker cũng cần); ghi nguyên object lỗi (có thể chứa header của request).
+By hand: Vượng tìm ra hai điểm khi review. Claude viết test, sửa client, chạy kiểm trên proxy thử, cập nhật README, evidence.

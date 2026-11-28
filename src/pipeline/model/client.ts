@@ -74,6 +74,31 @@ export interface AnthropicModelClientOptions {
 const redact = (message: string, secret: string): string =>
   message.split(secret).join('[redacted]');
 
+/**
+ * PA04-T08: nguyên nhân gốc của một lỗi kết nối. SDK chỉ báo "Connection error." và giữ lỗi thật
+ * (ví dụ proxy từ chối, DNS, TLS) trong chuỗi `cause`. Trả về " (cause: a <- b)" hoặc chuỗi rỗng,
+ * tối đa 4 tầng.
+ */
+const describeCause = (error: unknown): string => {
+  const parts: string[] = [];
+  let current: unknown = (error as { cause?: unknown } | null)?.cause;
+  for (let depth = 0; depth < 4 && current != null; depth += 1) {
+    if (current instanceof Error) {
+      const code = (current as { code?: unknown }).code;
+      parts.push(
+        typeof code === 'string' || typeof code === 'number'
+          ? `${current.message} [${code}]`
+          : current.message,
+      );
+      current = (current as { cause?: unknown }).cause;
+    } else {
+      parts.push(String(current));
+      current = undefined;
+    }
+  }
+  return parts.length === 0 ? '' : ` (cause: ${parts.join(' <- ')})`;
+};
+
 const joinText = (
   content: Anthropic.Messages.Message['content'],
 ): string | null => {
@@ -188,7 +213,10 @@ export const createAnthropicModelClient = (
           const type = error.type === null ? '' : `, ${error.type}`;
           const requestPart =
             requestId === null ? '' : `, request-id ${requestId}`;
-          const detail = redact(error.apiMessage ?? error.message, apiKey);
+          const detail = redact(
+            `${error.apiMessage ?? error.message}${describeCause(error)}`,
+            apiKey,
+          );
           throw new ModelProviderError(
             `Anthropic API call failed (${status === null ? 'no HTTP status' : `HTTP ${status}`}${type}${requestPart}): ${detail}`,
             { status, requestId },
@@ -196,7 +224,7 @@ export const createAnthropicModelClient = (
         }
         throw new ModelProviderError(
           `Anthropic API call failed: ${redact(
-            error instanceof Error ? error.message : String(error),
+            `${error instanceof Error ? error.message : String(error)}${describeCause(error)}`,
             apiKey,
           )}`,
         );
