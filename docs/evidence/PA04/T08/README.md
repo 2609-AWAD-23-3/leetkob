@@ -1,7 +1,7 @@
 # Evidence PA04-T08 — Sẵn sàng cho lần chạy held-out
 
 **Thực hiện:** Vượng · **Reviewer:** Vỹ · **Issue:** #61 · **Nhánh:** `feat/pa04-t08-held-out` (tách từ `develop` `5037508`).
-**Trạng thái:** đang làm từng bước; mỗi bước được Vượng review rồi mới commit. Chưa push, chưa mở PR.
+**Trạng thái:** đã hoàn thành sáu bước và mở [PR #94](https://github.com/2609-AWAD-23-3/leetkob/pull/94); còn lần chạy kiểm chứng cuối sau T06 trên tag `pa4`.
 
 ## 1. Mục tiêu
 
