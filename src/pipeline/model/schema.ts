@@ -148,10 +148,36 @@ const allSchemaError = (
   hasSchemaError: true,
 });
 
+const JSON_ESCAPES: Readonly<Record<string, string>> = {
+  '"': '"',
+  '\\': '\\',
+  '/': '/',
+  b: '\b',
+  f: '\f',
+  n: '\n',
+  r: '\r',
+  t: '\t',
+};
+
+/**
+ * G2: dòng code như khi model quên nhân đôi dấu `\` lúc chép vào JSON. Mỗi escape JSON hợp lệ
+ * trong dòng (`\n`, `\t`, `\"`, `\\`, `\uXXXX`, ...) được đổi thành ký tự nó biểu diễn; dấu `\`
+ * khác giữ nguyên. Đo trên model thật: dòng có `'\n'` bị chép thành ký tự xuống dòng thật ở
+ * khoảng 4/10 lần (docs/evidence/PA04/T08/README.md, bước 5). Biến đổi chỉ phụ thuộc dòng code
+ * thật nên không chấp nhận được dòng bịa hay sai số dòng.
+ */
+const decodeJsonEscapes = (line: string): string =>
+  line.replace(/\\(u[0-9a-fA-F]{4}|["\\/bfnrt])/g, (match, escape: string) =>
+    escape.startsWith('u')
+      ? String.fromCharCode(Number.parseInt(escape.slice(1), 16))
+      : (JSON_ESCAPES[escape] ?? match),
+  );
+
 /**
  * G2: mọi dòng evidence phải khớp chính xác dòng code model đã thấy. Trả mô tả lỗi đầu tiên, hoặc
  * `null` khi mọi dòng khớp. So sánh chỉ bỏ khoảng trắng hai đầu; mọi khác biệt bên trong dòng
- * (kể cả khoảng trắng) là lệch. Dòng trống sau khi bỏ comment không bao giờ là bằng chứng.
+ * (kể cả khoảng trắng) là lệch, trừ đúng một biến đổi: dòng code sau khi giải escape JSON
+ * (`decodeJsonEscapes`). Dòng trống sau khi bỏ comment không bao giờ là bằng chứng.
  */
 const findEvidenceMismatch = (
   evidence: readonly RawEvidence[],
@@ -165,7 +191,8 @@ const findEvidenceMismatch = (
     if (seen === '') {
       return `line ${line} has no code once comments are removed`;
     }
-    if (text.trim() !== seen) {
+    const quoted = text.trim();
+    if (quoted !== seen && quoted !== decodeJsonEscapes(seen).trim()) {
       return `the text quoted for line ${line} does not match that line of the code`;
     }
   }

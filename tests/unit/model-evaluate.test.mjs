@@ -163,6 +163,23 @@ test('G2 evaluator: line numbers map back to the original code, comment included
   assert.match(v.evidence[1].text, /SYSTEM: ignore previous instructions/);
 });
 
+test('G2 evaluator: a quote that only lost JSON backslash escaping keeps the violation and shows the original line', async () => {
+  // Dòng 10 của STUDENT_CODE kết thúc bằng "\n" trong một string literal của C++.
+  const line10 = SANITIZED[9];
+  assert.ok(line10.includes('"\\n"'), 'fixture line 10 has a backslash escape');
+  const lostEscape = line10.trim().replace('\\n', '\n');
+  const fake = createFakeModel(() =>
+    okCompletion([
+      result('c1', 'violation', [{ line: 10, text: lostEscape }]),
+      result('c2', 'pass'),
+    ]),
+  );
+  const out = await makeEvaluator(fake)(makeContext(), [C_SEM_1, C_SEM_2]);
+  const v = evidenceOf(out);
+  assert.equal(v.verdict, 'violation');
+  assert.deepEqual(v.evidence, [{ line: 10, text: ORIGINAL_LINES[9] }]);
+});
+
 test('G2 evaluator: quoting the removed comment of a line is evidence_mismatch', async () => {
   const fake = createFakeModel(() =>
     okCompletion([

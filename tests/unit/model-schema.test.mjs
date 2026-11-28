@@ -521,3 +521,66 @@ test('G2 schema: a line outside the file is evidence_mismatch and the reason nam
   assertMismatch(mixed);
   assert.match(byId(mixed, 'c1').reason, /line 99 is outside the file/);
 });
+
+// G2 sau T02 (PA04-T08 bước 5): model đôi khi chép dấu `\` của code mà không nhân đôi trong JSON,
+// nên `'\n'` của code thành một ký tự xuống dòng thật sau khi parse. G2 nhận đúng một biến đổi:
+// dòng code sau khi giải các escape JSON của nó. Mọi khác biệt khác vẫn là lệch.
+const ESC_LINES = [
+  '#include <cstdio>',
+  'int main() {',
+  "  while ((c = std::getchar()) != EOF && c != '\\n') {",
+  '    std::printf("%d\\n", sum);',
+  '  std::puts("say \\"hi\\"");',
+  "  char slash = '\\\\';",
+  '  return 0;',
+  '}',
+];
+const parseEsc = (text) => parse(text, { codeLines: ESC_LINES });
+
+test('G2 schema: a quote that only lost JSON backslash escaping is accepted, line by line', () => {
+  for (const [line, text] of [
+    // Code có hai ký tự "\" và "n"; model viết escape JSON nên text có ký tự xuống dòng thật.
+    [3, "while ((c = std::getchar()) != EOF && c != '\n') {"],
+    [4, 'std::printf("%d\n", sum);'],
+    // Code có \" trong chuỗi; model viết \" trong JSON nên text chỉ còn dấu ".
+    [5, 'std::puts("say "hi"");'],
+    // Code có hai dấu "\"; model viết \\ trong JSON nên text chỉ còn một dấu "\".
+    [6, "char slash = '\\';"],
+  ]) {
+    const parsed = parseEsc(
+      body([result('c1', 'violation', [ev(line, text)]), result('c2', 'pass')]),
+    );
+    assert.equal(byId(parsed, 'c1').verdict, 'violation', `line ${line}`);
+    assert.deepEqual(byId(parsed, 'c1').evidenceLines, [line]);
+  }
+});
+
+test('G2 schema: the correctly escaped quote of a line with backslashes is still accepted', () => {
+  const parsed = parseEsc(
+    body([result('c1', 'violation', [3, 4, 5, 6]), result('c2', 'pass')]),
+  );
+  assert.equal(byId(parsed, 'c1').verdict, 'violation');
+  assert.deepEqual(byId(parsed, 'c1').evidenceLines, [3, 4, 5, 6]);
+});
+
+test('G2 schema: lost escaping does not excuse any other difference, a wrong line or a line without backslashes', () => {
+  for (const [line, text] of [
+    // Thiếu "std::" ngoài lỗi escape.
+    [3, "while ((c = getchar()) != EOF && c != '\n') {"],
+    // Đúng text đã giải escape của dòng 3 nhưng ghi là dòng 4.
+    [4, "while ((c = std::getchar()) != EOF && c != '\n') {"],
+    // Dòng 7 không có "\": một ký tự xuống dòng trong text không thể là lỗi escape.
+    [7, 'return\n0;'],
+    // Dòng 4 sau khi giải escape nhưng có thêm khoảng trắng bên trong.
+    [4, 'std::printf("%d\n",  sum);'],
+  ]) {
+    assertMismatch(
+      parseEsc(
+        body([
+          result('c1', 'violation', [ev(line, text)]),
+          result('c2', 'pass'),
+        ]),
+      ),
+    );
+  }
+});

@@ -98,3 +98,12 @@ Kept: Không sửa code G2; hành vi dòng ngoài file vẫn là `unsure`/`evide
 Changed: Thêm test G2 kiểm lý do `line N is outside the file (1..10)` cho dòng 0, 11, -1 với cả ba verdict và cho dòng 99 lẫn giữa dòng đúng. Thử bỏ nhánh kiểm phạm vi: đúng test này đỏ, log có patch ở `removal/g2-no-range-check.log`. README mục G2 thêm dòng vào bảng thử xoá guardrail và đoạn giải thích.
 Rejected: Merge mà không thêm test (rubric trừ điểm khi có test không thể fail, và người chấm có thể xoá đúng nhánh này); sửa test PA03 về dòng ngoài file thay vì thêm test G2 riêng (giữ test PA03 nguyên như lịch sử).
 By hand: Vỹ tìm ra điểm này khi review. Claude viết test, chạy kiểm xoá guardrail, cập nhật evidence, commit và nhờ Vỹ review lại.
+
+## 2026-11-28 — G2 chấp nhận bản trích chỉ mất escape JSON
+
+Tool: Claude Code (desktop app).
+Asked for: Sau chẩn đoán ở T08 bước 5, Vượng hỏi việc sửa G2 có mất điểm ở tiêu chí nào không, rồi bảo sửa theo hướng G2 chấp nhận đúng một biến đổi: dòng code sau khi giải escape JSON.
+Kept: Làm ở nhánh riêng từ `develop` (`fix/pa04-t02-g2-json-escape`), commit chỉ chạm G2, test trước. Giữ nguyên các test G2 cũ và bốn log thử xoá đã được review.
+Changed: Viết 4 test (2 đỏ trước khi sửa, 2 canh các trường hợp vẫn phải lệch), thêm `decodeJsonEscapes`, so text với dòng gốc rồi với dòng đã giải escape. Thử xoá hai chiều. Lần đầu dòng sửa tạm "nới lỏng" mất dấu `\` qua shell (`/\s+/g` thành `/s+/g`) nên kết quả vô nghĩa; viết spec ra file rồi chạy lại. Cũng phát hiện script thử xoá in patch so với HEAD, nên khi code chưa commit patch có cả thay đổi thật; sửa script so với file đang có trên đĩa và ghi chú bốn log G2 cũ bị ảnh hưởng. Trong lúc chạy kiểm, lệnh `git add -N .` đụng tới `marking.env` vì nhánh tách từ `develop` chưa có quy tắc ignore của T08; đã kiểm file chưa vào index hay commit nào, thêm `marking.env` vào `.git/info/exclude` của máy, và từ đó chỉ thêm file theo đường dẫn cụ thể. Chạy lại model thật: `eval-cases` và dev set đều `PASS`; 10 call trên dòng 9 có 5 phần tử mất escape, cả 10 giữ `violation` qua G2 mới.
+Rejected: So lỏng (bỏ khoảng trắng, chuỗi con) vì đi ngược "exactly" và mở đường cho dòng bịa; sửa bốn log G2 cũ bằng tay; dặn trong prompt thay cho sửa G2 (thuộc T06, không chắc model làm theo).
+By hand: Vượng quyết hướng sửa và sẽ review trước khi commit. Claude viết test, code, chạy kiểm tra, thử xoá, chạy model thật ($0.018692) và viết evidence.

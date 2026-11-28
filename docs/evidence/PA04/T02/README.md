@@ -267,3 +267,45 @@ Call log (kiểm bằng script): mọi call `outcome: ok`, mỗi call một requ
 - **Thay đổi ảnh hưởng T06.** Schema gửi model (`evidence: [{ line, text }]`) và rule 3 của prompt đổi; helper model giả đổi nghĩa (`result(id, verdict, [n])` là "model trích đúng dòng `n`"). Cần báo Vỹ trước khi T06 sửa prompt.
 - Lời dặn chấm điểm trong `reason` vẫn hiện nguyên chữ cho TA (mục 2).
 - G4 (T03) chưa xong; tiêu chí 3 chỉ đủ năm guardrail khi T03 merge.
+
+## 10. G2 sau T02 — Dấu `\` bị mất khi model chép dòng vào JSON
+
+**Phát hiện** (T08 bước 5, `docs/evidence/PA04/T08/README.md` mục 7). Cặp `digit-sum/s06` C2, một vi phạm thật, nhiều lần bị G2 hạ thành `evidence_mismatch` ở dòng 9: `while ((c = std::getchar()) != EOF && c != '\n') {`. Gọi model 10 lần với đúng prompt đó: ở 4/10 lần, model viết hai ký tự `\` và `n` của code thành escape JSON của ký tự xuống dòng, nên text sau khi parse có một ký tự xuống dòng thật. G2 so chính xác nên hạ verdict xuống `unsure`. Code C++ hay có `'\n'`, `"%d\n"`, `"\t"` trên chính dòng vi phạm, nên rủi ro là giảm recall ở tiêu chí 2 (không trừ oan).
+
+**Quy tắc mới** (Vượng chốt 28/11). Nếu `text` không khớp dòng code, G2 so tiếp với **đúng một** biến đổi của dòng code: giải các escape JSON hợp lệ trong dòng (`\n`, `\r`, `\t`, `\b`, `\f`, `\"`, `\\`, `\/`, `\uXXXX`) thành ký tự chúng biểu diễn; dấu `\` khác giữ nguyên. Hàm `decodeJsonEscapes` trong `src/pipeline/model/schema.ts`.
+
+**Vì sao vẫn là "match the submitted code exactly":**
+
+- Text model trích, sau khi giải mã JSON, chính là dòng code đó; sai chỉ nằm ở cách model escape `\` khi viết JSON, không ở nội dung trích.
+- Biến đổi được chấp nhận chỉ phụ thuộc dòng code thật tại `line`, nên không mở đường cho dòng bịa (text không có trong code), đúng text nhưng sai số dòng, hay dòng chỉ có comment. Dòng không có `\` thì biến đổi không đổi gì: một ký tự xuống dòng trong text của dòng đó vẫn là lệch.
+- Mọi khác biệt khác (một ký tự, một khoảng trắng bên trong dòng) vẫn là lệch; các test G2 cũ giữ nguyên và vẫn xanh.
+
+**Giới hạn đã biết.** Nếu một dòng có nhiều escape và model chỉ chép sai một phần (ví dụ đúng `\\n` ở chỗ này, sai `\n` ở chỗ kia), text không khớp cả dòng gốc lẫn dòng đã giải hết escape, nên vẫn là `evidence_mismatch`. Chưa gặp trường hợp này trong các lần đo.
+
+**Test** (viết trước; 2 đỏ trước khi sửa code, `red/g2-json-escape-tests-before-code.txt`):
+
+| Test | Kiểm |
+| --- | --- |
+| `G2 schema: a quote that only lost JSON backslash escaping is accepted, line by line` | `'\n'`, `"%d\n"`, `\"` trong chuỗi, `'\\'`: bản trích mất escape được nhận, đúng số dòng |
+| `G2 evaluator: a quote that only lost JSON backslash escaping keeps the violation and shows the original line` | Qua evaluator với code mẫu có `"\n"`: verdict giữ `violation`, TA thấy dòng gốc |
+| `G2 schema: the correctly escaped quote of a line with backslashes is still accepted` | Bản trích escape đúng vẫn được nhận (canh hành vi cũ) |
+| `G2 schema: lost escaping does not excuse any other difference, a wrong line or a line without backslashes` | Mất escape cộng một khác biệt khác, đúng text nhưng sai dòng, ký tự xuống dòng trong dòng không có `\`, thêm khoảng trắng bên trong: vẫn lệch |
+
+**Thử bỏ guardrail** (log có patch tạm so với file đang có trên đĩa):
+
+| Sửa tạm | Test đỏ | Log |
+| --- | --- | --- |
+| Bỏ phép so với dòng đã giải escape | 2: hai test "được nhận" | `removal/g2-no-json-escape-decode.log` |
+| Nới thành so sau khi bỏ mọi khoảng trắng và xuống dòng | 4: hai test "được nhận", test canh "vẫn lệch", test G2 cũ về khoảng trắng bên trong dòng | `removal/g2-json-escape-too-loose.log` |
+
+**Chạy model thật sau khi sửa** (tại nhánh `fix/pa04-t02-g2-json-escape`, nền `f3501c2` cộng thay đổi này; key dev; `claude-haiku-5-5`; evidence ở `json-escape-fix/`, call log tách bỏ prompt):
+
+| Lần chạy | Kết quả | Call | Chi phí |
+| --- | --- | --- | --- |
+| `eval-cases` (49 cặp) | `PASS`: 0 khấu trừ sai, recall 100%, unsure 0% | 22, đều `ok`, 22 request id | $0.006169 |
+| Dev set (102 cặp) | `PASS`: 0 khấu trừ sai, recall 97.3%, unsure 1.0% (`dynamic-array/s05` C2, `model_unsure`) | 39, đều `ok`, 39 request id | $0.010192 |
+| Dòng 9 của `digit-sum/s06`, 10 call (`line9-quotes.jsonl`) | 5/20 phần tử evidence mất escape; đưa đúng 10 output đó qua G2 mới thì cả 10 giữ `violation` | 10, mỗi call một request id | $0.002331 |
+
+Nhánh này tách từ `develop`, chưa có thay đổi ghi `reason` của T08, nên call log ở đây không có `reason`.
+
+**Ghi chú về 4 log G2 cũ.** Script thử xoá in "patch tạm" bằng `git diff` so với HEAD. Bốn log `removal/g2-no-text-compare.log`, `g2-no-blank-line-check.log`, `g2-first-line-only.log`, `g2-strict-evidence-keys.log` được tạo lúc thay đổi G2 chưa commit, nên phần patch của chúng in cả thay đổi G2 thật lẫn dòng sửa tạm; dòng có chú thích `REMOVAL TEST` mới là phần sửa tạm. Kết quả đỏ/xanh của các log đó không bị ảnh hưởng. Từ commit này, script so với đúng nội dung file đang có trên đĩa, nên patch chỉ còn dòng sửa tạm. Bốn log cũ giữ nguyên vì là evidence đã được review.
