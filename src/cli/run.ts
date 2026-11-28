@@ -40,6 +40,13 @@ export interface DecisionEntry {
   readonly modelCalled: boolean;
   /** Có giá trị khi và chỉ khi `verdict` là `unsure`. */
   readonly unsureCause: CheckerUnsureCause | null;
+  /**
+   * PA04-T08: chỉ có ở decision `unsure` của đường model: lý do của verdict (lý do model đưa ra,
+   * hoặc vì sao output bị hạ xuống `unsure`, ví dụ dòng evidence lệch) hoặc thông điệp lỗi
+   * provider. Dùng để chẩn đoán lần chạy held-out; không có ở `pass`, `violation`, hard rule
+   * hay `model_off` để call log không phình.
+   */
+  readonly reason?: string;
   readonly bannedNames?: readonly string[];
 }
 
@@ -172,6 +179,7 @@ const checkSolution = async (
     constraint: string,
     route: DecisionEntry['route'],
     unsureCause: CheckerUnsureCause,
+    reason?: string,
   ) => ({
     prediction: {
       solution: solution.id,
@@ -188,6 +196,7 @@ const checkSolution = async (
       evidenceLines: [],
       modelCalled: route === 'model',
       unsureCause,
+      ...(reason === undefined ? {} : { reason }),
     },
   });
 
@@ -227,6 +236,9 @@ const checkSolution = async (
             evidenceLines: v.evidence.map((e) => e.line),
             modelCalled: true,
             unsureCause: v.unsureCause,
+            ...(v.verdict === 'unsure' && v.reason !== null
+              ? { reason: v.reason }
+              : {}),
           },
         });
       }
@@ -243,7 +255,10 @@ const checkSolution = async (
         );
       }
       for (const c of semantic) {
-        byConstraint.set(c.id, unsure(c.id, 'model', 'provider_error'));
+        byConstraint.set(
+          c.id,
+          unsure(c.id, 'model', 'provider_error', error.message),
+        );
       }
     }
   }

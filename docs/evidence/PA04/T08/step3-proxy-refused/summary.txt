@@ -1,0 +1,5 @@
+# Step 3 check on a real network path: checker on the host, HTTPS_PROXY to scripts/held-out-proxy.mjs with ALLOW_HOSTS=example.com:443 (refuses the model host), NODE_USE_ENV_PROXY=1, key from .env, dataset eval-cases
+# Command: ALLOW_HOSTS=example.com:443 PORT=3129 node scripts/held-out-proxy.mjs; HTTPS_PROXY=http://127.0.0.1:3129 NODE_USE_ENV_PROXY=1 node --env-file=.env dist/cli/checker.js eval-cases --out out/deny-check/predictions.jsonl --call-log out/deny-check/call-log.jsonl
+# Result: checker exit 0; 22 model calls, all provider_error, cost $0; 27 provider_error decisions, 27 with reason; the key does not appear in the call log
+# Distinct reasons:
+Anthropic API call failed (no HTTP status): Connection error. (cause: fetch failed <- Request was cancelled. [0] <- Proxy response (403) !== 200 when HTTP Tunneling [UND_ERR_ABORTED])

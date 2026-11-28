@@ -1,0 +1,3 @@
+checker: model on (anthropic claude-haiku-5-5), concurrency 4
+checker: 6 problems, 102 pairs (pass 65, violation 36, unsure 1); model calls 39 (not ok 0), cost $0.010204
+checker: wrote predictions to out/diag/run1/leetkob-eval/predictions.jsonl, call log to out/diag/run1/leetkob-eval/call-log.jsonl

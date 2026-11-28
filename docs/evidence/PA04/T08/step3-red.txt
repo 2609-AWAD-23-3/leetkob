@@ -1,0 +1,8 @@
+# Step 3 red run: call log tests added before src/cli/run.ts changed
+# State: 57b6531 plus the T08 tests in tests/unit/checker-run.test.mjs
+# Command: npm run build && node --test tests/unit/checker-run.test.mjs
+# Result: exit 1; tests 13, pass 10, fail 3
+T08 call log: a model unsure and an evidence mismatch record the reason; other decisions do not
+T08 call log: a provider error records its message as the reason
+T08 call log: a schema error records the reason, a pass verdict from the model does not
+# Passes already (guards current behaviour): T08 call log: model off and hard-rule decisions have no reason field

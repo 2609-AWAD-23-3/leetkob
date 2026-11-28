@@ -266,3 +266,100 @@ test('formatJsonl writes one JSON object per line with exactly the prediction fi
     ]);
   }
 });
+
+// PA04-T08: decision `unsure` của đường model ghi `reason` để chẩn đoán lần chạy held-out
+// (ví dụ dòng evidence nào lệch). Chỉ `unsure` của đường model có `reason`, để call log không phình.
+const decisionOf = (callLog, solution, constraint) =>
+  callLog.find(
+    (e) =>
+      e.type === 'decision' &&
+      e.solution === solution &&
+      e.constraint === constraint,
+  );
+
+test('T08 call log: a model unsure and an evidence mismatch record the reason; other decisions do not', async (t) => {
+  const { problems } = await withDataset(t);
+  const fake = createFakeModel((request) =>
+    /std::accumulate\(v\.begin/.test(request.user)
+      ? okCompletion([
+          result('C2', 'unsure', [], 'The loop may or may not store input.'),
+        ])
+      : okCompletion([result('C2', 'violation', [999], 'stores input')]),
+  );
+  const { callLog } = await runChecker({
+    problems,
+    modelOff: false,
+    model: { client: fake, timeoutMs: 1_000 },
+  });
+  const unsure = decisionOf(callLog, 'odd-sum/s01', 'C2');
+  assert.equal(unsure.unsureCause, 'model_unsure');
+  assert.equal(unsure.reason, 'The loop may or may not store input.');
+  const mismatch = decisionOf(callLog, 'odd-sum/s02', 'C2');
+  assert.equal(mismatch.unsureCause, 'evidence_mismatch');
+  // Đúng nguyên văn lý do của bước kiểm evidence (có dòng nào lệch thì nêu ở đây).
+  assert.match(mismatch.reason, /evidence/);
+  assert.match(mismatch.reason, /stores input/);
+  for (const e of callLog.filter((x) => x.type === 'decision')) {
+    if (e.route === 'model' && e.verdict === 'unsure') continue;
+    assert.equal('reason' in e, false, JSON.stringify(e));
+  }
+});
+
+test('T08 call log: a schema error records the reason, a pass verdict from the model does not', async (t) => {
+  const { problems } = await withDataset(t);
+  const fake = createFakeModel((request) =>
+    /std::accumulate\(v\.begin/.test(request.user)
+      ? { ...okCompletion([]), text: 'not json at all' }
+      : okCompletion([result('C2', 'pass')]),
+  );
+  const { callLog } = await runChecker({
+    problems,
+    modelOff: false,
+    model: { client: fake, timeoutMs: 1_000 },
+  });
+  const broken = decisionOf(callLog, 'odd-sum/s01', 'C2');
+  assert.equal(broken.unsureCause, 'schema_error');
+  assert.match(broken.reason, /not valid JSON/);
+  const pass = decisionOf(callLog, 'odd-sum/s02', 'C2');
+  assert.equal(pass.verdict, 'pass');
+  assert.equal('reason' in pass, false);
+});
+
+test('T08 call log: a provider error records its message as the reason', async (t) => {
+  const { problems } = await withDataset(t);
+  const fake = createFakeModel(() => {
+    throw new ModelProviderError('overloaded, try later', {
+      status: 529,
+      requestId: 'req_err',
+    });
+  });
+  const { callLog } = await runChecker({
+    problems,
+    modelOff: false,
+    model: { client: fake, timeoutMs: 1_000 },
+  });
+  const failed = decisionOf(callLog, 'odd-sum/s01', 'C2');
+  assert.equal(failed.unsureCause, 'provider_error');
+  assert.match(failed.reason, /overloaded, try later/);
+});
+
+test('T08 call log: a timeout records the reason', async (t) => {
+  const { problems } = await withDataset(t);
+  const fake = createFakeModel(() => new Promise(() => {}));
+  const { callLog } = await runChecker({
+    problems,
+    modelOff: false,
+    model: { client: fake, timeoutMs: 30 },
+  });
+  const late = decisionOf(callLog, 'odd-sum/s01', 'C2');
+  assert.equal(late.unsureCause, 'timeout');
+  assert.match(late.reason, /did not answer within 30 ms/);
+});
+
+test('T08 call log: model off and hard-rule decisions have no reason field', async (t) => {
+  const { problems } = await withDataset(t);
+  const { callLog } = await runChecker({ problems, modelOff: true });
+  for (const e of callLog.filter((x) => x.type === 'decision')) {
+    assert.equal('reason' in e, false, JSON.stringify(e));
+  }
+});

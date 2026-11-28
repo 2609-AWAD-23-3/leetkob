@@ -1,0 +1,2 @@
+{"time":"2026-11-28T05:03:06.635Z","listening":3128,"allow":["api.anthropic.com:443"]}
+{"time":"2026-11-28T05:03:08.909Z","method":"CONNECT","target":"example.com:443","allowed":false}

@@ -22,6 +22,8 @@
 .env
 .env.*
 !.env.example
+# Model key cho lần chạy held-out của người chấm (PA04-T08): chỉ đính kèm trên Classroom, không bao giờ vào Git.
+marking.env
 
 # Credential và private key local; file giả phục vụ test cần review trước khi track
 *.pem

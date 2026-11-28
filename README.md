@@ -55,11 +55,52 @@ Windows PowerShell: **không dùng `>`** (PowerShell ghi file kèm BOM/UTF-16, `
 docker run --rm --network none -e MODEL_OFF=1 -v "${PWD}\leetkob-eval:/data:ro" -v "${PWD}\out:/out" leetkob-checker /data --out /out/predictions.jsonl
 ```
 
-Cách mount `-v "$PWD/out:/out" ... --out /out/predictions.jsonl` cũng dùng được trên Linux: image chạy checker bằng root trong container nên ghi được cả khi Docker tự tạo `out/` thuộc root; checker chỉ đọc text, không chạy code sinh viên. Cách stdout không ghi file nào trong container nên chạy được với mọi `--user`, `--cap-drop ALL`, `--read-only`. `npm run test:checker-image` (cần Docker) build image rồi chạy cả hai cách trong các cấu hình đó và kiểm mọi cách cho cùng một file, `eval.mjs` exit 0 hoặc 1. Không dùng Docker: `npm run build`, rồi `MODEL_OFF=1 npm run checker -- leetkob-eval --out out/predictions.jsonl` (PowerShell: `$env:MODEL_OFF='1'; npm.cmd run checker -- leetkob-eval --out out/predictions.jsonl`). Tuỳ chọn `--call-log <file>` ghi quyết định cho từng cặp và mọi model call (request id, model, token, thời gian, chi phí, prompt đã gửi); `--concurrency <n>` (1–32, mặc định 4) chỉ có tác dụng khi bật model.
+Cách mount `-v "$PWD/out:/out" ... --out /out/predictions.jsonl` cũng dùng được trên Linux: image chạy checker bằng root trong container nên ghi được cả khi Docker tự tạo `out/` thuộc root; checker chỉ đọc text, không chạy code sinh viên. Cách stdout không ghi file nào trong container nên chạy được với mọi `--user`, `--cap-drop ALL`, `--read-only`. `npm run test:checker-image` (cần Docker) build image rồi chạy cả hai cách trong các cấu hình đó và kiểm mọi cách cho cùng một file, `eval.mjs` exit 0 hoặc 1. Không dùng Docker: `npm run build`, rồi `MODEL_OFF=1 npm run checker -- leetkob-eval --out out/predictions.jsonl` (PowerShell: `$env:MODEL_OFF='1'; npm.cmd run checker -- leetkob-eval --out out/predictions.jsonl`). Tuỳ chọn `--call-log <file>` ghi quyết định cho từng cặp và mọi model call (request id, model, token, thời gian, chi phí, prompt đã gửi); quyết định `unsure` của model có thêm `reason` (lý do của model, vì sao output bị hạ xuống `unsure`, hoặc thông điệp lỗi provider kèm nguyên nhân gốc, ví dụ proxy từ chối); `--concurrency <n>` (1–32, mặc định 4) chỉ có tác dụng khi bật model.
 
 - `MODEL_OFF=1`: chỉ chạy hard rules; constraint semantic ghi `unsure` (call log ghi `unsureCause: "model_off"`); không tạo model client, không đọc `MODEL_API_KEY`, không mở network.
-- Không đặt `MODEL_OFF`: cần `MODEL_API_KEY` (truyền lúc chạy, ví dụ `docker run -e MODEL_API_KEY ...` với biến đã đặt trong shell; không ghi key vào image hay file). Thiếu key thì lệnh dừng với exit 2. Lỗi provider ở một bài chỉ làm bài đó thành `unsure` và được ghi vào call log; lần chạy vẫn ra file đầy đủ.
+- Không đặt `MODEL_OFF`: cần `MODEL_API_KEY`, truyền lúc chạy (`docker run --env-file marking.env ...` cho lần chạy held-out, hoặc `-e MODEL_API_KEY` với biến đã đặt trong shell); không ghi key vào image hay file trong repo. Thiếu key thì lệnh dừng với exit 2. Lỗi provider ở một bài chỉ làm bài đó thành `unsure` và được ghi vào call log; lần chạy vẫn ra file đầy đủ.
 - Exit code của checker: 0 khi đã ghi prediction; 2 khi sai tham số, cấu hình hoặc dataset. Prediction chỉ được ghi một lần sau khi chấm xong, lần chạy lỗi không ghi gì ra stdout.
+
+### Lần chạy held-out (PA04)
+
+Người chấm chạy checker image trên held-out set một lần, trong container không có network ngoài một proxy. Checker cần đúng **một model host**:
+
+- **Model host:** `api.anthropic.com`, cổng `443` (HTTPS). Proxy chỉ cần cho phép host này; checker không gọi host nào khác.
+- **Key:** file `marking.env` đính kèm cạnh file zip trên Classroom (không nằm trong zip hay Git), chỉ gồm `MODEL_API_KEY=…` (key tạo riêng cho lần chạy này) và `MODEL_TIMEOUT_MS=30000`.
+- **Proxy:** truyền bằng `HTTPS_PROXY`. Image đã đặt sẵn `NODE_USE_ENV_PROXY=1`, nên `fetch` của Node trong checker đi qua proxy mà không cần cấu hình thêm.
+
+Linux/macOS (prediction ra stdout):
+
+```sh
+docker build -f docker/checker.Dockerfile -t leetkob-checker .
+docker run --rm --env-file marking.env -e HTTPS_PROXY=http://<proxy>:<port> \
+  -v "$PWD/<held-out>:/data:ro" leetkob-checker /data > predictions.jsonl
+```
+
+Windows PowerShell (mount thư mục output, không dùng `>`):
+
+```powershell
+docker run --rm --env-file marking.env -e HTTPS_PROXY=http://<proxy>:<port> -v "${PWD}\<held-out>:/data:ro" -v "${PWD}\out:/out" leetkob-checker /data --out /out/predictions.jsonl
+```
+
+**Thời gian:** build image không dùng cache (`docker build --no-cache`, gồm `npm ci` từ đầu) mất 48 giây khi base image `node:24.22.3-bookworm-slim` đã có sẵn; tải base image (330 MB sau khi giải nén) tuỳ mạng, chưa tính. Chạy checker dùng concurrency mặc định 4. Qua proxy, dev set (102 cặp, 39 call model) chạy hết 20 giây trong container checker, mỗi call khoảng 2 giây; nếu mọi call đều chạm hạn 30 giây thì 30 phút vẫn đủ cho khoảng 240 call, gấp khoảng 6 lần dev set ([số đo](docs/evidence/PA04/T08/README.md)).
+
+Không có `marking.env` dùng được thì chạy với model tắt như lệnh `MODEL_OFF=1` ở trên: chỉ hard rules quyết constraint ban-list, mọi constraint semantic là `unsure`.
+
+`--env-file` ở đây chỉ đưa key vào container **checker**: checker đọc text, không compile hay chạy code sinh viên. Quy tắc trong `AGENTS.md` cấm `--env-file` và `-e MODEL_API_KEY` áp cho container **sandbox** chạy code sinh viên; sandbox không bao giờ nhận key.
+
+Kiểm thử cùng điều kiện (cần Docker và key trong `.env`, gọi model thật): `npm run test:held-out-proxy` build image, chạy checker trong một mạng Docker `--internal` chỉ ra ngoài qua proxy thử (`scripts/held-out-proxy.mjs`, chỉ cho `api.anthropic.com:443`), rồi chấm bằng `eval.mjs`. Thử đúng file sẽ nộp: `npm run test:held-out-proxy -- --env-file marking.env`. Evidence: [T08](docs/evidence/PA04/T08/README.md).
+
+**Khi nén repo để nộp:** không nén nguyên thư mục làm việc, vì `.env` (key dev) và `marking.env` có thể nằm ở thư mục gốc; `.gitignore` chỉ ngăn chúng vào Git, không ngăn vào file zip. Nén từ một bản clone sạch ở tag `pa4` (chỉ có file được Git theo dõi và `.git`), rồi kiểm nội dung trước khi nộp. Chạy các lệnh dưới **ở một thư mục ngoài repo** (ví dụ thư mục cha); chạy ngay trong repo sẽ tạo thư mục lồng `leetkob/leetkob`. Tag `pa4` do T10 tạo trước khi nộp. PowerShell, dùng `tar.exe` của Windows (`tar` trong Git Bash là GNU tar, tạo file tar chứ không phải zip):
+
+```powershell
+git clone --branch pa4 https://github.com/2609-AWAD-23-3/leetkob.git leetkob
+tar.exe -a -c -f <StudentID1>-<StudentID2>-<StudentID3>_<total>.zip leetkob
+tar.exe -tf <StudentID1>-<StudentID2>-<StudentID3>_<total>.zip | Select-String '(^|/)(\.env|marking\.env)$'
+tar.exe -tf <StudentID1>-<StudentID2>-<StudentID3>_<total>.zip | Select-String '^leetkob/\.git/HEAD$'
+```
+
+Lệnh thứ ba phải không in gì (không có key trong zip); lệnh thứ tư phải in một dòng (zip có `.git`).
 
 `leetkob-eval/` là dev set nguyên byte từ commit `552c811` (`npm test` so SHA-256 từng file). Case riêng của nhóm ở `eval-cases/` cùng layout; chấm bằng `node leetkob-eval/eval.mjs --data eval-cases --predictions <file>`. Kiểm mọi case là Accepted trong sandbox (cần Docker): `npm run build && node scripts/verify-eval-cases.mjs eval-cases`. Kết quả chạy và dev run: [evidence T10](docs/evidence/PA03/T10/README.md).
 

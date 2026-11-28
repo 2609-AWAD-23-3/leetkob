@@ -1,0 +1,49 @@
+{"solution":"above-mean/s01","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"above-mean/s01","constraint":"C2","verdict":"pass","evidence":[]}
+{"solution":"above-mean/s02","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"above-mean/s02","constraint":"C2","verdict":"pass","evidence":[]}
+{"solution":"above-mean/s03","constraint":"C1","verdict":"violation","evidence":[{"line":3,"text":"#define EACH(i, lo, hi) for (int i = (lo); i < (hi); ++i)"},{"line":22,"text":"  EACH(i, 0, n) std::cin >> a[i];"}]}
+{"solution":"above-mean/s03","constraint":"C2","verdict":"pass","evidence":[]}
+{"solution":"above-mean/s04","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"above-mean/s04","constraint":"C2","verdict":"violation","evidence":[{"line":7,"text":"static int split_point(int lo, int hi) { return lo + std::min(hi - lo - 1, 1); }"},{"line":15,"text":"  read_range(lo, cut);"},{"line":16,"text":"  read_range(cut, hi);"},{"line":22,"text":"  return sum_range(lo, cut) + sum_range(cut, hi);"},{"line":28,"text":"  return count_above(lo, cut, sum, n) + count_above(cut, hi, sum, n);"}]}
+{"solution":"above-mean/s05","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"above-mean/s05","constraint":"C2","verdict":"violation","evidence":[{"line":8,"text":"  return a[i] + read_and_sum(i + 1, n);"},{"line":13,"text":"  return (a[i] * n > sum ? 1 : 0) + count_above(i + 1, n, sum);"}]}
+{"solution":"digit-sum/s01","constraint":"C1","verdict":"violation","evidence":[{"line":10,"text":"    std::string digits = std::to_string(n);"}]}
+{"solution":"digit-sum/s01","constraint":"C2","verdict":"violation","evidence":[{"line":10,"text":"    std::string digits = std::to_string(n);"},{"line":12,"text":"    for (char c : digits) sum += c - '0';"}]}
+{"solution":"digit-sum/s02","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"digit-sum/s02","constraint":"C2","verdict":"pass","evidence":[]}
+{"solution":"digit-sum/s03","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"digit-sum/s03","constraint":"C2","verdict":"violation","evidence":[{"line":10,"text":"    std::string n;"},{"line":11,"text":"    std::cin >> n;"},{"line":13,"text":"    for (std::size_t i = 0; i < n.size(); ++i) sum += n[i] - '0';"}]}
+{"solution":"digit-sum/s04","constraint":"C1","verdict":"violation","evidence":[{"line":3,"text":"using std::to_string;"},{"line":6,"text":"  const auto text = to_string(n);"}]}
+{"solution":"digit-sum/s04","constraint":"C2","verdict":"violation","evidence":[{"line":6,"text":"  const auto text = to_string(n);"},{"line":8,"text":"  for (char c : text) sum += c - '0';"}]}
+{"solution":"digit-sum/s05","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"digit-sum/s05","constraint":"C2","verdict":"pass","evidence":[]}
+{"solution":"digit-sum/s06","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"digit-sum/s06","constraint":"C2","verdict":"unsure","evidence":[]}
+{"solution":"mod-power/s01","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"mod-power/s01","constraint":"C2","verdict":"pass","evidence":[]}
+{"solution":"mod-power/s02","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"mod-power/s02","constraint":"C2","verdict":"pass","evidence":[]}
+{"solution":"mod-power/s03","constraint":"C1","verdict":"violation","evidence":[{"line":8,"text":"  return static_cast<u64>(std::llround(std::exp(k * std::log(2.0))));"}]}
+{"solution":"mod-power/s03","constraint":"C2","verdict":"pass","evidence":[]}
+{"solution":"mod-power/s04","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"mod-power/s04","constraint":"C2","verdict":"violation","evidence":[{"line":15,"text":"    for (u64 i = 0; i < b; ++i) result = result * (a % m) % m;"}]}
+{"solution":"mod-power/s05","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"mod-power/s05","constraint":"C2","verdict":"violation","evidence":[{"line":9,"text":"  return power_mod(a, b / 2, m) * power_mod(a, b / 2, m) % m;"}]}
+{"solution":"mod-power/s06","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"mod-power/s06","constraint":"C2","verdict":"pass","evidence":[]}
+{"solution":"rotate-array/s01","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"rotate-array/s01","constraint":"C2","verdict":"pass","evidence":[]}
+{"solution":"rotate-array/s01","constraint":"C3","verdict":"pass","evidence":[]}
+{"solution":"rotate-array/s02","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"rotate-array/s02","constraint":"C2","verdict":"pass","evidence":[]}
+{"solution":"rotate-array/s02","constraint":"C3","verdict":"pass","evidence":[]}
+{"solution":"rotate-array/s03","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"rotate-array/s03","constraint":"C2","verdict":"violation","evidence":[{"line":5,"text":"  static int spare[100000];"},{"line":10,"text":"  int *tmp = workspace();"},{"line":11,"text":"  for (int i = 0; i < n; ++i) tmp[(i + shift) % n] = a[i];"}]}
+{"solution":"rotate-array/s03","constraint":"C3","verdict":"pass","evidence":[]}
+{"solution":"rotate-array/s04","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"rotate-array/s04","constraint":"C2","verdict":"pass","evidence":[]}
+{"solution":"rotate-array/s04","constraint":"C3","verdict":"violation","evidence":[{"line":19,"text":"  int *a = new int[n];"},{"line":25,"text":"    return 0;"}]}
+{"solution":"rotate-array/s05","constraint":"C1","verdict":"pass","evidence":[]}
+{"solution":"rotate-array/s05","constraint":"C2","verdict":"violation","evidence":[{"line":14,"text":"  int *constant_size_scratch = new int[n];"},{"line":15,"text":"  for (int i = 0; i < n; ++i) constant_size_scratch[(i + shift) % n] = a[i];"}]}
+{"solution":"rotate-array/s05","constraint":"C3","verdict":"pass","evidence":[]}

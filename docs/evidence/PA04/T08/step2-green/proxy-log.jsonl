@@ -1,0 +1,6 @@
+{"time":"2026-11-28T05:09:10.588Z","listening":3128,"allow":["api.anthropic.com:443"]}
+{"time":"2026-11-28T05:09:13.251Z","method":"CONNECT","target":"example.com:443","allowed":false}
+{"time":"2026-11-28T05:09:15.560Z","method":"CONNECT","target":"api.anthropic.com:443","allowed":true}
+{"time":"2026-11-28T05:09:15.567Z","method":"CONNECT","target":"api.anthropic.com:443","allowed":true}
+{"time":"2026-11-28T05:09:15.569Z","method":"CONNECT","target":"api.anthropic.com:443","allowed":true}
+{"time":"2026-11-28T05:09:15.570Z","method":"CONNECT","target":"api.anthropic.com:443","allowed":true}

@@ -1,0 +1,8 @@
+image leetkob-checker:held-out-proxy: NODE_USE_ENV_PROXY=1 set
+PASS internal network cannot reach the model host without the proxy - fetch failed: EAI_AGAIN: getaddrinfo EAI_AGAIN api.anthropic.com
+PASS proxy refuses a host other than the model host - fetch failed: Request was cancelled.
+PASS checker exits 0 - exit 0, 11 s
+PASS eval.mjs accepts the file (exit 0 or 1) - exit 0; PASS
+PASS every model call went through the proxy (outcome ok, provider request id) - 39 calls, 0 not ok ()
+PASS the proxy only let traffic through to the model host - allowed: api.anthropic.com:443; refused: 1
+held-out proxy run: PASS
