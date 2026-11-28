@@ -25,10 +25,10 @@ Thay đổi tại `.github/workflows/ci.yml` và test `tests/unit/eval-gate-work
 
 ## 3. Lần chạy CI `eval-gate` thật trên GitHub Actions
 
-- **Commit kiểm chứng**: `a7ffa16d36e4d408420cb6d3d32492499cef452f`
-- **CI Run**: [#46177013367](https://github.com/2609-AWAD-23-3/leetkob/actions/runs/46177013367) (job `eval-gate` ID `141077894129`, model `anthropic claude-haiku-5-5`, chạy trong 42s) — toàn bộ 4/4 job xanh (`quality-gate`, `eval-gate`, `sandbox-attacks`, `postgres-store`).
+- **Run 1 (`a7ffa16d36e4d408420cb6d3d32492499cef452f`)**: [#46177013367](https://github.com/2609-AWAD-23-3/leetkob/actions/runs/46177013367) (job `eval-gate` ID `141077894129`, model `anthropic claude-haiku-5-5`, chạy trong 42s) — toàn bộ 4/4 job xanh (`quality-gate`, `eval-gate`, `sandbox-attacks`, `postgres-store`).
+- **Run 2 (`9d016f841228e1db42cdd86d699f6e6c18d8a11a`)**: [#46177390862](https://github.com/2609-AWAD-23-3/leetkob/actions/runs/46177390862) (job `eval-gate` ID `141079074416`, 48s) — toàn bộ 4/4 job xanh; `leetkob-eval` PASS (`100.0%` recall, `0` wrongful, `0%` unsure, `$0.010177`), `eval-cases` PASS (`100.0%` recall, `0` wrongful, `0%` unsure, `$0.006083`), tổng `$0.016261` (61/61 calls ok).
 
-| Dataset | Pairs | Wrongful | Recall | Unsure | `eval.mjs` | Calls (ok / not ok) | Tokens (in / out) | Chi phí |
+| Dataset (Run 1 — `a7ffa16`) | Pairs | Wrongful | Recall | Unsure | `eval.mjs` | Calls (ok / not ok) | Tokens (in / out) | Chi phí |
 | --- | ---: | ---: | ---: | ---: | --- | --- | ---: | ---: |
 | `leetkob-eval` | 102 | 0 | 100.0% (37/37) | 0.0% (0/102) | `PASS` (exit 0) | 39 (39 / 0) | 68 703 / 6 727 | `$0.010234` |
 | `eval-cases` | 49 | 0 | 100.0% (15/15) | 0.0% (0/49) | `PASS` (exit 0) | 22 (22 / 0) | 38 170 / 4 774 | `$0.006204` |
@@ -69,7 +69,21 @@ Chạy liên tiếp 3 lần từ cùng commit `a7ffa16` (`node --env-file=.env d
 - **Tổng cặp đổi verdict trên cả 151 cặp**: **1 / 151** (`dynamic-array/s05` `C2`).
 - **Chi phí tổng hợp (dev set + case riêng) qua 3 lần chạy local**: `$0.015979` (Run 1), `$0.016227` (Run 2), `$0.016245` (Run 3); trên GitHub Actions CI run `#46177013367`: **`$0.016438`**.
 
-## 5. Giới hạn và việc còn lại
+## 5. Branch protection & chứng minh gate đỏ chặn merge
 
-- Required status check `eval-gate` trên branch protection của `main` và `develop` sẽ được bật và kiểm chứng chặn merge (bằng PR thử có label sai từ phía reviewer theo checklist T05, đóng không merge).
-- PR bị chặn thật của checker thuộc `PA04-T06` (`#59`).
+### 5.1. Branch protection đã bật và kiểm chứng (`gh api`)
+
+Đã cấu hình `eval-gate` (cùng `quality-gate`, GitHub Actions `app_id: 15368`) làm **required status check** trên cả hai nhánh bảo vệ:
+
+- **`main`**: `strict: true`, `contexts: ["quality-gate", "eval-gate"]` (`gh api repos/2609-AWAD-23-3/leetkob/branches/main/protection/required_status_checks`).
+- **`develop`**: `strict: false`, `contexts: ["quality-gate", "eval-gate"]` (`gh api repos/2609-AWAD-23-3/leetkob/branches/develop/protection/required_status_checks`).
+
+### 5.2. Chứng minh job đỏ khi `eval.mjs` exit ≠ 0 và PR bị chặn merge
+
+- **PR kiểm chứng tạm (đã đóng không merge, đã xoá nhánh)**: [#97](https://github.com/2609-AWAD-23-3/leetkob/pull/97) (`test/pa04-t05-red-gate-check` ➔ `develop`, commit `1c72a30`).
+- **Cách thử**: sửa tạm output semantic trong `src/cli/run.ts` thành `unsure` trên nhánh tạm (không sửa `leetkob-eval/`, `eval-cases/` hay `labels.jsonl`).
+- **CI Run đỏ**: [#46177996891](https://github.com/2609-AWAD-23-3/leetkob/actions/runs/46177996891) (job `eval-gate` ID `141080959388`):
+  - Checker vẫn chạy model thật (`39` calls ok, `$0.010264`), ghi predictions vào `$RUNNER_TEMP/eval-gate/dev-predictions.jsonl`.
+  - `node leetkob-eval/eval.mjs` báo `recall 40.5% (15/37) FAIL`, `unsure rate 46.1% (47/102) FAIL`, kết luận `FAIL (recall 40.5% < 90.0%; unsure 46.1% > 20.0%)` và thoát `exit code 1`.
+  - Job `eval-gate` dừng với trạng thái `FAILURE` (không chạy step `eval-cases`), và `gh pr view 97` ghi nhận `mergeStateStatus: "BLOCKED"`.
+- **Ghi chú**: PR #97 chỉ để chứng minh cơ chế gate đỏ chặn merge cho `T05`; PR bị chặn thật của checker nộp trong `PA4.md` thuộc `PA04-T06` (`#59`), và checklist review của `@vinny2707` còn phần mở PR thử có label sai nếu cần kiểm tra độc lập.
