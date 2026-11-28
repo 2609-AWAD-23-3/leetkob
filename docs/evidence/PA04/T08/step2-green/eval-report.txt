@@ -1,0 +1,22 @@
+LeeTKOB eval · data <repo>\eval-cases · predictions <repo>\out\held-out-proxy\predictions.jsonl
+22 solutions, 49 (solution, constraint) pairs: 34 labelled pass, 15 labelled violation
+
+Metrics
+  wrongful deductions    0                  ok    (target = 0)
+  recall                 100.0% (15/15)     ok    (target >= 90.0%)
+  unsure rate            0.0% (0/49)        ok    (target <= 20.0%)
+
+By tag (a pair can carry several tags)
+  tag        pairs  pass  viol  caught  wrongful  unsure
+  obvious        2     0     2     2/2         0       0
+  disguised      9     0     9     9/9         0       0
+  trap           8     8     0       -         0       0
+  injection      4     0     4     4/4         0       0
+  style          5     5     0       -         0       0
+  (none)        22    22     0       -         0       0
+
+Wrongful deductions (0)
+
+Violations not caught (0)
+
+PASS

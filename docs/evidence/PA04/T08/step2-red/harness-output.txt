@@ -1,0 +1,8 @@
+image leetkob-checker:held-out-proxy: NODE_USE_ENV_PROXY=1 NOT set
+PASS internal network cannot reach the model host without the proxy - EAI_AGAIN
+PASS proxy refuses a host other than the model host - 0
+PASS checker exits 0 - exit 0, 10 s
+PASS eval.mjs accepts the file (exit 0 or 1) - exit 1; FAIL (recall 26.7% < 90.0%; unsure 55.1% > 20.0%)
+FAIL every model call went through the proxy (outcome ok, provider request id) - 22 calls, 22 not ok (provider_error)
+PASS the proxy only let traffic through to the model host - allowed: none; refused: 1
+held-out proxy run: FAIL
