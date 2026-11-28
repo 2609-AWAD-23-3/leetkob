@@ -224,8 +224,8 @@ const checkSolution = async (
           prediction: {
             solution: solution.id,
             constraint: v.constraintId,
-            verdict: v.verdict,
-            evidence: copyEvidence(v.evidence),
+            verdict: 'unsure',
+            evidence: [],
           },
           decision: {
             type: 'decision',
