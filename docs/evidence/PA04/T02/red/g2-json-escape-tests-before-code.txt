@@ -1,0 +1,9 @@
+# G2 JSON escape: tests added before src/pipeline/model/schema.ts changed
+# State: f3501c2 (develop after PR #92) plus the new tests in tests/unit/model-schema.test.mjs and tests/unit/model-evaluate.test.mjs
+# Command: npm run build && node --test tests/unit/model-schema.test.mjs tests/unit/model-evaluate.test.mjs
+# Result: exit 1; tests 107, pass 105, fail 2
+G2 evaluator: a quote that only lost JSON backslash escaping keeps the violation and shows the original line
+G2 schema: a quote that only lost JSON backslash escaping is accepted, line by line
+# Pass at once (guard what must stay a mismatch, and the correctly escaped quote):
+#   G2 schema: the correctly escaped quote of a line with backslashes is still accepted
+#   G2 schema: lost escaping does not excuse any other difference, a wrong line or a line without backslashes
