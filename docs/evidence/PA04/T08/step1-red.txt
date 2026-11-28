@@ -1,0 +1,6 @@
+# Step 1 red run: tests added before .gitignore and .dockerignore changed
+# State: 5037508 plus tests/unit/held-out-secrets.test.mjs in the working tree
+# Command: node --test tests/unit/held-out-secrets.test.mjs
+# Result: exit 1; tests 2, pass 0, fail 2
+held-out: .gitignore ignores marking.env in every directory and never re-includes it   (.gitignore has no marking.env line)
+held-out: .dockerignore keeps marking.env out of the build context at the root and below   (.dockerignore has no marking.env line)

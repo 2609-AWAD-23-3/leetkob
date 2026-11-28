@@ -3,6 +3,9 @@
 .env
 .env.*
 **/.env
+# Model key cho lần chạy held-out (PA04-T08): truyền lúc chạy bằng --env-file, không vào image.
+marking.env
+**/marking.env
 .git
 .claude
 node_modules
