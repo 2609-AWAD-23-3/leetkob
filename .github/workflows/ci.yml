@@ -10,6 +10,8 @@ on:
       - 'pa02*'
       - 'pa3'
       - 'pa03*'
+      - 'pa4'
+      - 'pa04*'
   pull_request:
     branches:
       - main
@@ -106,3 +108,109 @@ jobs:
 
       - name: Run Docker sandbox and 9 attack tests
         run: npm run test:sandbox
+
+  # PA04-T05: eval gate running checker with the real model on dev set and own cases.
+  eval-gate:
+    name: eval-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Require MODEL_API_KEY secret (fail closed on fork PRs)
+        env:
+          MODEL_API_KEY: ${{ secrets.MODEL_API_KEY }}
+        run: |
+          if [ -z "${MODEL_API_KEY}" ]; then
+            echo "::error::MODEL_API_KEY secret is missing. Fork PRs do not receive repository secrets; a maintainer must review the diff and push the branch to the upstream repo so eval-gate can run with the real model."
+            exit 1
+          fi
+
+      - name: Set up Node.js 24.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Verify dev set SHA-256 against published manifest
+        run: |
+          (cd leetkob-eval && sha256sum -c ../tests/support/leetkob-eval.sha256 --quiet)
+          node --test tests/unit/leetkob-eval-integrity.test.mjs
+
+      - name: Build checker
+        run: npm run build
+
+      - name: Run checker and eval on published dev set (leetkob-eval)
+        env:
+          MODEL_API_KEY: ${{ secrets.MODEL_API_KEY }}
+          MODEL_OFF: '0'
+        run: |
+          mkdir -p "$RUNNER_TEMP/eval-gate"
+          node dist/cli/checker.js leetkob-eval \
+            --out "$RUNNER_TEMP/eval-gate/dev-predictions.jsonl" \
+            --call-log "$RUNNER_TEMP/eval-gate/dev-call-log.jsonl"
+          node leetkob-eval/eval.mjs \
+            --data leetkob-eval \
+            --predictions "$RUNNER_TEMP/eval-gate/dev-predictions.jsonl" \
+            --json "$RUNNER_TEMP/eval-gate/dev-summary.json"
+
+      - name: Run checker and eval on own cases (eval-cases)
+        env:
+          MODEL_API_KEY: ${{ secrets.MODEL_API_KEY }}
+          MODEL_OFF: '0'
+        run: |
+          mkdir -p "$RUNNER_TEMP/eval-gate"
+          node dist/cli/checker.js eval-cases \
+            --out "$RUNNER_TEMP/eval-gate/own-predictions.jsonl" \
+            --call-log "$RUNNER_TEMP/eval-gate/own-call-log.jsonl"
+          node leetkob-eval/eval.mjs \
+            --data eval-cases \
+            --predictions "$RUNNER_TEMP/eval-gate/own-predictions.jsonl" \
+            --json "$RUNNER_TEMP/eval-gate/own-summary.json"
+
+      - name: Summarize eval gate cost
+        if: always()
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const path = require("node:path");
+            const dir = path.join(process.env.RUNNER_TEMP, "eval-gate");
+            const readLog = (name) => {
+              const p = path.join(dir, name);
+              if (!fs.existsSync(p)) return { calls: 0, ok: 0, cost: 0, input: 0, output: 0 };
+              const entries = fs.readFileSync(p, "utf8").split("\n").filter(Boolean).map(JSON.parse).filter((e) => e.type === "model_call");
+              return {
+                calls: entries.length,
+                ok: entries.filter((e) => e.outcome === "ok").length,
+                cost: entries.reduce((s, e) => s + (e.costUsd || 0), 0),
+                input: entries.reduce((s, e) => s + (e.inputTokens || 0), 0),
+                output: entries.reduce((s, e) => s + (e.outputTokens || 0), 0),
+              };
+            };
+            const dev = readLog("dev-call-log.jsonl");
+            const own = readLog("own-call-log.jsonl");
+            const totalCost = dev.cost + own.cost;
+            const lines = [
+              "### Eval Gate Cost Summary",
+              `- dev set: ${dev.calls} calls (${dev.ok} ok), ${dev.input}/${dev.output} tokens, $${dev.cost.toFixed(6)}`,
+              `- eval-cases: ${own.calls} calls (${own.ok} ok), ${own.input}/${own.output} tokens, $${own.cost.toFixed(6)}`,
+              `- total CI run cost: $${totalCost.toFixed(6)}`,
+            ];
+            console.log(lines.join("\n"));
+            if (process.env.GITHUB_STEP_SUMMARY) {
+              fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join("\n") + "\n");
+            }
+          '
+
+      - name: Upload eval gate artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-gate-results
+          path: ${{ runner.temp }}/eval-gate
+          if-no-files-found: ignore
+          retention-days: 14
