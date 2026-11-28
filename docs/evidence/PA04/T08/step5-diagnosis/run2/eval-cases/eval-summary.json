@@ -1,0 +1,19 @@
+{
+  "pairs": 49,
+  "passLabels": 34,
+  "violationLabels": 15,
+  "wrongful": 0,
+  "caught": 15,
+  "recall": 1,
+  "unsure": 0,
+  "unsureRate": 0,
+  "missing": 0,
+  "thresholds": {
+    "maxWrongful": 0,
+    "minRecall": 0.9,
+    "maxUnsure": 0.2
+  },
+  "pass": true,
+  "wrongfulPairs": [],
+  "missedPairs": []
+}

@@ -149,3 +149,35 @@ Cộng lại: build khoảng 1 phút cộng thời gian tải base image, chạy
 
 - Cặp `unsure` duy nhất ở lần chạy mức 4 là `dynamic-array/s05` C2, cause `model_unsure`. Call log ghi `reason` mới của bước 3: model nói code dùng `std::basic_string<int>` (container của thư viện, cấp phát qua `std::allocator`) nên không tự quyết được có đạt ý "tự quản lý bộ nhớ" hay không. Đây là lần đầu `reason` cho biết lý do của một `unsure` thật.
 - README (mục "Lần chạy held-out") ghi số đo này.
+
+## 7. Bước 5 — Chẩn đoán `evidence_mismatch`
+
+**Bối cảnh.** Lần chạy cuối của T02 có một cặp vi phạm thật (`digit-sum/s06` C2) bị G2 hạ thành `unsure`/`evidence_mismatch`, nhưng không biết dòng nào lệch. Sau khi T02 merge (PR #92), nhánh T08 merge `develop` (`fd57762`, không xung đột: hai bên không sửa chung file nào); `npm test` 609 test, 606 pass, 3 skipped, 0 fail; lint, format-check, type-check exit 0.
+
+**Ba lần chạy có `reason`** (tại `fd57762`, checker trên máy, key dev, model `claude-haiku-5-5`, concurrency 4; mỗi lần `eval-cases` 49 cặp và dev set 102 cặp; `step5-diagnosis/run1..3/`, call log tách thành `decisions.jsonl` và `model-calls.jsonl` bỏ prompt):
+
+| Lần | `eval-cases` | Dev set |
+| --- | --- | --- |
+| 1 | `PASS`: 0 khấu trừ sai, recall 100%, unsure 0% | `PASS`: 0 khấu trừ sai, recall 97.3%, unsure 1.0% |
+| 2 | `PASS`: 0 / 100% / 0% | `PASS`: 0 / 97.3% / 1.0% |
+| 3 | `PASS`: 0 / 93.3% / 2.0% | `PASS`: 0 / 97.3% / 1.0% |
+
+183 call, đều `ok` với request id `req_…`, tổng $0.048858. Trên 453 lượt quyết (151 cặp × 3), có 4 `unsure`:
+
+- 3 là `model_unsure` (model tự trả `unsure`, kèm lý do): `binary-search/s04` C2 hai lần (code dùng `std::lower_bound`; model băn khoăn đó là vi phạm "tự viết" hay không) và `dynamic-array/s05` C2 một lần (dùng `std::basic_string<int>` thay vì tự cấp phát). Đây là phán đoán của model, việc của T06.
+- 1 là `evidence_mismatch`: lại đúng `digit-sum/s06` C2, `reason` giờ nêu **dòng 9**: `while ((c = std::getchar()) != EOF && c != '\n') {`.
+
+3/151 cặp đổi verdict giữa ba lần chạy (`digit-sum/s06` C2, `binary-search/s04` C2, `dynamic-array/s05` C2). Đây chưa phải ba lần chạy lặp của T05 (khác commit và cách chạy), chỉ là số liệu tham khảo.
+
+**Xác nhận nguyên nhân.** Script chẩn đoán `step5-diagnosis/diag-line9.mjs` (không thuộc code sản phẩm) gọi model 10 lần với đúng prompt của `digit-sum/s06` C2 và in nguyên văn text model trích cho từng dòng (`line9-quotes.jsonl`, mỗi dòng có request id; $0.002351):
+
+- 20 phần tử evidence, 4 lệch, cả 4 ở dòng 9.
+- Code có hai ký tự `\` và `n`. Ở 6/10 lần model viết đúng `\\n` trong JSON; ở 4/10 lần model viết `\n`, là escape JSON của ký tự xuống dòng, nên text sau khi parse chứa **một ký tự xuống dòng thật** thay cho `\n`. G2 so chính xác nên hạ verdict xuống `unsure`.
+
+**Ý nghĩa cho lần chạy held-out.** Dòng vi phạm có `\` (`'\n'`, `"%d\n"`, `"\t"`) rất thường gặp trong code C++. Với những dòng đó, khoảng 4/10 lần trích sẽ lệch, verdict thành `unsure`: không trừ oan (an toàn), nhưng làm giảm recall ở tiêu chí 2. G2 làm đúng quy tắc đã chốt; vấn đề là quy tắc chưa tính tới lỗi escape của model.
+
+**Hướng sửa.** Vượng chốt hướng 1 (28/11), làm ở nhánh riêng `fix/pa04-t02-g2-json-escape`, [PR #93](https://github.com/2609-AWAD-23-3/leetkob/pull/93), evidence ở `docs/evidence/PA04/T02/README.md` mục 10. Sau khi sửa, 10 call trên dòng 9 có 5 phần tử mất escape và cả 10 giữ `violation`; `eval-cases` và dev set `PASS` với 0 khấu trừ sai. Ba hướng đã cân nhắc:
+
+1. **G2 chấp nhận đúng một biến đổi: dòng code bị đọc như chuỗi JSON.** So `text` với dòng code như hiện tại; nếu lệch, so tiếp với dòng code sau khi giải các escape JSON hợp lệ trong dòng (`\n` thành xuống dòng, `\t` thành tab, `\"` thành `"`, `\\` thành `\`, `\uXXXX`, …); dấu `\` khác (ví dụ `\0`) giữ nguyên, không đòi cả dòng là thân chuỗi JSON hợp lệ. Đây đúng là quy tắc đã làm ở PR #93 (`decodeJsonEscapes`, README T02 mục 10). Biến đổi này xác định duy nhất từ dòng code thật, nên không mở đường cho dòng bịa hay sai số dòng; mọi khác biệt khác vẫn là lệch. Đây là thay đổi của G2: commit riêng, test trước (gồm trường hợp `'\n'`, `"%d\n"`, `\"`), thử xoá, chạy lại model thật.
+2. **Dặn trong prompt** phải escape `\` khi chép dòng. Đụng prompt (T06, Vỹ) và không chắc model luôn làm theo.
+3. **Giữ nguyên**, chấp nhận mất recall ở các dòng có `\`.

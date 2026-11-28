@@ -62,3 +62,21 @@ Kept: Ghi rõ phần chưa đo được: base image đã có sẵn trên máy, n
 Changed: Đo một lần `docker build --no-cache`: 48 s (`npm ci` 16 s, build và prune 24 s), image 406 MB; lưu log đã thay đường dẫn local. README và evidence bước 4 ghi số này và tổng thời gian build cộng chạy.
 Rejected: Xoá base image để đo cả lần tải (phụ thuộc mạng của máy dev, không đại diện cho máy người chấm, và làm mất cache dùng chung).
 By hand: Vượng tìm ra điểm thiếu khi review. Claude chạy build không cache và cập nhật README, evidence.
+
+## 2026-11-28 — Bước 5: chẩn đoán `evidence_mismatch`
+
+Tool: Claude Code (desktop app).
+Asked for: Vượng bảo làm bước 5 sau khi PR #92 (T02) merge: đo tần suất và nguyên nhân G2 hạ verdict thành `evidence_mismatch`, dùng `reason` mới trong call log.
+Kept: Merge `develop` vào nhánh T08 bằng merge commit (không rebase) để giữ SHA các commit T08 mà evidence dẫn tới; kiểm trước là hai bên không sửa chung file. Không sửa G2 khi chưa có quyết định.
+Changed: Chạy checker 3 lần trên `eval-cases` và dev set: 1 `evidence_mismatch` trên 453 lượt quyết, `reason` chỉ ra dòng 9 của `digit-sum/s06` (dòng có ký tự xuống dòng viết dạng escape trong code C++). Vì `reason` không chứa text model trích, Claude viết một script chẩn đoán ngoài code sản phẩm, gọi model 10 lần với đúng prompt đó và in nguyên văn: 4/10 lần model chép hai ký tự "dấu gạch chéo ngược" và "n" của code thành escape JSON của ký tự xuống dòng, nên text sau khi parse có một ký tự xuống dòng thật. Lưu evidence không kèm prompt để gọn. Đề xuất ba hướng, khuyến nghị cho G2 chấp nhận đúng biến đổi "dòng code bị đọc như chuỗi JSON". Khi ghi mục này, lệnh Python của Claude làm lọt ký tự xuống dòng thật vào AI-LOG; đã viết lại cả mục từ file soạn sẵn.
+Rejected: Sửa G2 hay prompt ngay trong bước 5 (thay đổi guardrail, cần Vượng quyết và commit riêng); kết luận từ một lần lệch mà không xác nhận cơ chế. Sau đó Vượng chọn hướng 1 và phần sửa G2 đi ở PR #93 (nhánh riêng từ `develop`); trong lúc làm, phần evidence bước 5 này được cất tạm bằng `git stash` rồi lấy lại.
+By hand: Vượng quyết định làm bước 5. Claude merge, chạy kiểm tra, ba lần chạy model thật ($0.048858), script chẩn đoán ($0.002351), phân tích và viết evidence.
+
+## 2026-11-28 — Bước 5 sau review của Vượng
+
+Tool: Claude Code (desktop app).
+Asked for: Vượng review evidence bước 5 (chưa commit): mô tả hướng 1 ghi chỉ giải escape "khi dòng code là thân chuỗi JSON hợp lệ", khác code của PR #93 (giải từng escape hợp lệ, giữ nguyên dấu gạch chéo ngược khác) và khác README T02 mục 10; comment đầu `diag-line9.mjs` ghi "không thuộc repo" dù file đã nằm trong `docs/evidence/`.
+Kept: Không đổi kết quả hay số liệu nào.
+Changed: Sửa mô tả hướng 1 cho khớp `decodeJsonEscapes` và README T02 mục 10; đổi comment thành "không thuộc code sản phẩm". Mô tả cũ viết trước khi làm PR #93 và không được cập nhật sau khi cách làm đổi.
+Rejected: Không có.
+By hand: Vượng tìm ra hai điểm khi review. Claude sửa README và comment.

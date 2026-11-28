@@ -1,0 +1,21 @@
+{"call":1,"requestId":"req_011ChUqj7V77sJmSZ2KaeT9D","verdict":"violation","line":9,"match":false,"quoted":"while ((c = std::getchar()) != EOF && c != '\n') {","expected":"while ((c = std::getchar()) != EOF && c != '\\n') {"}
+{"call":1,"requestId":"req_011ChUqj7V77sJmSZ2KaeT9D","verdict":"violation","line":10,"match":true,"quoted":"if (c >= '0' && c <= '9') sum += c - '0';"}
+{"call":2,"requestId":"req_011ChUqjGcnBJLqmw9P3Ntwx","verdict":"violation","line":9,"match":true,"quoted":"while ((c = std::getchar()) != EOF && c != '\\n') {"}
+{"call":2,"requestId":"req_011ChUqjGcnBJLqmw9P3Ntwx","verdict":"violation","line":10,"match":true,"quoted":"if (c >= '0' && c <= '9') sum += c - '0';"}
+{"call":3,"requestId":"req_011ChUqjSRNyFqZpvK16wtWp","verdict":"violation","line":9,"match":true,"quoted":"while ((c = std::getchar()) != EOF && c != '\\n') {"}
+{"call":3,"requestId":"req_011ChUqjSRNyFqZpvK16wtWp","verdict":"violation","line":10,"match":true,"quoted":"if (c >= '0' && c <= '9') sum += c - '0';"}
+{"call":4,"requestId":"req_011ChUqjYwoQsNMPtSVh8bMn","verdict":"violation","line":9,"match":true,"quoted":"while ((c = std::getchar()) != EOF && c != '\\n') {"}
+{"call":4,"requestId":"req_011ChUqjYwoQsNMPtSVh8bMn","verdict":"violation","line":10,"match":true,"quoted":"if (c >= '0' && c <= '9') sum += c - '0';"}
+{"call":5,"requestId":"req_011ChUqjfvFTYMeK5YBye8t6","verdict":"violation","line":9,"match":false,"quoted":"while ((c = std::getchar()) != EOF && c != '\n') {","expected":"while ((c = std::getchar()) != EOF && c != '\\n') {"}
+{"call":5,"requestId":"req_011ChUqjfvFTYMeK5YBye8t6","verdict":"violation","line":10,"match":true,"quoted":"if (c >= '0' && c <= '9') sum += c - '0';"}
+{"call":6,"requestId":"req_011ChUqjsTmfmutUHiWxs49f","verdict":"violation","line":9,"match":true,"quoted":"while ((c = std::getchar()) != EOF && c != '\\n') {"}
+{"call":6,"requestId":"req_011ChUqjsTmfmutUHiWxs49f","verdict":"violation","line":10,"match":true,"quoted":"if (c >= '0' && c <= '9') sum += c - '0';"}
+{"call":7,"requestId":"req_011ChUqk5a3kEq6D2h5DUuMD","verdict":"violation","line":9,"match":false,"quoted":"while ((c = std::getchar()) != EOF && c != '\n') {","expected":"while ((c = std::getchar()) != EOF && c != '\\n') {"}
+{"call":7,"requestId":"req_011ChUqk5a3kEq6D2h5DUuMD","verdict":"violation","line":10,"match":true,"quoted":"if (c >= '0' && c <= '9') sum += c - '0';"}
+{"call":8,"requestId":"req_011ChUqkD8TSCakJUoMTTFY6","verdict":"violation","line":9,"match":true,"quoted":"while ((c = std::getchar()) != EOF && c != '\\n') {"}
+{"call":8,"requestId":"req_011ChUqkD8TSCakJUoMTTFY6","verdict":"violation","line":10,"match":true,"quoted":"if (c >= '0' && c <= '9') sum += c - '0';"}
+{"call":9,"requestId":"req_011ChUqkM9umTd5rcqNKzvFf","verdict":"violation","line":9,"match":true,"quoted":"while ((c = std::getchar()) != EOF && c != '\\n') {"}
+{"call":9,"requestId":"req_011ChUqkM9umTd5rcqNKzvFf","verdict":"violation","line":10,"match":true,"quoted":"if (c >= '0' && c <= '9') sum += c - '0';"}
+{"call":10,"requestId":"req_011ChUqkY8xZ1j3Xe7R7UQDR","verdict":"violation","line":9,"match":false,"quoted":"while ((c = std::getchar()) != EOF && c != '\n') {","expected":"while ((c = std::getchar()) != EOF && c != '\\n') {"}
+{"call":10,"requestId":"req_011ChUqkY8xZ1j3Xe7R7UQDR","verdict":"violation","line":10,"match":true,"quoted":"if (c >= '0' && c <= '9') sum += c - '0';"}
+{"calls":10,"costUsd":0.002351}
