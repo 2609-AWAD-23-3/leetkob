@@ -15,6 +15,7 @@
 // giá trị key. Gọi model thật nên tốn tiền (khoảng $0.006 cho eval-cases).
 //
 //   node scripts/test-held-out-proxy.mjs [--data eval-cases] [--out out/held-out-proxy] [--env-file <file>]
+//     [--concurrency <n>]   (không truyền thì dùng mặc định của checker, như lệnh trong README)
 import { spawnSync } from 'node:child_process';
 import {
   existsSync,
@@ -40,6 +41,7 @@ const arg = (name, fallback) => {
 const data = resolve(arg('--data', 'eval-cases'));
 const out = resolve(arg('--out', join('out', 'held-out-proxy')));
 const envFileArg = arg('--env-file', null);
+const concurrencyArg = arg('--concurrency', null);
 
 const docker = (args, options = {}) => {
   const run = spawnSync('docker', args, { encoding: 'utf8', ...options });
@@ -174,6 +176,7 @@ try {
     '/out/predictions.jsonl',
     '--call-log',
     '/out/call-log.jsonl',
+    ...(concurrencyArg === null ? [] : ['--concurrency', concurrencyArg]),
   ]);
   const seconds = Math.round((Date.now() - started) / 1000);
   writeFileSync(join(out, 'checker-stderr.txt'), run.stderr);

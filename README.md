@@ -83,6 +83,8 @@ Windows PowerShell (mount thư mục output, không dùng `>`):
 docker run --rm --env-file marking.env -e HTTPS_PROXY=http://<proxy>:<port> -v "${PWD}\<held-out>:/data:ro" -v "${PWD}\out:/out" leetkob-checker /data --out /out/predictions.jsonl
 ```
 
+**Thời gian:** build image không dùng cache (`docker build --no-cache`, gồm `npm ci` từ đầu) mất 48 giây khi base image `node:24.22.3-bookworm-slim` đã có sẵn; tải base image (330 MB sau khi giải nén) tuỳ mạng, chưa tính. Chạy checker dùng concurrency mặc định 4. Qua proxy, dev set (102 cặp, 39 call model) chạy hết 20 giây trong container checker, mỗi call khoảng 2 giây; nếu mọi call đều chạm hạn 30 giây thì 30 phút vẫn đủ cho khoảng 240 call, gấp khoảng 6 lần dev set ([số đo](docs/evidence/PA04/T08/README.md)).
+
 Không có `marking.env` dùng được thì chạy với model tắt như lệnh `MODEL_OFF=1` ở trên: chỉ hard rules quyết constraint ban-list, mọi constraint semantic là `unsure`.
 
 `--env-file` ở đây chỉ đưa key vào container **checker**: checker đọc text, không compile hay chạy code sinh viên. Quy tắc trong `AGENTS.md` cấm `--env-file` và `-e MODEL_API_KEY` áp cho container **sandbox** chạy code sinh viên; sandbox không bao giờ nhận key.

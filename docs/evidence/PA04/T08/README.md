@@ -120,3 +120,32 @@ Decision `pass`, `violation`, hard rule và `model_off` không có `reason`, đ�
 - **Thiếu test cho `timeout`.** Thêm `T08 call log: a timeout records the reason` (model không bao giờ trả lời, hạn 30 ms; `reason` có "did not answer within 30 ms"). Test xanh ngay khi thêm vì thay đổi đầu tiên của bước 3 đã ghi `reason` cho mọi `unsure` từ evaluator; test chỉ bổ sung độ phủ cho đủ các loại `unsure`.
 - **Kiểm trên đường mạng thật** (`step3-proxy-refused/`): checker chạy trên máy, đi qua proxy thử cấu hình **từ chối** model host. 22 call đều `provider_error` (không tốn tiền), cả 27 decision `provider_error` có `reason`, và `reason` là: `Anthropic API call failed (no HTTP status): Connection error. (cause: fetch failed <- Request was cancelled. [0] <- Proxy response (403) !== 200 when HTTP Tunneling [UND_ERR_ABORTED])`. Key không xuất hiện trong call log.
 - **Kiểm tra sau khi sửa:** lint, format-check, type-check, `git diff --check` exit 0; `npm test` 578 test, 575 pass, 3 skipped, 0 fail (thêm 2 test so với bảng ở trên).
+
+## 6. Bước 4 — Thời gian chạy và concurrency
+
+**Câu hỏi.** Người chấm dừng container sau 30 phút. Held-out set chưa biết cỡ. Concurrency mặc định của checker (4) có đủ nhanh, và có làm provider giới hạn tốc độ không?
+
+**Đo.** Chạy `npm run test:held-out-proxy -- --data leetkob-eval` (dev set, 102 cặp, 39 call model) qua proxy thử, cùng điều kiện như người chấm, ở concurrency mặc định 4 và ở 8 (`--concurrency 8`, tham số mới của script thử, chỉ truyền tiếp cho checker). Key dev trong `.env`, model `claude-haiku-5-5`.
+
+| Concurrency | Thời gian container checker | Call | Độ trễ mỗi call p50 / p90 / max | `eval.mjs` | Chi phí | Evidence |
+| ---: | ---: | --- | --- | --- | --- | --- |
+| 4 (mặc định) | 20 s | 39, đều `ok` qua proxy | 1.68 / 2.32 / 5.06 s | `PASS`: 0 khấu trừ sai, recall 97.3% (36/37), unsure 1.0% | $0.009136 | `step4-timing/dev-set-c4/` |
+| 8 | 11 s | 39, đều `ok` qua proxy | 1.68 / 2.37 / 4.54 s | `PASS`: 0 khấu trừ sai, recall 100%, unsure 0% | $0.009150 | `step4-timing/dev-set-c8/` |
+
+Độ trễ mỗi call gần như không đổi khi tăng gấp đôi concurrency, và không call nào lỗi, nên ở mức 8 chưa thấy dấu hiệu provider giới hạn tốc độ.
+
+**Build image trên máy chưa có cache** (sau review của Vượng: script thử build có dùng cache Docker, không phản ánh máy người chấm phải chạy `npm ci` từ đầu). `docker build --no-cache --progress=plain -f docker/checker.Dockerfile -t leetkob-checker:nocache .`: exit 0, **48 s**, trong đó `npm ci` 16.0 s và `npm run build` cộng `npm prune` 23.7 s; image 406 MB. Base image `node:24.22.3-bookworm-slim` đã có sẵn trên máy (330 MB sau khi giải nén), nên thời gian tải base image chưa được tính và tuỳ mạng của người chấm. Log: `step4-timing/build-nocache.txt`. Đầu vào của build (`src/`, `package*.json`, Dockerfile) không đổi từ `cbcfe38`.
+
+Cộng lại: build khoảng 1 phút cộng thời gian tải base image, chạy checker trên dev set 20 s, xa giới hạn 30 phút.
+
+**Ước lượng cho held-out** (thời gian ≈ số call × độ trễ ÷ concurrency):
+
+- Bình thường, ở mức 4: khoảng 2 call/giây (39 call trong 20 s), tức 30 phút đủ cho khoảng 3 500 call; dev set chỉ cần 39.
+- Trường hợp xấu nhất, mọi call đều chạm hạn `MODEL_TIMEOUT_MS=30000`: mức 4 xử lý 4 call mỗi 30 s, tức khoảng 240 call trong 30 phút, gấp khoảng 6 lần dev set. Một lần call lỗi thật sẽ trả `unsure` và checker vẫn ghi đủ file.
+
+**Quyết định (Vượng chốt 28/11): giữ concurrency mặc định 4.** Đủ nhanh với dư lớn, và ít rủi ro chạm giới hạn tốc độ của tài khoản hơn mức 8 nếu held-out lớn. Không yêu cầu người chấm truyền thêm tham số; lệnh trong README giữ nguyên.
+
+**Ghi chú:**
+
+- Cặp `unsure` duy nhất ở lần chạy mức 4 là `dynamic-array/s05` C2, cause `model_unsure`. Call log ghi `reason` mới của bước 3: model nói code dùng `std::basic_string<int>` (container của thư viện, cấp phát qua `std::allocator`) nên không tự quyết được có đạt ý "tự quản lý bộ nhớ" hay không. Đây là lần đầu `reason` cho biết lý do của một `unsure` thật.
+- README (mục "Lần chạy held-out") ghi số đo này.

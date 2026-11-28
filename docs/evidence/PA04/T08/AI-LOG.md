@@ -44,3 +44,21 @@ Kept: Che key bằng cùng hàm `redact` của client cho cả phần nguyên nh
 Changed: Claude tìm ra nguyên nhân gốc bị mất ở client (`src/pipeline/model/client.ts` chỉ chép `error.message`), không phải ở checker; sửa ở client để cả worker cũng có. Viết test client trước (đỏ), thêm test `timeout` (xanh ngay, chỉ bổ sung độ phủ), rồi kiểm trên đường mạng thật bằng proxy thử từ chối model host: `reason` nêu đúng "Proxy response (403)", không có key. Lúc dọn proxy thử, lệnh `pkill` không tắt được process trên Windows và nhánh dự phòng `taskkill` lọc theo tên `node.exe` có thể đụng process Node khác; Claude kiểm danh sách process (không process nào khác bị tắt) rồi chỉ tắt đúng PID của proxy thử.
 Rejected: Ghép `cause` trong checker (`src/cli/run.ts`) thay vì client (`ModelProviderError` không giữ `cause`, và worker cũng cần); ghi nguyên object lỗi (có thể chứa header của request).
 By hand: Vượng tìm ra hai điểm khi review. Claude viết test, sửa client, chạy kiểm trên proxy thử, cập nhật README, evidence.
+
+## 2026-11-28 — Bước 4: thời gian chạy và concurrency
+
+Tool: Claude Code (desktop app).
+Asked for: Vượng bảo commit bước 3 rồi làm bước 4: đo thời gian chạy và chốt concurrency, ghi vào README; dừng cho review trước khi commit.
+Kept: Đo qua proxy thử, cùng điều kiện như người chấm, trên dev set. Không đổi giá trị mặc định khi số đo không cần.
+Changed: Thêm `--concurrency` cho script thử (chỉ truyền tiếp cho checker; không truyền thì dùng mặc định như lệnh trong README). Đo mức 4 (20 s) và 8 (11 s); độ trễ mỗi call không đổi, không call nào lỗi. Ước lượng 30 phút đủ cho khoảng 3 500 call bình thường, khoảng 240 call nếu mọi call chạm hạn 30 s. Đề xuất giữ mặc định 4. Lần chạy mức 4 có một `model_unsure` và call log ghi đúng `reason` của model, xác nhận thay đổi ở bước 3 trên lần chạy thật.
+Rejected: Tăng mặc định lên 8 (không cần về thời gian, tăng rủi ro giới hạn tốc độ nếu held-out lớn); bắt người chấm truyền `--concurrency` (họ chạy đúng lệnh trong README).
+By hand: Vượng chốt giữ concurrency 4 khi review. Claude sửa script thử, chạy hai lần đo (model thật qua proxy, tổng khoảng $0.018), viết README và evidence.
+
+## 2026-11-28 — Bước 4 sau review của Vượng: thời gian build image
+
+Tool: Claude Code (desktop app).
+Asked for: Vượng chỉ ra bước 4 mới đo phần chạy checker; plan ghi người chấm build image rồi chạy, và lần build trong script thử có thể dùng cache Docker, không phản ánh máy người chấm phải `npm ci` từ đầu. Cần đo `docker build --no-cache` rồi ghi vào evidence và câu "Thời gian" của README.
+Kept: Ghi rõ phần chưa đo được: base image đã có sẵn trên máy, nên thời gian tải base image không nằm trong 48 s.
+Changed: Đo một lần `docker build --no-cache`: 48 s (`npm ci` 16 s, build và prune 24 s), image 406 MB; lưu log đã thay đường dẫn local. README và evidence bước 4 ghi số này và tổng thời gian build cộng chạy.
+Rejected: Xoá base image để đo cả lần tải (phụ thuộc mạng của máy dev, không đại diện cho máy người chấm, và làm mất cache dùng chung).
+By hand: Vượng tìm ra điểm thiếu khi review. Claude chạy build không cache và cập nhật README, evidence.
