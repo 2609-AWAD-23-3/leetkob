@@ -80,3 +80,12 @@ Kept: Không đổi kết quả hay số liệu nào.
 Changed: Sửa mô tả hướng 1 cho khớp `decodeJsonEscapes` và README T02 mục 10; đổi comment thành "không thuộc code sản phẩm". Mô tả cũ viết trước khi làm PR #93 và không được cập nhật sau khi cách làm đổi.
 Rejected: Không có.
 By hand: Vượng tìm ra hai điểm khi review. Claude sửa README và comment.
+
+## 2026-11-28 — Bước 6 (thử sớm) với `marking.env`
+
+Tool: Claude Code (desktop app).
+Asked for: Vượng hỏi T08 có phải chờ T06 không; Claude giải thích chỉ lần chạy thử cuối phụ thuộc T06 và đề xuất thử `marking.env` ngay để phát hiện sớm lỗi key. Vượng bảo chạy thử rồi ghi evidence.
+Kept: Không in giá trị key; chỉ kiểm có biến, key khác key dev, và không file kết quả nào chứa key.
+Changed: Phát hiện `marking.env` dùng CRLF và thiếu ký tự xuống dòng cuối; kiểm `readModelConfig` thấy cả hai biến được `trim()`, rồi lần chạy thật xác nhận key và timeout đọc đúng. Ghi khuyến nghị lưu file bằng LF trước khi đính kèm. Chạy `npm run test:held-out-proxy -- --env-file marking.env` tại `45f659c`: mọi kiểm đều `PASS`, `eval.mjs` `PASS`, 22 call qua proxy có request id, $0.006278.
+Rejected: Sửa `marking.env` thay Vượng (file chứa key của Vượng, chỉ ghi khuyến nghị); coi đây là lần chạy thử cuối (code còn đổi ở T06).
+By hand: Vượng tạo key và file `marking.env`, quyết định chạy thử. Claude kiểm file, chạy script thử, kiểm kết quả không chứa key, viết evidence.

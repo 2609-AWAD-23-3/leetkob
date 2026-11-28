@@ -181,3 +181,33 @@ Cộng lại: build khoảng 1 phút cộng thời gian tải base image, chạy
 1. **G2 chấp nhận đúng một biến đổi: dòng code bị đọc như chuỗi JSON.** So `text` với dòng code như hiện tại; nếu lệch, so tiếp với dòng code sau khi giải các escape JSON hợp lệ trong dòng (`\n` thành xuống dòng, `\t` thành tab, `\"` thành `"`, `\\` thành `\`, `\uXXXX`, …); dấu `\` khác (ví dụ `\0`) giữ nguyên, không đòi cả dòng là thân chuỗi JSON hợp lệ. Đây đúng là quy tắc đã làm ở PR #93 (`decodeJsonEscapes`, README T02 mục 10). Biến đổi này xác định duy nhất từ dòng code thật, nên không mở đường cho dòng bịa hay sai số dòng; mọi khác biệt khác vẫn là lệch. Đây là thay đổi của G2: commit riêng, test trước (gồm trường hợp `'\n'`, `"%d\n"`, `\"`), thử xoá, chạy lại model thật.
 2. **Dặn trong prompt** phải escape `\` khi chép dòng. Đụng prompt (T06, Vỹ) và không chắc model luôn làm theo.
 3. **Giữ nguyên**, chấp nhận mất recall ở các dòng có `\`.
+
+## 8. Bước 6 (thử sớm) — Chạy với đúng `marking.env` sẽ nộp
+
+**Vì sao thử sớm.** Plan đặt lần chạy thử cuối sau T06, vì image người chấm build là code ở tag `pa4`. Nhưng key trong `marking.env` là key mới tạo; nếu key sai, chưa có quyền hay hết hạn mức thì cần biết sớm, không phải sát hạn nộp. Lần này chạy với code hiện tại; lần cuối sẽ chạy lại cùng lệnh trên code sau T06.
+
+**File `marking.env`** (ngoài Git: `.gitignore`, `.dockerignore` và `.git/info/exclude` của máy dev đều bỏ qua). Kiểm bằng script, không in giá trị:
+
+- Có đúng hai biến `MODEL_API_KEY` và `MODEL_TIMEOUT_MS`.
+- Key khác key dev trong `.env` (key riêng cho lần chạy held-out).
+- File dùng xuống dòng CRLF (tạo trên Windows) và dòng cuối không có ký tự xuống dòng. Checker `trim()` cả hai biến (`readModelConfig` trong `src/pipeline/model/client.ts`), nên ký tự `\r` thừa không làm hỏng key hay timeout; lần chạy dưới xác nhận điều này. Nên lưu file bằng LF trước khi đính kèm để chắc chắn với mọi cách đọc file env.
+
+**Lệnh** (tại `45f659c`, gồm T02 và bản sửa G2 ở PR #93):
+
+```sh
+npm run test:held-out-proxy -- --env-file marking.env
+```
+
+**Kết quả** (`step6-early-marking-env/`, call log tách bỏ prompt):
+
+| Kiểm | Kết quả |
+| --- | --- |
+| Mạng internal không ra thẳng được model host | `PASS` (`EAI_AGAIN`) |
+| Proxy từ chối host khác | `PASS` |
+| Checker | exit 0, 14 s |
+| `eval.mjs` trên `eval-cases` | exit 0 `PASS`: 0 khấu trừ sai, recall 100% (15/15), unsure 0% (0/49) |
+| Model call | 22, đều `ok` qua proxy, 22 request id `req_…`, độ trễ tối đa 4.0 s, $0.006278 |
+| Proxy | chỉ cho qua `api.anthropic.com:443`, từ chối 1 kết nối (lần thử host khác) |
+| Key trong file kết quả | không file nào chứa key dev hay key held-out (kiểm 7 file) |
+
+**Còn lại cho lần chạy cuối:** sau khi T06 merge, chạy lại đúng lệnh trên code sẽ gắn tag `pa4`, ghi kết quả vào mục này hoặc vào evidence của T10.
