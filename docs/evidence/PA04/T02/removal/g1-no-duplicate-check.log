@@ -1,0 +1,163 @@
+# Removal check: g1-no-duplicate-check
+# What: G1 removed: a constraint answered twice keeps the first answer
+# Source: HEAD 366f691 plus the working tree at the time of the run; src/pipeline/model/schema.ts restored afterwards
+# Command: npm run build && node --test tests/unit/model-schema.test.mjs tests/unit/model-evaluate.test.mjs
+# Exit code: 1
+# Failing tests: 2
+#   ✖ schema: a duplicated id becomes schema_error for that id only
+#   ✖ G1 schema: a duplicated constraint is unsure with schema_error, even when both answers agree
+#
+# Temporary patch applied to src/pipeline/model/schema.ts:
+#   diff --git a/src/pipeline/model/schema.ts b/src/pipeline/model/schema.ts
+#   index b72538c..8545f08 100644
+#   --- a/src/pipeline/model/schema.ts
+#   +++ b/src/pipeline/model/schema.ts
+#   @@ -198,7 +198,7 @@ export const parseModelOutput = (
+#          );
+#        }
+#        const [raw] = entries;
+#   -    if (entries.length > 1 || raw === undefined) {
+#   +    if (raw === undefined) { // REMOVAL TEST: duplicates allowed
+#          hasSchemaError = true;
+#          return unsureResult(
+#            id,
+#
+# Test output:
+✔ evaluator: no semantic constraint means no model call and an empty result (3.3159ms)
+✔ evaluator: one call covers all semantic constraints of a submission (4.964ms)
+✔ evaluator: verdict fields, order and evidence text come from the original code (1.0545ms)
+✔ evaluator: evidence text is the original line, never text written by the model (0.7203ms)
+✔ evaluator: violation with no line, or a line outside the file, is unsure/evidence_mismatch (2.5764ms)
+✔ evaluator: a violation that only cites lines the model never saw is evidence_mismatch (0.5258ms)
+✔ evaluator: an unsure verdict from the model keeps cause model_unsure (0.7114ms)
+✔ evaluator: unsureCause is set if and only if the verdict is unsure (1.5395ms)
+✔ evaluator: broken output makes every constraint unsure/schema_error and logs schema_error (0.5625ms)
+✔ evaluator: refusal and max_tokens are unsure/schema_error even with parseable text (2.1583ms)
+✔ evaluator: a model that returns null text is unsure/schema_error (0.5277ms)
+✔ G5 evaluator: an extra deduction field is ignored, the verdict is kept and no verdict carries a mark (0.5582ms)
+✔ G1 evaluator: a fenced JSON answer is not unwrapped, every constraint is unsure/schema_error (0.3582ms)
+✔ G1 evaluator: JSON after prose is not cut out, every constraint is unsure/schema_error (0.2953ms)
+✔ evaluator: a missing constraint is schema_error, the valid one is kept (0.2688ms)
+✔ evaluator: no verdict carries any grading field (0.4758ms)
+✔ timeout: a model that never answers becomes unsure/timeout and the signal is aborted (47.3167ms)
+✔ timeout: a model that honours the abort signal is also unsure/timeout (46.461ms)
+✔ timeout: a client that throws ModelTimeoutError is unsure/timeout (0.8407ms)
+✔ timeout: a late answer after the deadline is ignored and does not crash the process (230.4925ms)
+✔ provider errors (429, 5xx, connection) are thrown so the worker can retry the job (1.8125ms)
+✔ provider errors: an unknown error from the client is thrown too, not turned into unsure (0.3984ms)
+✔ abort: when the job signal is aborted the evaluator throws instead of returning unsure (14.2655ms)
+✔ prompt: the model gets statement, semantic constraints and numbered clean code only (1.3588ms)
+✔ prompt: the system prompt treats code as data and forbids scores (0.3988ms)
+✔ prompt: only the asked constraints are sent, and code with CRLF is numbered correctly (0.3585ms)
+✔ prompt: onPrompt receives the exact prompt and its sha256, before the model is called (0.5076ms)
+✔ prompt: identity comes from getIdentity(submission), which may be async (0.3518ms)
+✔ call log: every field is filled from the response and the price table (0.4521ms)
+✔ integration with T07: ban-list constraints never reach the model (3.2521ms)
+✔ identity fails closed: no usable identity means no prompt and no model call (0.77ms)
+✔ identity fails closed: an async getIdentity that returns nothing usable also throws (0.1697ms)
+✔ identity fails closed: one usable string is enough, the others may be short (0.543ms)
+✔ identity: a joined form such as nguyen_van_an is masked when only the full name is given (1.2002ms)
+✔ evaluator: bad configuration fails fast (0.2824ms)
+✔ evaluator: duplicated constraint ids are a programming error (0.1167ms)
+✔ schema: the request schema has enums for ids and verdicts and no score field (2.6849ms)
+✔ schema: a clean output is accepted as is (0.746ms)
+✔ schema: broken JSON makes every constraint unsure with schema_error (0.2808ms)
+✔ schema: not JSON at all makes every constraint unsure with schema_error (0.1227ms)
+✔ schema: empty text makes every constraint unsure with schema_error (0.1817ms)
+✔ schema: null JSON makes every constraint unsure with schema_error (0.349ms)
+✔ schema: an array at the top level makes every constraint unsure with schema_error (0.25ms)
+✔ schema: missing results makes every constraint unsure with schema_error (0.1502ms)
+✔ schema: results is not an array makes every constraint unsure with schema_error (0.2278ms)
+✔ schema: an unknown verdict makes every constraint unsure with schema_error (0.4252ms)
+✔ schema: a missing reason makes every constraint unsure with schema_error (0.3076ms)
+✔ schema: a missing evidence_lines makes every constraint unsure with schema_error (0.1294ms)
+✔ schema: evidence_lines that are not integers makes every constraint unsure with schema_error (0.1023ms)
+✔ schema: evidence_lines with a fractional number makes every constraint unsure with schema_error (0.1098ms)
+✔ schema: a reason that is not a string makes every constraint unsure with schema_error (0.0951ms)
+✔ schema: a constraint_id that is not a string makes every constraint unsure with schema_error (0.0887ms)
+✔ schema: an item that is not an object makes every constraint unsure with schema_error (0.0836ms)
+✔ schema: a missing constraint becomes schema_error, the valid one is kept (0.1821ms)
+✖ schema: a duplicated id becomes schema_error for that id only (1.2636ms)
+✔ schema: an unknown id is ignored, the asked constraints keep their result (0.1579ms)
+✔ schema: an unknown id with a missing asked constraint leaves that one as schema_error (0.1165ms)
+✔ schema: stop_reason refusal is schema_error even if the text is valid (0.0877ms)
+✔ schema: stop_reason max_tokens is schema_error even if the text is valid (0.049ms)
+✔ schema: stop_reason tool_use is schema_error even if the text is valid (0.0615ms)
+✔ schema: stop_reason null is schema_error even if the text is valid (0.0597ms)
+✔ schema: no text block is schema_error (0.0846ms)
+✔ schema: violation without evidence lines is evidence_mismatch (0.1131ms)
+✔ schema: evidence lines [0] outside 1..10 is evidence_mismatch (0.0835ms)
+✔ schema: evidence lines [11] outside 1..10 is evidence_mismatch (0.1502ms)
+✔ schema: evidence lines [-1] outside 1..10 is evidence_mismatch (0.1059ms)
+✔ schema: evidence lines [3,99] outside 1..10 is evidence_mismatch (0.093ms)
+✔ schema: pass and unsure may omit evidence, but lines that are given must be in range (0.198ms)
+✔ schema: evidence lines are sorted, deduplicated and capped (0.2163ms)
+✔ schema: a very long reason is truncated, not rejected (0.255ms)
+✔ schema: a model unsure verdict has cause model_unsure (0.176ms)
+✔ G5 schema: extra deduction or score fields on a result are ignored and the verdict is kept (0.2907ms)
+✔ G5 schema: an extra top-level deduction field is ignored and the results are kept (0.1754ms)
+✔ G5 schema: a grading instruction in the reason changes nothing but the reason text (0.1327ms)
+✔ G5 schema: required fields with the wrong type are still schema_error (G1), extra fields do not hide them (0.2772ms)
+✔ G1 schema: JSON in a json code fence makes every constraint unsure with schema_error (0.1466ms)
+✔ G1 schema: JSON in a bare code fence makes every constraint unsure with schema_error (0.0979ms)
+✔ G1 schema: JSON after prose makes every constraint unsure with schema_error (0.0923ms)
+✔ G1 schema: JSON followed by prose makes every constraint unsure with schema_error (0.1129ms)
+✔ G1 schema: two JSON objects in a row makes every constraint unsure with schema_error (0.1447ms)
+✔ G1 schema: the same answer without fence or prose is accepted, so the cases above fail only on the wrapping (0.1139ms)
+✔ G1 schema: an unknown verdict makes every constraint unsure with schema_error (0.2691ms)
+✔ G1 schema: a missing constraint is unsure with schema_error, the other keeps its verdict (0.1384ms)
+✖ G1 schema: a duplicated constraint is unsure with schema_error, even when both answers agree (0.619ms)
+ℹ tests 84
+ℹ suites 0
+ℹ pass 82
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 836.9946
+
+✖ failing tests:
+
+test at tests\unit\model-schema.test.mjs:121:1
+✖ schema: a duplicated id becomes schema_error for that id only (1.2636ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  'pass' !== 'unsure'
+
+      at TestContext.<anonymous> (<repo>/tests/unit/model-schema.test.mjs:129:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'pass',
+    expected: 'unsure',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\unit\model-schema.test.mjs:321:1
+✖ G1 schema: a duplicated constraint is unsure with schema_error, even when both answers agree (0.619ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'violation'
+  - 'unsure'
+
+      at TestContext.<anonymous> (<repo>/tests/unit/model-schema.test.mjs:329:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'violation',
+    expected: 'unsure',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

@@ -1,0 +1,193 @@
+# Removal check: g5-exact-keys
+# What: G5 removed: require exactly the schema keys again (as hasExactKeys in PA03), so an extra field is schema_error
+# Source: HEAD 0ea7ff0 plus the working tree at the time of the run; src/pipeline/model/schema.ts restored afterwards
+# Command: npm run build && node --test tests/unit/model-schema.test.mjs tests/unit/model-evaluate.test.mjs tests/e2e/pipeline.test.mjs
+# Exit code: 1
+# Failing tests: 4
+#   ✖ e2e pipeline: submit -> worker -> fake sandbox -> hard rules -> fake model -> review queue -> publish
+#   ✖ G5 evaluator: an extra deduction field is ignored, the verdict is kept and no verdict carries a mark
+#   ✖ G5 schema: extra deduction or score fields on a result are ignored and the verdict is kept
+#   ✖ G5 schema: an extra top-level deduction field is ignored and the results are kept
+#
+# Temporary patch applied to src/pipeline/model/schema.ts:
+#   diff --git a/src/pipeline/model/schema.ts b/src/pipeline/model/schema.ts
+#   index b72538c..4814ffb 100644
+#   --- a/src/pipeline/model/schema.ts
+#   +++ b/src/pipeline/model/schema.ts
+#   @@ -71,7 +71,9 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+#    const hasRequiredKeys = (
+#      value: Record<string, unknown>,
+#      keys: readonly string[],
+#   -): boolean => keys.every((key) => Object.hasOwn(value, key));
+#   +): boolean =>
+#   +  keys.every((key) => Object.hasOwn(value, key)) &&
+#   +  Object.keys(value).length === keys.length; // REMOVAL TEST: exact keys again
+#
+#    const RESULT_KEYS = ['constraint_id', 'evidence_lines', 'reason', 'verdict'];
+#
+# Test output:
+✖ e2e pipeline: submit -> worker -> fake sandbox -> hard rules -> fake model -> review queue -> publish (1441.0706ms)
+✔ evaluator: no semantic constraint means no model call and an empty result (2.8137ms)
+✔ evaluator: one call covers all semantic constraints of a submission (5.1221ms)
+✔ evaluator: verdict fields, order and evidence text come from the original code (1.2737ms)
+✔ evaluator: evidence text is the original line, never text written by the model (0.968ms)
+✔ evaluator: violation with no line, or a line outside the file, is unsure/evidence_mismatch (3.6212ms)
+✔ evaluator: a violation that only cites lines the model never saw is evidence_mismatch (0.7279ms)
+✔ evaluator: an unsure verdict from the model keeps cause model_unsure (0.6858ms)
+✔ evaluator: unsureCause is set if and only if the verdict is unsure (2.9415ms)
+✔ evaluator: broken output makes every constraint unsure/schema_error and logs schema_error (0.7008ms)
+✔ evaluator: refusal and max_tokens are unsure/schema_error even with parseable text (1.6887ms)
+✔ evaluator: a model that returns null text is unsure/schema_error (1.3394ms)
+✖ G5 evaluator: an extra deduction field is ignored, the verdict is kept and no verdict carries a mark (2.8594ms)
+✔ evaluator: a missing constraint is schema_error, the valid one is kept (1.2321ms)
+✔ evaluator: no verdict carries any grading field (2.7379ms)
+✔ timeout: a model that never answers becomes unsure/timeout and the signal is aborted (45.0674ms)
+✔ timeout: a model that honours the abort signal is also unsure/timeout (31.3769ms)
+✔ timeout: a client that throws ModelTimeoutError is unsure/timeout (0.6959ms)
+✔ timeout: a late answer after the deadline is ignored and does not crash the process (233.814ms)
+✔ provider errors (429, 5xx, connection) are thrown so the worker can retry the job (2.6035ms)
+✔ provider errors: an unknown error from the client is thrown too, not turned into unsure (0.5058ms)
+✔ abort: when the job signal is aborted the evaluator throws instead of returning unsure (12.597ms)
+✔ prompt: the model gets statement, semantic constraints and numbered clean code only (1.0952ms)
+✔ prompt: the system prompt treats code as data and forbids scores (0.4639ms)
+✔ prompt: only the asked constraints are sent, and code with CRLF is numbered correctly (0.4096ms)
+✔ prompt: onPrompt receives the exact prompt and its sha256, before the model is called (0.5886ms)
+✔ prompt: identity comes from getIdentity(submission), which may be async (0.4328ms)
+✔ call log: every field is filled from the response and the price table (0.5487ms)
+✔ integration with T07: ban-list constraints never reach the model (4.4038ms)
+✔ identity fails closed: no usable identity means no prompt and no model call (0.9479ms)
+✔ identity fails closed: an async getIdentity that returns nothing usable also throws (0.2736ms)
+✔ identity fails closed: one usable string is enough, the others may be short (0.598ms)
+✔ identity: a joined form such as nguyen_van_an is masked when only the full name is given (1.1876ms)
+✔ evaluator: bad configuration fails fast (0.3487ms)
+✔ evaluator: duplicated constraint ids are a programming error (0.1712ms)
+✔ schema: the request schema has enums for ids and verdicts and no score field (2.252ms)
+✔ schema: a clean output is accepted as is (0.6551ms)
+✔ schema: broken JSON makes every constraint unsure with schema_error (0.2836ms)
+✔ schema: not JSON at all makes every constraint unsure with schema_error (0.1056ms)
+✔ schema: empty text makes every constraint unsure with schema_error (0.1497ms)
+✔ schema: null JSON makes every constraint unsure with schema_error (0.0973ms)
+✔ schema: an array at the top level makes every constraint unsure with schema_error (0.0915ms)
+✔ schema: missing results makes every constraint unsure with schema_error (0.0834ms)
+✔ schema: results is not an array makes every constraint unsure with schema_error (0.1387ms)
+✔ schema: an unknown verdict makes every constraint unsure with schema_error (0.3142ms)
+✔ schema: a missing reason makes every constraint unsure with schema_error (0.2575ms)
+✔ schema: a missing evidence_lines makes every constraint unsure with schema_error (0.1724ms)
+✔ schema: evidence_lines that are not integers makes every constraint unsure with schema_error (0.1599ms)
+✔ schema: evidence_lines with a fractional number makes every constraint unsure with schema_error (0.183ms)
+✔ schema: a reason that is not a string makes every constraint unsure with schema_error (0.1122ms)
+✔ schema: a constraint_id that is not a string makes every constraint unsure with schema_error (0.0622ms)
+✔ schema: an item that is not an object makes every constraint unsure with schema_error (0.0511ms)
+✔ schema: a missing constraint becomes schema_error, the valid one is kept (0.1731ms)
+✔ schema: a duplicated id becomes schema_error for that id only (0.1692ms)
+✔ schema: an unknown id is ignored, the asked constraints keep their result (0.1428ms)
+✔ schema: an unknown id with a missing asked constraint leaves that one as schema_error (0.1081ms)
+✔ schema: stop_reason refusal is schema_error even if the text is valid (0.12ms)
+✔ schema: stop_reason max_tokens is schema_error even if the text is valid (0.058ms)
+✔ schema: stop_reason tool_use is schema_error even if the text is valid (0.0386ms)
+✔ schema: stop_reason null is schema_error even if the text is valid (0.0516ms)
+✔ schema: no text block is schema_error (0.0736ms)
+✔ schema: violation without evidence lines is evidence_mismatch (0.1585ms)
+✔ schema: evidence lines [0] outside 1..10 is evidence_mismatch (0.1489ms)
+✔ schema: evidence lines [11] outside 1..10 is evidence_mismatch (0.1031ms)
+✔ schema: evidence lines [-1] outside 1..10 is evidence_mismatch (0.065ms)
+✔ schema: evidence lines [3,99] outside 1..10 is evidence_mismatch (0.0548ms)
+✔ schema: pass and unsure may omit evidence, but lines that are given must be in range (0.1085ms)
+✔ schema: evidence lines are sorted, deduplicated and capped (0.1987ms)
+✔ schema: a very long reason is truncated, not rejected (0.2023ms)
+✔ schema: a model unsure verdict has cause model_unsure (0.1211ms)
+✖ G5 schema: extra deduction or score fields on a result are ignored and the verdict is kept (1.0619ms)
+✖ G5 schema: an extra top-level deduction field is ignored and the results are kept (0.2844ms)
+✔ G5 schema: a grading instruction in the reason changes nothing but the reason text (0.1781ms)
+✔ G5 schema: required fields with the wrong type are still schema_error (G1), extra fields do not hide them (0.1489ms)
+ℹ tests 74
+ℹ suites 0
+ℹ pass 70
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2139.7324
+
+✖ failing tests:
+
+test at tests\e2e\pipeline.test.mjs:82:1
+✖ e2e pipeline: submit -> worker -> fake sandbox -> hard rules -> fake model -> review queue -> publish (1441.0706ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'unsure'
+  - 'violation'
+
+      at TestContext.<anonymous> (<repo>/tests/e2e/pipeline.test.mjs:417:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'unsure',
+    expected: 'violation',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\unit\model-evaluate.test.mjs:202:1
+✖ G5 evaluator: an extra deduction field is ignored, the verdict is kept and no verdict carries a mark (2.8594ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'unsure'
+  - 'violation'
+
+      at TestContext.<anonymous> (<repo>/tests/unit/model-evaluate.test.mjs:212:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'unsure',
+    expected: 'violation',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\unit\model-schema.test.mjs:232:1
+✖ G5 schema: extra deduction or score fields on a result are ignored and the verdict is kept (1.0619ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  true !== false
+
+      at TestContext.<anonymous> (<repo>/tests/unit/model-schema.test.mjs:239:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\unit\model-schema.test.mjs:251:1
+✖ G5 schema: an extra top-level deduction field is ignored and the results are kept (0.2844ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  true !== false
+
+      at TestContext.<anonymous> (<repo>/tests/unit/model-schema.test.mjs:259:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

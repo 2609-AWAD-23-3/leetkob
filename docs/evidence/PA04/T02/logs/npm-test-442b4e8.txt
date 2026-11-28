@@ -1,0 +1,3648 @@
+# npm test at 442b4e8 (src/ and tests/ identical to the commit; only untracked evidence files in the working tree)
+# Run on 2026-11-28 for review of PR #92. Node v24.22.3, Windows 11
+# Command: npm test   (npm run build && node scripts/test.mjs)
+# Exit code: 0
+# Summary: tests 600
+# Summary: suites 0
+# Summary: pass 597
+# Summary: fail 0
+# Summary: cancelled 0
+# Summary: skipped 3
+# Summary: todo 0
+# Skipped tests:
+#   ok 88 - postgres store tests # SKIP TEST_DATABASE_URL is not set
+#   ok 107 - postgres review queue tests # SKIP TEST_DATABASE_URL is not set
+#   ok 114 - worker postgres integration tests # SKIP TEST_DATABASE_URL is not set
+#
+# Full output:
+
+> leetkob@0.1.0 test
+> npm run build && node scripts/test.mjs
+
+
+> leetkob@0.1.0 build
+> tsc -p tsconfig.json
+
+TAP version 13
+# Subtest: API docs serve local Swagger UI, assets and the four active auth operations
+ok 1 - API docs serve local Swagger UI, assets and the four active auth operations
+  ---
+  duration_ms: 815.8911
+  type: 'test'
+  ...
+# Subtest: API docs do not advertise auth operations when no AuthStore is mounted
+ok 2 - API docs do not advertise auth operations when no AuthStore is mounted
+  ---
+  duration_ms: 6.2944
+  type: 'test'
+  ...
+# Subtest: Swagger request examples execute successfully and error examples match handlers
+ok 3 - Swagger request examples execute successfully and error examples match handlers
+  ---
+  duration_ms: 1829.5539
+  type: 'test'
+  ...
+# Subtest: auth contract: malformed Unicode passwords and invalid display text return 400
+ok 4 - auth contract: malformed Unicode passwords and invalid display text return 400
+  ---
+  duration_ms: 993.6307
+  type: 'test'
+  ...
+# Subtest: auth contract: registration, real password login, me, independent sessions and revocation
+ok 5 - auth contract: registration, real password login, me, independent sessions and revocation
+  ---
+  duration_ms: 782.6013
+  type: 'test'
+  ...
+# Subtest: auth contract: validation, parser, size, media type and safe errors
+ok 6 - auth contract: validation, parser, size, media type and safe errors
+  ---
+  duration_ms: 1089.6197
+  type: 'test'
+  ...
+# Subtest: auth contract: database failures and malformed stored hashes are sanitized
+ok 7 - auth contract: database failures and malformed stored hashes are sanitized
+  ---
+  duration_ms: 33.6296
+  type: 'test'
+  ...
+# Subtest: auth contract: concurrent login failures are limited before verification
+ok 8 - auth contract: concurrent login failures are limited before verification
+  ---
+  duration_ms: 13
+  type: 'test'
+  ...
+# Subtest: auth contract: infrastructure errors release failed-login reservations
+ok 9 - auth contract: infrastructure errors release failed-login reservations
+  ---
+  duration_ms: 24.5602
+  type: 'test'
+  ...
+# Subtest: labs: authorization precedes parsing and database failures remain sanitized
+ok 10 - labs: authorization precedes parsing and database failures remain sanitized
+  ---
+  duration_ms: 538.8563
+  type: 'test'
+  ...
+# Subtest: labs: TA creates once, double-click replays, changed payload conflicts
+ok 11 - labs: TA creates once, double-click replays, changed payload conflicts
+  ---
+  duration_ms: 28.023
+  type: 'test'
+  ...
+# Subtest: labs: class ownership, role gates, draft filtering and student DTO
+ok 12 - labs: class ownership, role gates, draft filtering and student DTO
+  ---
+  duration_ms: 26.9082
+  type: 'test'
+  ...
+# Subtest: labs: JSON and multipart import share the same idempotency fingerprint
+ok 13 - labs: JSON and multipart import share the same idempotency fingerprint
+  ---
+  duration_ms: 42.8188
+  type: 'test'
+  ...
+# Subtest: labs: missing or malformed key, dates and text are rejected without creating labs
+ok 14 - labs: missing or malformed key, dates and text are rejected without creating labs
+  ---
+  duration_ms: 49.3358
+  type: 'test'
+  ...
+# Subtest: labs: multipart handles each source, BOM, empty tests, duplicate parts and invalid files
+ok 15 - labs: multipart handles each source, BOM, empty tests, duplicate parts and invalid files
+  ---
+  duration_ms: 57.6044
+  type: 'test'
+  ...
+# Subtest: labs: a two-class student sees both classes but unrelated students see no lab
+ok 16 - labs: a two-class student sees both classes but unrelated students see no lab
+  ---
+  duration_ms: 25.4714
+  type: 'test'
+  ...
+# Subtest: labs: replay canonicalizes defaults and rechecks revoked membership
+ok 17 - labs: replay canonicalizes defaults and rechecks revoked membership
+  ---
+  duration_ms: 33.5518
+  type: 'test'
+  ...
+# Subtest: labs: Swagger describes the mounted routes, upload schema and student-safe DTO
+ok 18 - labs: Swagger describes the mounted routes, upload schema and student-safe DTO
+  ---
+  duration_ms: 22.8767
+  type: 'test'
+  ...
+# Subtest: POST /labs/{labId}/publish — 401 unauthenticated when credentials are missing, malformed, or invalid
+ok 19 - POST /labs/{labId}/publish — 401 unauthenticated when credentials are missing, malformed, or invalid
+  ---
+  duration_ms: 298.5292
+  type: 'test'
+  ...
+# Subtest: POST /labs/{labId}/publish — 400 invalid-json for malformed JSON or prototype pollution payload
+ok 20 - POST /labs/{labId}/publish — 400 invalid-json for malformed JSON or prototype pollution payload
+  ---
+  duration_ms: 12.7759
+  type: 'test'
+  ...
+# Subtest: POST /labs/{labId}/publish — 400 validation for invalid labId syntax or non-object JSON body
+ok 21 - POST /labs/{labId}/publish — 400 validation for invalid labId syntax or non-object JSON body
+  ---
+  duration_ms: 9.5182
+  type: 'test'
+  ...
+# Subtest: POST /labs/{labId}/publish — 404 not-found when target lab does not exist
+ok 22 - POST /labs/{labId}/publish — 404 not-found when target lab does not exist
+  ---
+  duration_ms: 6.4267
+  type: 'test'
+  ...
+# Subtest: POST /labs/{labId}/publish — 403 forbidden for student, admin, or cross-class TA
+ok 23 - POST /labs/{labId}/publish — 403 forbidden for student, admin, or cross-class TA
+  ---
+  duration_ms: 7.2717
+  type: 'test'
+  ...
+# Subtest: POST /labs/{labId}/publish — 409 before-deadline when server time is before deadline
+ok 24 - POST /labs/{labId}/publish — 409 before-deadline when server time is before deadline
+  ---
+  duration_ms: 5.4291
+  type: 'test'
+  ...
+# Subtest: POST /labs/{labId}/publish — 409 pending-reviews with pendingCount member when reviews remain pending
+ok 25 - POST /labs/{labId}/publish — 409 pending-reviews with pendingCount member when reviews remain pending
+  ---
+  duration_ms: 5.7561
+  type: 'test'
+  ...
+# Subtest: POST /labs/{labId}/publish — 200 OK initial publication succeeds and returns LabPublication resource
+ok 26 - POST /labs/{labId}/publish — 200 OK initial publication succeeds and returns LabPublication resource
+  ---
+  duration_ms: 6.591
+  type: 'test'
+  ...
+# Subtest: POST /labs/{labId}/publish — 200 OK repeated call is naturally idempotent with Idempotent-Replayed: true
+ok 27 - POST /labs/{labId}/publish — 200 OK repeated call is naturally idempotent with Idempotent-Replayed: true
+  ---
+  duration_ms: 7.1794
+  type: 'test'
+  ...
+# Subtest: POST /labs/{labId}/publish — client cannot spoof caller identity, role, or state in body
+ok 28 - POST /labs/{labId}/publish — client cannot spoof caller identity, role, or state in body
+  ---
+  duration_ms: 8.0463
+  type: 'test'
+  ...
+# Subtest: POST /labs/{labId}/publish — empty request body or omitted body succeeds
+ok 29 - POST /labs/{labId}/publish — empty request body or omitted body succeeds
+  ---
+  duration_ms: 3.5652
+  type: 'test'
+  ...
+# Subtest: POST /labs/{labId}/publish — 413 payload-too-large when body exceeds 64 KB limit
+ok 30 - POST /labs/{labId}/publish — 413 payload-too-large when body exceeds 64 KB limit
+  ---
+  duration_ms: 9.9021
+  type: 'test'
+  ...
+# Subtest: POST /labs/{labId}/publish — 415 unsupported-media-type when content-type is unsupported (application/xml, text/plain)
+ok 31 - POST /labs/{labId}/publish — 415 unsupported-media-type when content-type is unsupported (application/xml, text/plain)
+  ---
+  duration_ms: 7.3767
+  type: 'test'
+  ...
+# Subtest: POST /labs/{labId}/publish — precedence: unsupported content-type (text/plain) is rejected with 415 before authentication
+ok 32 - POST /labs/{labId}/publish — precedence: unsupported content-type (text/plain) is rejected with 415 before authentication
+  ---
+  duration_ms: 5.1238
+  type: 'test'
+  ...
+# Subtest: POST /labs/{labId}/publish — precedence: malformed JSON body is rejected with 400 invalid-json before authentication
+ok 33 - POST /labs/{labId}/publish — precedence: malformed JSON body is rejected with 400 invalid-json before authentication
+  ---
+  duration_ms: 7.1893
+  type: 'test'
+  ...
+# Subtest: POST /labs/{labId}/publish — precedence: caller role check precedes lab lookup (anti-enumeration defense)
+ok 34 - POST /labs/{labId}/publish — precedence: caller role check precedes lab lookup (anti-enumeration defense)
+  ---
+  duration_ms: 5.6385
+  type: 'test'
+  ...
+# Subtest: review queue: the class TA sees every submission x constraint with verdict, evidence, deduction and unsure cause
+ok 35 - review queue: the class TA sees every submission x constraint with verdict, evidence, deduction and unsure cause
+  ---
+  duration_ms: 561.3736
+  type: 'test'
+  ...
+# Subtest: review item: detail adds the whole submission code for the TA (FAQ-09)
+ok 36 - review item: detail adds the whole submission code for the TA (FAQ-09)
+  ---
+  duration_ms: 24.0205
+  type: 'test'
+  ...
+# Subtest: review queue: unauthenticated callers get 401, students and admins 403, a TA of another class 404
+ok 37 - review queue: unauthenticated callers get 401, students and admins 403, a TA of another class 404
+  ---
+  duration_ms: 48.9472
+  type: 'test'
+  ...
+# Subtest: review queue: unknown or malformed IDs return 404 or 400
+ok 38 - review queue: unknown or malformed IDs return 404 or 400
+  ---
+  duration_ms: 46.1816
+  type: 'test'
+  ...
+# Subtest: decision: violation needs evidence lines inside the code; the text comes from the code (FAQ-09)
+ok 39 - decision: violation needs evidence lines inside the code; the text comes from the code (FAQ-09)
+  ---
+  duration_ms: 29.9328
+  type: 'test'
+  ...
+# Subtest: decision: evidence text is read from the stored code for CRLF files too
+ok 40 - decision: evidence text is read from the stored code for CRLF files too
+  ---
+  duration_ms: 20.5422
+  type: 'test'
+  ...
+# Subtest: confirm passes: bulk-confirms only the unreviewed pass verdicts
+ok 41 - confirm passes: bulk-confirms only the unreviewed pass verdicts
+  ---
+  duration_ms: 25.7483
+  type: 'test'
+  ...
+# Subtest: publish: refused while any verdict, a pass included, is unreviewed; then publishes once
+ok 42 - publish: refused while any verdict, a pass included, is unreviewed; then publishes once
+  ---
+  duration_ms: 48.57
+  type: 'test'
+  ...
+# Subtest: publish: contract v1 statuses hold with session tokens
+ok 43 - publish: contract v1 statuses hold with session tokens
+  ---
+  duration_ms: 33.3138
+  type: 'test'
+  ...
+# Subtest: publish: a TA of another class keeps the contract v1 403 without lab details
+ok 44 - publish: a TA of another class keeps the contract v1 403 without lab details
+  ---
+  duration_ms: 26.0957
+  type: 'test'
+  ...
+# Subtest: review queue: a TA of another class gets the same 404 for a real and a missing lab or item
+ok 45 - review queue: a TA of another class gets the same 404 for a real and a missing lab or item
+  ---
+  duration_ms: 36.2658
+  type: 'test'
+  ...
+# Subtest: confirm passes: a Publish that commits during the call returns 409
+ok 46 - confirm passes: a Publish that commits during the call returns 409
+  ---
+  duration_ms: 24.5489
+  type: 'test'
+  ...
+# Subtest: after publish: review decisions are locked
+ok 47 - after publish: review decisions are locked
+  ---
+  duration_ms: 18.6126
+  type: 'test'
+  ...
+# Subtest: students never receive verdicts before publish (FAQ-08)
+ok 48 - students never receive verdicts before publish (FAQ-08)
+  ---
+  duration_ms: 41.292
+  type: 'test'
+  ...
+# Subtest: API docs list the review queue and Publish operations
+ok 49 - API docs list the review queue and Publish operations
+  ---
+  duration_ms: 22.6403
+  type: 'test'
+  ...
+# Subtest: API docs list every unsure cause of a review item, including model_off
+ok 50 - API docs list every unsure cause of a review item, including model_off
+  ---
+  duration_ms: 35.6139
+  type: 'test'
+  ...
+# Subtest: submissions: multipart duplicates/missing parts and JSON transport boundaries
+ok 51 - submissions: multipart duplicates/missing parts and JSON transport boundaries
+  ---
+  duration_ms: 501.3937
+  type: 'test'
+  ...
+# Subtest: submissions: database failures are sanitized and never treated as client validation
+ok 52 - submissions: database failures are sanitized and never treated as client validation
+  ---
+  duration_ms: 30.4972
+  type: 'test'
+  ...
+# Subtest: submissions: double-click records one submission/job and enforces ownership
+ok 53 - submissions: double-click records one submission/job and enforces ownership
+  ---
+  duration_ms: 25.1494
+  type: 'test'
+  ...
+# Subtest: submissions: deadline rejects new intake but replay and reads survive
+ok 54 - submissions: deadline rejects new intake but replay and reads survive
+  ---
+  duration_ms: 20.0854
+  type: 'test'
+  ...
+# Subtest: submissions: UTF-8 file and JSON preserve code and share idempotency
+ok 55 - submissions: UTF-8 file and JSON preserve code and share idempotency
+  ---
+  duration_ms: 38.5334
+  type: 'test'
+  ...
+# Subtest: submissions: exact code/body limits and rejected input never reserve a key
+ok 56 - submissions: exact code/body limits and rejected input never reserve a key
+  ---
+  duration_ms: 31.0117
+  type: 'test'
+  ...
+# Subtest: submissions: role gates precede parsing and draft lab is hidden
+ok 57 - submissions: role gates precede parsing and draft lab is hidden
+  ---
+  duration_ms: 31.9352
+  type: 'test'
+  ...
+# Subtest: submissions: pagination/filter/cursor scope and student summary isolation
+ok 58 - submissions: pagination/filter/cursor scope and student summary isolation
+  ---
+  duration_ms: 33.5042
+  type: 'test'
+  ...
+# Subtest: submissions: limiter includes replay, is per-app and uses Retry-After
+ok 59 - submissions: limiter includes replay, is per-app and uses Retry-After
+  ---
+  duration_ms: 89.9343
+  type: 'test'
+  ...
+# Subtest: submissions: Swagger describes real routes, file input and safe summaries
+ok 60 - submissions: Swagger describes real routes, file input and safe summaries
+  ---
+  duration_ms: 32.0685
+  type: 'test'
+  ...
+# Subtest: e2e pipeline: submit -> worker -> fake sandbox -> hard rules -> fake model -> review queue -> publish
+ok 61 - e2e pipeline: submit -> worker -> fake sandbox -> hard rules -> fake model -> review queue -> publish
+  ---
+  duration_ms: 2117.0648
+  type: 'test'
+  ...
+# Subtest: support bootstrap owns cleanup and isolates plugin state between apps
+    # Subtest: first app registers an instance-only route and closes
+    ok 1 - first app registers an instance-only route and closes
+      ---
+      duration_ms: 282.0739
+      type: 'test'
+      ...
+    1..1
+ok 62 - support bootstrap owns cleanup and isolates plugin state between apps
+  ---
+  duration_ms: 290.0099
+  type: 'test'
+  ...
+# Subtest: factory does not listen; health works through the real HTTP injection boundary
+ok 63 - factory does not listen; health works through the real HTTP injection boundary
+  ---
+  duration_ms: 247.0684
+  type: 'test'
+  ...
+# Subtest: each module accepts its own real Fastify plugin in the same application
+ok 64 - each module accepts its own real Fastify plugin in the same application
+  ---
+  duration_ms: 14.7723
+  type: 'test'
+  ...
+# Subtest: business routes are absent rather than fake successful implementations
+ok 65 - business routes are absent rather than fake successful implementations
+  ---
+  duration_ms: 27.8818
+  type: 'test'
+  ...
+# Subtest: application instances have isolated plugin state and lifecycle hooks
+ok 66 - application instances have isolated plugin state and lifecycle hooks
+  ---
+  duration_ms: 16.8281
+  type: 'test'
+  ...
+# Subtest: listener can start on loopback and close without hard-coded test ports
+ok 67 - listener can start on loopback and close without hard-coded test ports
+  ---
+  duration_ms: 75.9942
+  type: 'test'
+  ...
+# Subtest: configuration has local defaults and validates explicit environment input
+ok 68 - configuration has local defaults and validates explicit environment input
+  ---
+  duration_ms: 1.1398
+  type: 'test'
+  ...
+# Subtest: executable rejects invalid configuration with a nonzero exit
+ok 69 - executable rejects invalid configuration with a nonzero exit
+  ---
+  duration_ms: 542.1532
+  type: 'test'
+  ...
+# Subtest: runtime requires a database URL and closes failed initialization without exposing details
+ok 70 - runtime requires a database URL and closes failed initialization without exposing details
+  ---
+  duration_ms: 3.1059
+  type: 'test'
+  ...
+# {"level":30,"time":1795802441828,"pid":15108,"hostname":"DESKTOP-SIBC7E8","reqId":"req-1","req":{"method":"GET","url":"/auth/me","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# Subtest: runtime waits for readiness, mounts auth and releases its Store on close
+ok 71 - runtime waits for readiness, mounts auth and releases its Store on close
+  ---
+  duration_ms: 530.4331
+  type: 'test'
+  ...
+# Subtest: application logger redacts authorization and request bodies
+ok 72 - application logger redacts authorization and request bodies
+  ---
+  duration_ms: 644.76
+  type: 'test'
+  ...
+# {"level":30,"time":1795802441837,"pid":15108,"hostname":"DESKTOP-SIBC7E8","reqId":"req-1","res":{"statusCode":401},"responseTime":7.996599999999944,"msg":"request completed"}
+# Subtest: MODEL_OFF=1 writes predictions without a key and without opening the network
+ok 73 - MODEL_OFF=1 writes predictions without a key and without opening the network
+  ---
+  duration_ms: 1004.9982
+  type: 'test'
+  ...
+# Subtest: the checker needs only statement.md, constraints.json and solutions/
+ok 74 - the checker needs only statement.md, constraints.json and solutions/
+  ---
+  duration_ms: 1416.7837
+  type: 'test'
+  ...
+# Subtest: --data is accepted as well as a positional dataset folder
+ok 75 - --data is accepted as well as a positional dataset folder
+  ---
+  duration_ms: 778.0121
+  type: 'test'
+  ...
+# Subtest: --call-log writes one decision per pair and records model_off
+ok 76 - --call-log writes one decision per pair and records model_off
+  ---
+  duration_ms: 359.3081
+  type: 'test'
+  ...
+# Subtest: without MODEL_OFF=1 and without MODEL_API_KEY the checker stops with exit 2 and writes nothing
+ok 77 - without MODEL_OFF=1 and without MODEL_API_KEY the checker stops with exit 2 and writes nothing
+  ---
+  duration_ms: 278.151
+  type: 'test'
+  ...
+# Subtest: without --out (or with --out -) predictions go to stdout and logs stay on stderr
+ok 78 - without --out (or with --out -) predictions go to stdout and logs stay on stderr
+  ---
+  duration_ms: 842.1757
+  type: 'test'
+  ...
+# Subtest: a failed run writes nothing to stdout
+ok 79 - a failed run writes nothing to stdout
+  ---
+  duration_ms: 265.5579
+  type: 'test'
+  ...
+# Subtest: usage errors exit 2: no dataset, unknown flag, missing folder, bad MODEL_OFF or concurrency
+ok 80 - usage errors exit 2: no dataset, unknown flag, missing folder, bad MODEL_OFF or concurrency
+  ---
+  duration_ms: 1304.646
+  type: 'test'
+  ...
+# Subtest: dev set, MODEL_OFF=1: eval.mjs accepts the file (exit 0 or 1), 0 wrongful, every ban-list pair decided
+ok 81 - dev set, MODEL_OFF=1: eval.mjs accepts the file (exit 0 or 1), 0 wrongful, every ban-list pair decided
+  ---
+  duration_ms: 1236.3612
+  type: 'test'
+  ...
+# Subtest: eval-cases, MODEL_OFF=1: eval.mjs accepts the file (exit 0 or 1) with 0 wrongful deductions
+ok 82 - eval-cases, MODEL_OFF=1: eval.mjs accepts the file (exit 0 or 1) with 0 wrongful deductions
+  ---
+  duration_ms: 849.2426
+  type: 'test'
+  ...
+# Subtest: labs upload: invalid UTF-8 in multipart text field is rejected before replacement
+ok 83 - labs upload: invalid UTF-8 in multipart text field is rejected before replacement
+  ---
+  duration_ms: 442.2153
+  type: 'test'
+  ...
+# Subtest: labs upload: real chunked multipart and aggregate cap, without partial writes
+ok 84 - labs upload: real chunked multipart and aggregate cap, without partial writes
+  ---
+  duration_ms: 368.7552
+  type: 'test'
+  ...
+# Subtest: labs upload: truncated multipart settles with 400 and no lab
+ok 85 - labs upload: truncated multipart settles with 400 and no lab
+  ---
+  duration_ms: 24.8136
+  type: 'test'
+  ...
+# Subtest: labs upload: a real chunked JSON body also enforces the total cap
+ok 86 - labs upload: a real chunked JSON body also enforces the total cap
+  ---
+  duration_ms: 159.0334
+  type: 'test'
+  ...
+# Subtest: labs upload: client abort reaches error handling without creating a lab
+ok 87 - labs upload: client abort reaches error handling without creating a lab
+  ---
+  duration_ms: 36.782
+  type: 'test'
+  ...
+# Subtest: postgres store tests
+ok 88 - postgres store tests # SKIP TEST_DATABASE_URL is not set
+  ---
+  duration_ms: 1.6149
+  type: 'test'
+  ...
+# Subtest: token identity resolver authenticates valid bearer tokens and returns defensive copies
+ok 89 - token identity resolver authenticates valid bearer tokens and returns defensive copies
+  ---
+  duration_ms: 4.5878
+  type: 'test'
+  ...
+# Subtest: token identity resolver rejects missing header with missing_credentials
+ok 90 - token identity resolver rejects missing header with missing_credentials
+  ---
+  duration_ms: 0.4324
+  type: 'test'
+  ...
+# Subtest: token identity resolver rejects undefined authorization with missing_credentials
+ok 91 - token identity resolver rejects undefined authorization with missing_credentials
+  ---
+  duration_ms: 0.9473
+  type: 'test'
+  ...
+# Subtest: token identity resolver rejects empty authorization with malformed_credentials
+ok 92 - token identity resolver rejects empty authorization with malformed_credentials
+  ---
+  duration_ms: 0.267
+  type: 'test'
+  ...
+# Subtest: token identity resolver rejects whitespace authorization with malformed_credentials
+ok 93 - token identity resolver rejects whitespace authorization with malformed_credentials
+  ---
+  duration_ms: 0.2394
+  type: 'test'
+  ...
+# Subtest: token identity resolver rejects leading whitespace authorization with malformed_credentials
+ok 94 - token identity resolver rejects leading whitespace authorization with malformed_credentials
+  ---
+  duration_ms: 0.3276
+  type: 'test'
+  ...
+# Subtest: token identity resolver rejects wrong auth scheme with malformed_credentials
+ok 95 - token identity resolver rejects wrong auth scheme with malformed_credentials
+  ---
+  duration_ms: 0.2122
+  type: 'test'
+  ...
+# Subtest: token identity resolver rejects bearer without token with malformed_credentials
+ok 96 - token identity resolver rejects bearer without token with malformed_credentials
+  ---
+  duration_ms: 0.14
+  type: 'test'
+  ...
+# Subtest: token identity resolver rejects bearer with extra segments with malformed_credentials
+ok 97 - token identity resolver rejects bearer with extra segments with malformed_credentials
+  ---
+  duration_ms: 0.1404
+  type: 'test'
+  ...
+# Subtest: token identity resolver rejects array authorization header with malformed_credentials
+ok 98 - token identity resolver rejects array authorization header with malformed_credentials
+  ---
+  duration_ms: 0.2324
+  type: 'test'
+  ...
+# Subtest: token identity resolver rejects unknown bearer token with invalid_credentials
+ok 99 - token identity resolver rejects unknown bearer token with invalid_credentials
+  ---
+  duration_ms: 0.1592
+  type: 'test'
+  ...
+# Subtest: default token resolver has no implicit credentials and rejects all requests
+ok 100 - default token resolver has no implicit credentials and rejects all requests
+  ---
+  duration_ms: 0.378
+  type: 'test'
+  ...
+# Subtest: test-header identity injection is disabled by default and cannot become a public bypass
+ok 101 - test-header identity injection is disabled by default and cannot become a public bypass
+  ---
+  duration_ms: 4.8196
+  type: 'test'
+  ...
+# Subtest: explicit programmatic test-header resolver validates headers when enabled in tests
+ok 102 - explicit programmatic test-header resolver validates headers when enabled in tests
+  ---
+  duration_ms: 0.3364
+  type: 'test'
+  ...
+# Subtest: authorizePublishAccess enforces role TA, lab existence and T02 class ownership
+ok 103 - authorizePublishAccess enforces role TA, lab existence and T02 class ownership
+  ---
+  duration_ms: 6.4797
+  type: 'test'
+  ...
+# Subtest: HTTP boundary rejects missing/invalid identity, wrong role and cross-class TA with RFC 9457 problem details
+ok 104 - HTTP boundary rejects missing/invalid identity, wrong role and cross-class TA with RFC 9457 problem details
+  ---
+  duration_ms: 348.068
+  type: 'test'
+  ...
+# Subtest: HTTP boundary maps parser errors, validation errors, deadline/pending conflicts and internal errors to RFC 9457 without leaking internals
+ok 105 - HTTP boundary maps parser errors, validation errors, deadline/pending conflicts and internal errors to RFC 9457 without leaking internals
+  ---
+  duration_ms: 86.837
+  type: 'test'
+  ...
+# Subtest: problem factories validate inputs and return defensive copies
+ok 106 - problem factories validate inputs and return defensive copies
+  ---
+  duration_ms: 1.0011
+  type: 'test'
+  ...
+# Subtest: postgres review queue tests
+ok 107 - postgres review queue tests # SKIP TEST_DATABASE_URL is not set
+  ---
+  duration_ms: 0.9595
+  type: 'test'
+  ...
+# {"level":30,"time":1795802442762,"pid":84116,"hostname":"DESKTOP-SIBC7E8","reqId":"req-1","req":{"method":"GET","url":"/labs/lab-sort/review-queue","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# Subtest: runtime mounts the review queue and Publish on the Store with session auth
+ok 108 - runtime mounts the review queue and Publish on the Store with session auth
+  ---
+  duration_ms: 494.1189
+  type: 'test'
+  ...
+# {"level":30,"time":1795802442768,"pid":84116,"hostname":"DESKTOP-SIBC7E8","reqId":"req-1","res":{"statusCode":401},"responseTime":4.275200000000041,"msg":"request completed"}
+# {"level":30,"time":1795802442768,"pid":84116,"hostname":"DESKTOP-SIBC7E8","reqId":"req-2","req":{"method":"GET","url":"/review-items/item-1","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1795802442769,"pid":84116,"hostname":"DESKTOP-SIBC7E8","reqId":"req-2","res":{"statusCode":401},"responseTime":0.6716999999998734,"msg":"request completed"}
+# {"level":30,"time":1795802442770,"pid":84116,"hostname":"DESKTOP-SIBC7E8","reqId":"req-3","req":{"method":"POST","url":"/review-items/item-1/decision","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1795802442770,"pid":84116,"hostname":"DESKTOP-SIBC7E8","reqId":"req-3","res":{"statusCode":401},"responseTime":0.5109000000002197,"msg":"request completed"}
+# {"level":30,"time":1795802442771,"pid":84116,"hostname":"DESKTOP-SIBC7E8","reqId":"req-4","req":{"method":"POST","url":"/labs/lab-sort/review-queue/confirm-passes","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1795802442771,"pid":84116,"hostname":"DESKTOP-SIBC7E8","reqId":"req-4","res":{"statusCode":401},"responseTime":0.28490000000010696,"msg":"request completed"}
+# {"level":30,"time":1795802442771,"pid":84116,"hostname":"DESKTOP-SIBC7E8","reqId":"req-5","req":{"method":"POST","url":"/labs/lab-sort/publish","host":"localhost:80","remoteAddress":"127.0.0.1"},"msg":"incoming request"}
+# {"level":30,"time":1795802442773,"pid":84116,"hostname":"DESKTOP-SIBC7E8","reqId":"req-5","res":{"statusCode":401},"responseTime":1.4160000000001673,"msg":"request completed"}
+# Subtest: submissions upload: real chunked, aggregate body cap, truncated request and UTF-8
+ok 109 - submissions upload: real chunked, aggregate body cap, truncated request and UTF-8
+  ---
+  duration_ms: 495.0548
+  type: 'test'
+  ...
+# Subtest: submissions upload: finishing at deadline is rejected, client abort creates nothing
+ok 110 - submissions upload: finishing at deadline is rejected, client abort creates nothing
+  ---
+  duration_ms: 62.1841
+  type: 'test'
+  ...
+# Subtest: loadTrustProxy defaults to false, rejects unsafe values and parses valid IP/CIDR lists
+ok 111 - loadTrustProxy defaults to false, rejects unsafe values and parses valid IP/CIDR lists
+  ---
+  duration_ms: 9.4126
+  type: 'test'
+  ...
+# Subtest: trusted reverse proxy isolates rate-limit IP buckets across X-Forwarded-For clients
+ok 112 - trusted reverse proxy isolates rate-limit IP buckets across X-Forwarded-For clients
+  ---
+  duration_ms: 2524.4312
+  type: 'test'
+  ...
+# Subtest: untrusted direct client cannot spoof X-Forwarded-For to bypass IP bucket
+ok 113 - untrusted direct client cannot spoof X-Forwarded-For to bypass IP bucket
+  ---
+  duration_ms: 2563.6953
+  type: 'test'
+  ...
+# Subtest: worker postgres integration tests
+ok 114 - worker postgres integration tests # SKIP TEST_DATABASE_URL is not set
+  ---
+  duration_ms: 1.0565
+  type: 'test'
+  ...
+# Subtest: password hashing is salted, preserves whitespace and rejects invalid hashes
+ok 115 - password hashing is salted, preserves whitespace and rejects invalid hashes
+  ---
+  duration_ms: 876.4756
+  type: 'test'
+  ...
+# Subtest: password service rejects unpaired surrogates without changing valid Unicode
+ok 116 - password service rejects unpaired surrogates without changing valid Unicode
+  ---
+  duration_ms: 421.0408
+  type: 'test'
+  ...
+# Subtest: password scheduler caps running and waiting work and recovers after errors
+ok 117 - password scheduler caps running and waiting work and recovers after errors
+  ---
+  duration_ms: 5.9111
+  type: 'test'
+  ...
+# Subtest: validation counts Unicode code points without transforming passwords
+ok 118 - validation counts Unicode code points without transforming passwords
+  ---
+  duration_ms: 1.7953
+  type: 'test'
+  ...
+# Subtest: rate limiter uses fixed windows, bounded capacity and instance isolation
+ok 119 - rate limiter uses fixed windows, bounded capacity and instance isolation
+  ---
+  duration_ms: 1.4172
+  type: 'test'
+  ...
+# Subtest: demo seed covers 100 students and exactly 80 students per class
+ok 120 - demo seed covers 100 students and exactly 80 students per class
+  ---
+  duration_ms: 5.884
+  type: 'test'
+  ...
+# Subtest: authorization checks class role and student ownership without admin bypass
+ok 121 - authorization checks class role and student ownership without admin bypass
+  ---
+  duration_ms: 3.2718
+  type: 'test'
+  ...
+# Subtest: dataset: problems and .cpp solutions are read in a fixed order with problem/sNN ids
+ok 122 - dataset: problems and .cpp solutions are read in a fixed order with problem/sNN ids
+  ---
+  duration_ms: 41.7617
+  type: 'test'
+  ...
+# Subtest: dataset: a broken constraints.json or a missing problems folder is a DatasetError
+ok 123 - dataset: a broken constraints.json or a missing problems folder is a DatasetError
+  ---
+  duration_ms: 57.5812
+  type: 'test'
+  ...
+# Subtest: dataset: a constraint without a string id and text is a DatasetError
+ok 124 - dataset: a constraint without a string id and text is a DatasetError
+  ---
+  duration_ms: 47.5418
+  type: 'test'
+  ...
+# Subtest: model off: ban lists are decided by hard rules with original lines; semantic pairs are unsure
+ok 125 - model off: ban lists are decided by hard rules with original lines; semantic pairs are unsure
+  ---
+  duration_ms: 42.6684
+  type: 'test'
+  ...
+# Subtest: model off wins: a model passed in is never called
+ok 126 - model off wins: a model passed in is never called
+  ---
+  duration_ms: 48.149
+  type: 'test'
+  ...
+# Subtest: model on: one call per solution with semantic constraints, prompt logged with dataset identity
+ok 127 - model on: one call per solution with semantic constraints, prompt logged with dataset identity
+  ---
+  duration_ms: 51.4481
+  type: 'test'
+  ...
+# Subtest: model on: a provider error makes that solution unsure, is logged, and the run continues
+ok 128 - model on: a provider error makes that solution unsure, is logged, and the run continues
+  ---
+  duration_ms: 48.8627
+  type: 'test'
+  ...
+# Subtest: output order does not depend on concurrency or model latency
+ok 129 - output order does not depend on concurrency or model latency
+  ---
+  duration_ms: 107.3259
+  type: 'test'
+  ...
+# Subtest: formatJsonl writes one JSON object per line with exactly the prediction fields
+ok 130 - formatJsonl writes one JSON object per line with exactly the prediction fields
+  ---
+  duration_ms: 36.4987
+  type: 'test'
+  ...
+# Subtest: assertDevSeedAllowed blocks production environments and explicit opt-out
+ok 131 - assertDevSeedAllowed blocks production environments and explicit opt-out
+  ---
+  duration_ms: 1.3564
+  type: 'test'
+  ...
+# Subtest: loadDeploySeedAccounts builds exactly 5 isolated PA03 accounts without dev credentials
+ok 132 - loadDeploySeedAccounts builds exactly 5 isolated PA03 accounts without dev credentials
+  ---
+  duration_ms: 1.269
+  type: 'test'
+  ...
+# Subtest: loadDeploySeedAccounts rejects missing, short or dev password123
+ok 133 - loadDeploySeedAccounts rejects missing, short or dev password123
+  ---
+  duration_ms: 0.264
+  type: 'test'
+  ...
+# Subtest: eval-cases has the dev set layout
+ok 134 - eval-cases has the dev set layout
+  ---
+  duration_ms: 19.965
+  type: 'test'
+  ...
+# Subtest: eval-cases: at least ten labelled solutions, with trap, injection and disguised tags
+ok 135 - eval-cases: at least ten labelled solutions, with trap, injection and disguised tags
+  ---
+  duration_ms: 1.3323
+  type: 'test'
+  ...
+# Subtest: eval-cases: every (solution, constraint) pair has exactly one valid label
+ok 136 - eval-cases: every (solution, constraint) pair has exactly one valid label
+  ---
+  duration_ms: 14.09
+  type: 'test'
+  ...
+# Subtest: eval-cases are new problems, not copies of the dev set
+ok 137 - eval-cases are new problems, not copies of the dev set
+  ---
+  duration_ms: 22.4496
+  type: 'test'
+  ...
+# Subtest: trap: a student-written global sort is not std::sort
+ok 138 - trap: a student-written global sort is not std::sort
+  ---
+  duration_ms: 5.8172
+  type: 'test'
+  ...
+# Subtest: trap: a sort inside the students own namespace, even next to using namespace std
+ok 139 - trap: a sort inside the students own namespace, even next to using namespace std
+  ---
+  duration_ms: 0.7147
+  type: 'test'
+  ...
+# Subtest: trap: ::sort that the student defined is the global one, not std
+ok 140 - trap: ::sort that the student defined is the global one, not std
+  ---
+  duration_ms: 0.3728
+  type: 'test'
+  ...
+# Subtest: trap: banned names in comments, strings, raw strings and char literals are ignored
+ok 141 - trap: banned names in comments, strings, raw strings and char literals are ignored
+  ---
+  duration_ms: 0.4861
+  type: 'test'
+  ...
+# Subtest: trap: a multi-line raw string hides everything inside it
+ok 142 - trap: a multi-line raw string hides everything inside it
+  ---
+  duration_ms: 0.2335
+  type: 'test'
+  ...
+# Subtest: trap: <algorithm> included only for std::swap
+ok 143 - trap: <algorithm> included only for std::swap
+  ---
+  duration_ms: 0.2904
+  type: 'test'
+  ...
+# Subtest: trap: identifiers that merely contain a keyword are not keywords
+ok 144 - trap: identifiers that merely contain a keyword are not keywords
+  ---
+  duration_ms: 0.5207
+  type: 'test'
+  ...
+# Subtest: trap: a member function called sort on the students own class
+ok 145 - trap: a member function called sort on the students own class
+  ---
+  duration_ms: 0.3494
+  type: 'test'
+  ...
+# Subtest: trap: a local variable named sort shadows std::sort under using namespace std
+ok 146 - trap: a local variable named sort shadows std::sort under using namespace std
+  ---
+  duration_ms: 0.3823
+  type: 'test'
+  ...
+# Subtest: trap: using namespace std inside one function does not leak to the next
+ok 147 - trap: using namespace std inside one function does not leak to the next
+  ---
+  duration_ms: 0.4018
+  type: 'test'
+  ...
+# Subtest: trap: the student defines a bare banned C name themselves
+ok 148 - trap: the student defines a bare banned C name themselves
+  ---
+  duration_ms: 1.6102
+  type: 'test'
+  ...
+# Subtest: trap: a student member function named find, called inside its class
+ok 149 - trap: a student member function named find, called inside its class
+  ---
+  duration_ms: 0.6104
+  type: 'test'
+  ...
+# Subtest: trap: a parameter named find shadows std::find inside that function
+ok 150 - trap: a parameter named find shadows std::find inside that function
+  ---
+  duration_ms: 0.2107
+  type: 'test'
+  ...
+# Subtest: trap: a student class with its own rbegin member
+ok 151 - trap: a student class with its own rbegin member
+  ---
+  duration_ms: 0.1764
+  type: 'test'
+  ...
+# Subtest: trap: a loop keyword inside dead \#if 0 code
+ok 152 - trap: a loop keyword inside dead \#if 0 code
+  ---
+  duration_ms: 0.3145
+  type: 'test'
+  ...
+# Subtest: trap: the \#else branch of \#if 1 is dead
+ok 153 - trap: the \#else branch of \#if 1 is dead
+  ---
+  duration_ms: 0.1334
+  type: 'test'
+  ...
+# Subtest: trap: a line continuation keeps a // comment going onto the next line
+ok 154 - trap: a line continuation keeps a // comment going onto the next line
+  ---
+  duration_ms: 0.138
+  type: 'test'
+  ...
+# Subtest: trap: a macro that is defined but never used is not a use
+ok 155 - trap: a macro that is defined but never used is not a use
+  ---
+  duration_ms: 0.3647
+  type: 'test'
+  ...
+# Subtest: trap: an alias of an allowed type is not a violation
+ok 156 - trap: an alias of an allowed type is not a violation
+  ---
+  duration_ms: 0.3323
+  type: 'test'
+  ...
+# Subtest: trap: a member called lower_bound is not std::lower_bound
+ok 157 - trap: a member called lower_bound is not std::lower_bound
+  ---
+  duration_ms: 0.2462
+  type: 'test'
+  ...
+# Subtest: trap: empty code and an empty name list are both a pass
+ok 158 - trap: empty code and an empty name list are both a pass
+  ---
+  duration_ms: 0.08
+  type: 'test'
+  ...
+# Subtest: trap: no banned names means nothing can be violated
+ok 159 - trap: no banned names means nothing can be violated
+  ---
+  duration_ms: 0.07
+  type: 'test'
+  ...
+# Subtest: injection: comments and strings that claim compliance change nothing
+ok 160 - injection: comments and strings that claim compliance change nothing
+  ---
+  duration_ms: 0.2242
+  type: 'test'
+  ...
+# Subtest: injection: a compliant claim next to a real violation is still a violation
+ok 161 - injection: a compliant claim next to a real violation is still a violation
+  ---
+  duration_ms: 0.4216
+  type: 'test'
+  ...
+# Subtest: a // inside a string does not start a comment
+ok 162 - a // inside a string does not start a comment
+  ---
+  duration_ms: 0.2175
+  type: 'test'
+  ...
+# Subtest: a digit separator is not the start of a char literal
+ok 163 - a digit separator is not the start of a char literal
+  ---
+  duration_ms: 0.2781
+  type: 'test'
+  ...
+# Subtest: obvious: std::sort
+ok 164 - obvious: std::sort
+  ---
+  duration_ms: 0.1981
+  type: 'test'
+  ...
+# Subtest: obvious: sort after using namespace std (the using line is not evidence)
+ok 165 - obvious: sort after using namespace std (the using line is not evidence)
+  ---
+  duration_ms: 0.2508
+  type: 'test'
+  ...
+# Subtest: obvious: using std::sort and then sort
+ok 166 - obvious: using std::sort and then sort
+  ---
+  duration_ms: 0.2738
+  type: 'test'
+  ...
+# Subtest: obvious: ::std::sort
+ok 167 - obvious: ::std::sort
+  ---
+  duration_ms: 0.2282
+  type: 'test'
+  ...
+# Subtest: std::ranges::sort is matched exactly
+ok 168 - std::ranges::sort is matched exactly
+  ---
+  duration_ms: 0.2301
+  type: 'test'
+  ...
+# Subtest: std::sort does not match std::ranges::sort
+ok 169 - std::sort does not match std::ranges::sort
+  ---
+  duration_ms: 0.2263
+  type: 'test'
+  ...
+# Subtest: using namespace std::ranges makes sort the ranges version
+ok 170 - using namespace std::ranges makes sort the ranges version
+  ---
+  duration_ms: 0.253
+  type: 'test'
+  ...
+# Subtest: using namespace std::ranges does not make sort std::sort
+ok 171 - using namespace std::ranges does not make sort std::sort
+  ---
+  duration_ms: 0.266
+  type: 'test'
+  ...
+# Subtest: using namespace std then ranges::sort
+ok 172 - using namespace std then ranges::sort
+  ---
+  duration_ms: 0.203
+  type: 'test'
+  ...
+# Subtest: obvious: bare C name qsort, std::qsort and ::qsort
+ok 173 - obvious: bare C name qsort, std::qsort and ::qsort
+  ---
+  duration_ms: 0.3227
+  type: 'test'
+  ...
+# Subtest: obvious: bare __gcd and std::__gcd
+ok 174 - obvious: bare __gcd and std::__gcd
+  ---
+  duration_ms: 0.1845
+  type: 'test'
+  ...
+# Subtest: a namespaced ban matches the unqualified call under using namespace std
+ok 175 - a namespaced ban matches the unqualified call under using namespace std
+  ---
+  duration_ms: 0.173
+  type: 'test'
+  ...
+# Subtest: boost::integer::gcd, directly and through a namespace alias
+ok 176 - boost::integer::gcd, directly and through a namespace alias
+  ---
+  duration_ms: 0.2691
+  type: 'test'
+  ...
+# Subtest: using namespace boost::integer then gcd
+ok 177 - using namespace boost::integer then gcd
+  ---
+  duration_ms: 0.2005
+  type: 'test'
+  ...
+# Subtest: keyword: for
+ok 178 - keyword: for
+  ---
+  duration_ms: 0.2688
+  type: 'test'
+  ...
+# Subtest: keyword: while counts the while of a do-while too
+ok 179 - keyword: while counts the while of a do-while too
+  ---
+  duration_ms: 0.2684
+  type: 'test'
+  ...
+# Subtest: keyword: do
+ok 180 - keyword: do
+  ---
+  duration_ms: 0.3631
+  type: 'test'
+  ...
+# Subtest: keyword: goto reports the goto line and its label line
+ok 181 - keyword: goto reports the goto line and its label line
+  ---
+  duration_ms: 0.283
+  type: 'test'
+  ...
+# Subtest: keywords: several at once give sorted, unique lines
+ok 182 - keywords: several at once give sorted, unique lines
+  ---
+  duration_ms: 0.2409
+  type: 'test'
+  ...
+# Subtest: keywords: none of them appear
+ok 183 - keywords: none of them appear
+  ---
+  duration_ms: 0.1817
+  type: 'test'
+  ...
+# Subtest: keyword: range-based for is a for
+ok 184 - keyword: range-based for is a for
+  ---
+  duration_ms: 0.2124
+  type: 'test'
+  ...
+# Subtest: container: std::vector
+ok 185 - container: std::vector
+  ---
+  duration_ms: 1.081
+  type: 'test'
+  ...
+# Subtest: container: std::string
+ok 186 - container: std::string
+  ---
+  duration_ms: 0.3922
+  type: 'test'
+  ...
+# Subtest: container: several names give the union of their lines
+ok 187 - container: several names give the union of their lines
+  ---
+  duration_ms: 0.3764
+  type: 'test'
+  ...
+# Subtest: container: a container that is not used
+ok 188 - container: a container that is not used
+  ---
+  duration_ms: 0.2452
+  type: 'test'
+  ...
+# Subtest: container: unqualified names under using namespace std
+ok 189 - container: unqualified names under using namespace std
+  ---
+  duration_ms: 0.2195
+  type: 'test'
+  ...
+# Subtest: container: std::basic_string and a nested name
+ok 190 - container: std::basic_string and a nested name
+  ---
+  duration_ms: 0.3262
+  type: 'test'
+  ...
+# Subtest: member names: x.rbegin(), p->rend(), std::rbegin and crbegin
+ok 191 - member names: x.rbegin(), p->rend(), std::rbegin and crbegin
+  ---
+  duration_ms: 2.186
+  type: 'test'
+  ...
+# Subtest: member names: only rbegin
+ok 192 - member names: only rbegin
+  ---
+  duration_ms: 0.4241
+  type: 'test'
+  ...
+# Subtest: disguised: a function-like macro hides std::sort (define line and use line)
+ok 193 - disguised: a function-like macro hides std::sort (define line and use line)
+  ---
+  duration_ms: 0.816
+  type: 'test'
+  ...
+# Subtest: disguised: nested macros across a line continuation
+ok 194 - disguised: nested macros across a line continuation
+  ---
+  duration_ms: 1.9124
+  type: 'test'
+  ...
+# Subtest: disguised: a macro hides a for loop
+ok 195 - disguised: a macro hides a for loop
+  ---
+  duration_ms: 0.5161
+  type: 'test'
+  ...
+# Subtest: disguised: an object-like macro renames the function
+ok 196 - disguised: an object-like macro renames the function
+  ---
+  duration_ms: 0.2486
+  type: 'test'
+  ...
+# Subtest: disguised: a macro that uses sort unqualified under using namespace std
+ok 197 - disguised: a macro that uses sort unqualified under using namespace std
+  ---
+  duration_ms: 0.2478
+  type: 'test'
+  ...
+# Subtest: disguised: using-alias of a banned container, then its use
+ok 198 - disguised: using-alias of a banned container, then its use
+  ---
+  duration_ms: 0.2748
+  type: 'test'
+  ...
+# Subtest: disguised: typedef of a banned container, then its use
+ok 199 - disguised: typedef of a banned container, then its use
+  ---
+  duration_ms: 0.303
+  type: 'test'
+  ...
+# Subtest: disguised: a chain of aliases
+ok 200 - disguised: a chain of aliases
+  ---
+  duration_ms: 0.2076
+  type: 'test'
+  ...
+# Subtest: disguised: a template alias
+ok 201 - disguised: a template alias
+  ---
+  duration_ms: 0.3572
+  type: 'test'
+  ...
+# Subtest: disguised: typedef of an unqualified name under using namespace std
+ok 202 - disguised: typedef of an unqualified name under using namespace std
+  ---
+  duration_ms: 0.2753
+  type: 'test'
+  ...
+# Subtest: disguised: namespace alias of std
+ok 203 - disguised: namespace alias of std
+  ---
+  duration_ms: 0.1775
+  type: 'test'
+  ...
+# Subtest: disguised: taking the address of a function template
+ok 204 - disguised: taking the address of a function template
+  ---
+  duration_ms: 0.3591
+  type: 'test'
+  ...
+# Subtest: disguised: an unqualified function template used as a value
+ok 205 - disguised: an unqualified function template used as a value
+  ---
+  duration_ms: 1.4212
+  type: 'test'
+  ...
+# Subtest: disguised: a student wrapper that calls the banned function inside
+ok 206 - disguised: a student wrapper that calls the banned function inside
+  ---
+  duration_ms: 0.2923
+  type: 'test'
+  ...
+# Subtest: disguised: a qualified name split across two lines reports both lines
+ok 207 - disguised: a qualified name split across two lines reports both lines
+  ---
+  duration_ms: 0.1791
+  type: 'test'
+  ...
+# Subtest: disguised: inside a lambda
+ok 208 - disguised: inside a lambda
+  ---
+  duration_ms: 0.1702
+  type: 'test'
+  ...
+# Subtest: scope: using namespace std inside a namespace body applies there
+ok 209 - scope: using namespace std inside a namespace body applies there
+  ---
+  duration_ms: 0.1783
+  type: 'test'
+  ...
+# Subtest: scope: a parameter named find in one function does not hide std::find elsewhere
+ok 210 - scope: a parameter named find in one function does not hide std::find elsewhere
+  ---
+  duration_ms: 0.1667
+  type: 'test'
+  ...
+# Subtest: known limit: argument-dependent lookup is not modelled, so an unqualified sort with no using stays a pass
+ok 211 - known limit: argument-dependent lookup is not modelled, so an unqualified sort with no using stays a pass
+  ---
+  duration_ms: 0.1386
+  type: 'test'
+  ...
+# Subtest: CRLF sources are numbered correctly and the evidence text has no CR
+ok 212 - CRLF sources are numbered correctly and the evidence text has no CR
+  ---
+  duration_ms: 0.3791
+  type: 'test'
+  ...
+# Subtest: evidence keeps the whole original line, indentation and comments included
+ok 213 - evidence keeps the whole original line, indentation and comments included
+  ---
+  duration_ms: 0.2355
+  type: 'test'
+  ...
+# Subtest: the same line is reported once even if it matches several names
+ok 214 - the same line is reported once even if it matches several names
+  ---
+  duration_ms: 0.169
+  type: 'test'
+  ...
+# Subtest: checkBanList is deterministic and does not mutate the names
+ok 215 - checkBanList is deterministic and does not mutate the names
+  ---
+  duration_ms: 0.2545
+  type: 'test'
+  ...
+# Subtest: "Do not use" followed by backticked names is a ban list
+ok 216 - "Do not use" followed by backticked names is a ban list
+  ---
+  duration_ms: 2.408
+  type: 'test'
+  ...
+# Subtest: "Do not call" is a ban list too
+ok 217 - "Do not call" is a ban list too
+  ---
+  duration_ms: 0.3589
+  type: 'test'
+  ...
+# Subtest: the prefix is matched after trimming whitespace
+ok 218 - the prefix is matched after trimming whitespace
+  ---
+  duration_ms: 0.2489
+  type: 'test'
+  ...
+# Subtest: text that does not start with the prefix is semantic
+ok 219 - text that does not start with the prefix is semantic
+  ---
+  duration_ms: 0.2225
+  type: 'test'
+  ...
+# Subtest: the prefix must be a whole phrase, not the start of another word
+ok 220 - the prefix must be a whole phrase, not the start of another word
+  ---
+  duration_ms: 0.176
+  type: 'test'
+  ...
+# Subtest: a "Do not use" text without any backticked name stays semantic
+ok 221 - a "Do not use" text without any backticked name stays semantic
+  ---
+  duration_ms: 0.1637
+  type: 'test'
+  ...
+# Subtest: `do`-`while` yields both keywords, in order
+ok 222 - `do`-`while` yields both keywords, in order
+  ---
+  duration_ms: 0.2402
+  type: 'test'
+  ...
+# Subtest: a single backtick span "do-while" yields do and while
+ok 223 - a single backtick span "do-while" yields do and while
+  ---
+  duration_ms: 0.2056
+  type: 'test'
+  ...
+# Subtest: plain words around the names are not names
+ok 224 - plain words around the names are not names
+  ---
+  duration_ms: 0.2448
+  type: 'test'
+  ...
+# Subtest: names are deduplicated and keep their first-seen order
+ok 225 - names are deduplicated and keep their first-seen order
+  ---
+  duration_ms: 0.3388
+  type: 'test'
+  ...
+# Subtest: a leading :: is dropped; nested namespaces are kept
+ok 226 - a leading :: is dropped; nested namespaces are kept
+  ---
+  duration_ms: 0.218
+  type: 'test'
+  ...
+# Subtest: backtick spans that are not C++ names are ignored
+ok 227 - backtick spans that are not C++ names are ignored
+  ---
+  duration_ms: 0.1704
+  type: 'test'
+  ...
+# Subtest: a ban list whose spans are all invalid falls back to semantic
+ok 228 - a ban list whose spans are all invalid falls back to semantic
+  ---
+  duration_ms: 0.1805
+  type: 'test'
+  ...
+# Subtest: generalisation: own stack struct under using std
+ok 229 - generalisation: own stack struct under using std
+  ---
+  duration_ms: 9.4353
+  type: 'test'
+  ...
+# Subtest: generalisation: own swap template
+ok 230 - generalisation: own swap template
+  ---
+  duration_ms: 0.9359
+  type: 'test'
+  ...
+# Subtest: generalisation: own max
+ok 231 - generalisation: own max
+  ---
+  duration_ms: 0.6113
+  type: 'test'
+  ...
+# Subtest: generalisation: own Vector class capital
+ok 232 - generalisation: own Vector class capital
+  ---
+  duration_ms: 0.4829
+  type: 'test'
+  ...
+# Subtest: generalisation: class named vector with using std
+ok 233 - generalisation: class named vector with using std
+  ---
+  duration_ms: 0.4014
+  type: 'test'
+  ...
+# Subtest: generalisation: struct member called find
+ok 234 - generalisation: struct member called find
+  ---
+  duration_ms: 0.4797
+  type: 'test'
+  ...
+# Subtest: generalisation: out of class member calling same-name
+ok 235 - generalisation: out of class member calling same-name
+  ---
+  duration_ms: 2.0174
+  type: 'test'
+  ...
+# Subtest: generalisation: printf_count identifier
+ok 236 - generalisation: printf_count identifier
+  ---
+  duration_ms: 0.3393
+  type: 'test'
+  ...
+# Subtest: generalisation: printf used
+ok 237 - generalisation: printf used
+  ---
+  duration_ms: 0.5592
+  type: 'test'
+  ...
+# Subtest: generalisation: cout used with ban std::cout
+ok 238 - generalisation: cout used with ban std::cout
+  ---
+  duration_ms: 0.4556
+  type: 'test'
+  ...
+# Subtest: generalisation: cin bare
+ok 239 - generalisation: cin bare
+  ---
+  duration_ms: 0.5081
+  type: 'test'
+  ...
+# Subtest: generalisation: new keyword
+ok 240 - generalisation: new keyword
+  ---
+  duration_ms: 0.2401
+  type: 'test'
+  ...
+# Subtest: generalisation: delete keyword only
+ok 241 - generalisation: delete keyword only
+  ---
+  duration_ms: 0.1525
+  type: 'test'
+  ...
+# Subtest: generalisation: no new
+ok 242 - generalisation: no new
+  ---
+  duration_ms: 0.1424
+  type: 'test'
+  ...
+# Subtest: generalisation: own pow
+ok 243 - generalisation: own pow
+  ---
+  duration_ms: 0.2219
+  type: 'test'
+  ...
+# Subtest: generalisation: pow from cmath global bare
+ok 244 - generalisation: pow from cmath global bare
+  ---
+  duration_ms: 0.1753
+  type: 'test'
+  ...
+# Subtest: generalisation: std::pow qualified
+ok 245 - generalisation: std::pow qualified
+  ---
+  duration_ms: 0.1558
+  type: 'test'
+  ...
+# Subtest: generalisation: stringstream
+ok 246 - generalisation: stringstream
+  ---
+  duration_ms: 0.1552
+  type: 'test'
+  ...
+# Subtest: generalisation: map via using decl
+ok 247 - generalisation: map via using decl
+  ---
+  duration_ms: 0.1966
+  type: 'test'
+  ...
+# Subtest: generalisation: lambda param named sort
+ok 248 - generalisation: lambda param named sort
+  ---
+  duration_ms: 1.4403
+  type: 'test'
+  ...
+# Subtest: generalisation: struct field sort
+ok 249 - generalisation: struct field sort
+  ---
+  duration_ms: 0.2226
+  type: 'test'
+  ...
+# Subtest: generalisation: local lambda named sort
+ok 250 - generalisation: local lambda named sort
+  ---
+  duration_ms: 0.2549
+  type: 'test'
+  ...
+# Subtest: generalisation: loop var named count
+ok 251 - generalisation: loop var named count
+  ---
+  duration_ms: 0.2436
+  type: 'test'
+  ...
+# Subtest: generalisation: global var count
+ok 252 - generalisation: global var count
+  ---
+  duration_ms: 0.2063
+  type: 'test'
+  ...
+# Subtest: generalisation: unqualified count std
+ok 253 - generalisation: unqualified count std
+  ---
+  duration_ms: 0.2142
+  type: 'test'
+  ...
+# Subtest: generalisation: member count of map
+ok 254 - generalisation: member count of map
+  ---
+  duration_ms: 0.1656
+  type: 'test'
+  ...
+# Subtest: generalisation: own reverse in ns
+ok 255 - generalisation: own reverse in ns
+  ---
+  duration_ms: 0.1709
+  type: 'test'
+  ...
+# Subtest: generalisation: own reverse global using std
+ok 256 - generalisation: own reverse global using std
+  ---
+  duration_ms: 0.132
+  type: 'test'
+  ...
+# Subtest: generalisation: macro with for
+ok 257 - generalisation: macro with for
+  ---
+  duration_ms: 1.1496
+  type: 'test'
+  ...
+# Subtest: generalisation: unused macro W
+ok 258 - generalisation: unused macro W
+  ---
+  duration_ms: 0.3744
+  type: 'test'
+  ...
+# Subtest: generalisation: escaped quote in string
+ok 259 - generalisation: escaped quote in string
+  ---
+  duration_ms: 0.3496
+  type: 'test'
+  ...
+# Subtest: generalisation: escaped char literal
+ok 260 - generalisation: escaped char literal
+  ---
+  duration_ms: 0.1507
+  type: 'test'
+  ...
+# Subtest: generalisation: >> closing
+ok 261 - generalisation: >> closing
+  ---
+  duration_ms: 0.1441
+  type: 'test'
+  ...
+# Subtest: generalisation: own vector in ns
+ok 262 - generalisation: own vector in ns
+  ---
+  duration_ms: 0.1771
+  type: 'test'
+  ...
+# Subtest: generalisation: using namespace ds only
+ok 263 - generalisation: using namespace ds only
+  ---
+  duration_ms: 0.2019
+  type: 'test'
+  ...
+# Subtest: generalisation: do-while macro
+ok 264 - generalisation: do-while macro
+  ---
+  duration_ms: 0.1514
+  type: 'test'
+  ...
+# Subtest: generalisation: switch not banned
+ok 265 - generalisation: switch not banned
+  ---
+  duration_ms: 0.1097
+  type: 'test'
+  ...
+# Subtest: generalisation: ternary only
+ok 266 - generalisation: ternary only
+  ---
+  duration_ms: 0.3403
+  type: 'test'
+  ...
+# Subtest: generalisation: comment inside qualified
+ok 267 - generalisation: comment inside qualified
+  ---
+  duration_ms: 0.2137
+  type: 'test'
+  ...
+# Subtest: generalisation: own member sort defined out of class
+ok 268 - generalisation: own member sort defined out of class
+  ---
+  duration_ms: 0.1321
+  type: 'test'
+  ...
+# Subtest: generalisation: member declared after use in class
+ok 269 - generalisation: member declared after use in class
+  ---
+  duration_ms: 0.1488
+  type: 'test'
+  ...
+# Subtest: generalisation: typedef of std::string
+ok 270 - generalisation: typedef of std::string
+  ---
+  duration_ms: 0.3423
+  type: 'test'
+  ...
+# Subtest: generalisation: strlen
+ok 271 - generalisation: strlen
+  ---
+  duration_ms: 0.1385
+  type: 'test'
+  ...
+# Subtest: generalisation: own strlen2
+ok 272 - generalisation: own strlen2
+  ---
+  duration_ms: 0.2298
+  type: 'test'
+  ...
+# Subtest: generalisation: own strlen same name
+ok 273 - generalisation: own strlen same name
+  ---
+  duration_ms: 0.2492
+  type: 'test'
+  ...
+# Subtest: generalisation: prototype param named find then use of find
+ok 274 - generalisation: prototype param named find then use of find
+  ---
+  duration_ms: 0.2056
+  type: 'test'
+  ...
+# Subtest: generalisation: namespace with std using inside function and own function same name outside
+ok 275 - generalisation: namespace with std using inside function and own function same name outside
+  ---
+  duration_ms: 0.2092
+  type: 'test'
+  ...
+# Subtest: generalisation: array of struct names
+ok 276 - generalisation: array of struct names
+  ---
+  duration_ms: 0.1592
+  type: 'test'
+  ...
+# Subtest: generalisation: std::array real
+ok 277 - generalisation: std::array real
+  ---
+  duration_ms: 0.1549
+  type: 'test'
+  ...
+# Subtest: generalisation: enum value named sort
+ok 278 - generalisation: enum value named sort
+  ---
+  duration_ms: 0.1626
+  type: 'test'
+  ...
+# Subtest: ban-list constraints get a hard-rule verdict, semantic ones go to the model
+ok 279 - ban-list constraints get a hard-rule verdict, semantic ones go to the model
+  ---
+  duration_ms: 5.2097
+  type: 'test'
+  ...
+# Subtest: the fake model only ever receives the semantic constraint ids
+ok 280 - the fake model only ever receives the semantic constraint ids
+  ---
+  duration_ms: 0.8546
+  type: 'test'
+  ...
+# Subtest: a decided constraint never reaches the model, even when it passes
+ok 281 - a decided constraint never reaches the model, even when it passes
+  ---
+  duration_ms: 0.4849
+  type: 'test'
+  ...
+# Subtest: when every constraint is a ban list the model is not called at all
+ok 282 - when every constraint is a ban list the model is not called at all
+  ---
+  duration_ms: 0.6629
+  type: 'test'
+  ...
+# Subtest: the decision log says which constraints the hard rules decided
+ok 283 - the decision log says which constraints the hard rules decided
+  ---
+  duration_ms: 0.565
+  type: 'test'
+  ...
+# Subtest: every id is either decided by a hard rule or handed to the model, never both
+ok 284 - every id is either decided by a hard rule or handed to the model, never both
+  ---
+  duration_ms: 0.8113
+  type: 'test'
+  ...
+# Subtest: a "Do not use" constraint with no usable name is left to the model
+ok 285 - a "Do not use" constraint with no usable name is left to the model
+  ---
+  duration_ms: 0.2439
+  type: 'test'
+  ...
+# Subtest: verdicts and evidence match classifyConstraint plus checkBanList
+ok 286 - verdicts and evidence match classifyConstraint plus checkBanList
+  ---
+  duration_ms: 0.749
+  type: 'test'
+  ...
+# Subtest: runHardRules is deterministic and keeps the order of the constraints
+ok 287 - runHardRules is deterministic and keeps the order of the constraints
+  ---
+  duration_ms: 0.8317
+  type: 'test'
+  ...
+# Subtest: no constraints give an empty result
+ok 288 - no constraints give an empty result
+  ---
+  duration_ms: 1.3511
+  type: 'test'
+  ...
+# Subtest: in-memory store: invalid display text is rejected before storing an account
+ok 289 - in-memory store: invalid display text is rejected before storing an account
+  ---
+  duration_ms: 3.5592
+  type: 'test'
+  ...
+# Subtest: in-memory store: registration normalizes usernames and atomically prevents duplicates
+ok 290 - in-memory store: registration normalizes usernames and atomically prevents duplicates
+  ---
+  duration_ms: 4.0768
+  type: 'test'
+  ...
+# Subtest: in-memory store: normalized lookup also covers legacy mixed-case and padded usernames
+ok 291 - in-memory store: normalized lookup also covers legacy mixed-case and padded usernames
+  ---
+  duration_ms: 0.614
+  type: 'test'
+  ...
+# Subtest: in-memory store: an unknown lab creator is rejected without replacing state
+ok 292 - in-memory store: an unknown lab creator is rejected without replacing state
+  ---
+  duration_ms: 2.4162
+  type: 'test'
+  ...
+# Subtest: in-memory store: login lookup returns the hash apart from the public user
+ok 293 - in-memory store: login lookup returns the hash apart from the public user
+  ---
+  duration_ms: 0.604
+  type: 'test'
+  ...
+# Subtest: in-memory store: sessions expire by the store clock and can be deleted
+ok 294 - in-memory store: sessions expire by the store clock and can be deleted
+  ---
+  duration_ms: 0.6127
+  type: 'test'
+  ...
+# Subtest: in-memory store: memberships scope the labs a user sees
+ok 295 - in-memory store: memberships scope the labs a user sees
+  ---
+  duration_ms: 0.5683
+  type: 'test'
+  ...
+# Subtest: in-memory store: createLab stores a valid lab and rejects bad limits or deductions
+ok 296 - in-memory store: createLab stores a valid lab and rejects bad limits or deductions
+  ---
+  duration_ms: 1.0318
+  type: 'test'
+  ...
+# Subtest: in-memory store: opensAt defaults to createdAt and must be before the deadline
+ok 297 - in-memory store: opensAt defaults to createdAt and must be before the deadline
+  ---
+  duration_ms: 0.9294
+  type: 'test'
+  ...
+# Subtest: in-memory store: createLab rejects an unknown field on the lab
+ok 298 - in-memory store: createLab rejects an unknown field on the lab
+  ---
+  duration_ms: 0.7468
+  type: 'test'
+  ...
+# Subtest: in-memory store: createLab rejects an unknown field as a client-chosen id
+ok 299 - in-memory store: createLab rejects an unknown field as a client-chosen id
+  ---
+  duration_ms: 0.4789
+  type: 'test'
+  ...
+# Subtest: in-memory store: createLab rejects an unknown field on the limits
+ok 300 - in-memory store: createLab rejects an unknown field on the limits
+  ---
+  duration_ms: 0.8628
+  type: 'test'
+  ...
+# Subtest: in-memory store: createLab rejects an unknown field on a test
+ok 301 - in-memory store: createLab rejects an unknown field on a test
+  ---
+  duration_ms: 0.9652
+  type: 'test'
+  ...
+# Subtest: in-memory store: createLab rejects an unknown field on a constraint
+ok 302 - in-memory store: createLab rejects an unknown field on a constraint
+  ---
+  duration_ms: 0.5473
+  type: 'test'
+  ...
+# Subtest: in-memory store: returned objects are copies
+ok 303 - in-memory store: returned objects are copies
+  ---
+  duration_ms: 0.5612
+  type: 'test'
+  ...
+# Subtest: in-memory store: submit keeps its receive time when the clock crosses the deadline before it resolves
+ok 304 - in-memory store: submit keeps its receive time when the clock crosses the deadline before it resolves
+  ---
+  duration_ms: 1.1386
+  type: 'test'
+  ...
+# Subtest: in-memory store: submit stores a queued submission and exactly one job
+ok 305 - in-memory store: submit stores a queued submission and exactly one job
+  ---
+  duration_ms: 0.6263
+  type: 'test'
+  ...
+# Subtest: in-memory store: an expired lease is reclaimed and only the holder can complete
+ok 306 - in-memory store: an expired lease is reclaimed and only the holder can complete
+  ---
+  duration_ms: 1.2342
+  type: 'test'
+  ...
+# Subtest: in-memory store: a stale claim cannot touch a newer lease, even from the same worker
+ok 307 - in-memory store: a stale claim cannot touch a newer lease, even from the same worker
+  ---
+  duration_ms: 1.2328
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete stores an unsure verdict with cause model_unsure
+ok 308 - in-memory store: complete stores an unsure verdict with cause model_unsure
+  ---
+  duration_ms: 1.2297
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete stores an unsure verdict with cause schema_error
+ok 309 - in-memory store: complete stores an unsure verdict with cause schema_error
+  ---
+  duration_ms: 0.4545
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete stores an unsure verdict with cause evidence_mismatch
+ok 310 - in-memory store: complete stores an unsure verdict with cause evidence_mismatch
+  ---
+  duration_ms: 3.8091
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete stores an unsure verdict with cause timeout
+ok 311 - in-memory store: complete stores an unsure verdict with cause timeout
+  ---
+  duration_ms: 0.5231
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete stores an unsure verdict with cause cost_cap
+ok 312 - in-memory store: complete stores an unsure verdict with cause cost_cap
+  ---
+  duration_ms: 0.3069
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete stores an unsure verdict with cause model_off
+ok 313 - in-memory store: complete stores an unsure verdict with cause model_off
+  ---
+  duration_ms: 0.3778
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects verdicts for a non-AC result and writes nothing
+ok 314 - in-memory store: complete rejects verdicts for a non-AC result and writes nothing
+  ---
+  duration_ms: 0.5655
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects an unknown judge verdict and writes nothing
+ok 315 - in-memory store: complete rejects an unknown judge verdict and writes nothing
+  ---
+  duration_ms: 0.334
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects an AC batch missing a constraint and writes nothing
+ok 316 - in-memory store: complete rejects an AC batch missing a constraint and writes nothing
+  ---
+  duration_ms: 0.304
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects a duplicate pair in one batch and writes nothing
+ok 317 - in-memory store: complete rejects a duplicate pair in one batch and writes nothing
+  ---
+  duration_ms: 0.4865
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects an unknown constraint and writes nothing
+ok 318 - in-memory store: complete rejects an unknown constraint and writes nothing
+  ---
+  duration_ms: 0.3995
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects an unknown verdict value and writes nothing
+ok 319 - in-memory store: complete rejects an unknown verdict value and writes nothing
+  ---
+  duration_ms: 0.3333
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects evidence that is not an array and writes nothing
+ok 320 - in-memory store: complete rejects evidence that is not an array and writes nothing
+  ---
+  duration_ms: 0.2967
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects evidence line 0 and writes nothing
+ok 321 - in-memory store: complete rejects evidence line 0 and writes nothing
+  ---
+  duration_ms: 0.336
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects a violation without evidence and writes nothing
+ok 322 - in-memory store: complete rejects a violation without evidence and writes nothing
+  ---
+  duration_ms: 0.3359
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects an unknown source and writes nothing
+ok 323 - in-memory store: complete rejects an unknown source and writes nothing
+  ---
+  duration_ms: 0.3721
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects a numeric reason and writes nothing
+ok 324 - in-memory store: complete rejects a numeric reason and writes nothing
+  ---
+  duration_ms: 0.3461
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects an unsure verdict without a cause and writes nothing
+ok 325 - in-memory store: complete rejects an unsure verdict without a cause and writes nothing
+  ---
+  duration_ms: 0.4555
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects an unknown unsure cause and writes nothing
+ok 326 - in-memory store: complete rejects an unknown unsure cause and writes nothing
+  ---
+  duration_ms: 0.3478
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects an unsureCause on a pass verdict and writes nothing
+ok 327 - in-memory store: complete rejects an unsureCause on a pass verdict and writes nothing
+  ---
+  duration_ms: 0.2896
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects an unknown field on a verdict and writes nothing
+ok 328 - in-memory store: complete rejects an unknown field on a verdict and writes nothing
+  ---
+  duration_ms: 0.312
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects an unknown field on evidence and writes nothing
+ok 329 - in-memory store: complete rejects an unknown field on evidence and writes nothing
+  ---
+  duration_ms: 0.3209
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects an unknown field on the judge result and writes nothing
+ok 330 - in-memory store: complete rejects an unknown field on the judge result and writes nothing
+  ---
+  duration_ms: 0.2827
+  type: 'test'
+  ...
+# Subtest: in-memory store: complete rejects an unknown field on a test result and writes nothing
+ok 331 - in-memory store: complete rejects an unknown field on a test result and writes nothing
+  ---
+  duration_ms: 0.2925
+  type: 'test'
+  ...
+# Subtest: in-memory store: a worker that crashes on every attempt ends the submission as failed
+ok 332 - in-memory store: a worker that crashes on every attempt ends the submission as failed
+  ---
+  duration_ms: 0.6648
+  type: 'test'
+  ...
+# Subtest: in-memory store: claim and fail reject a missing or invalid maxAttempts
+ok 333 - in-memory store: claim and fail reject a missing or invalid maxAttempts
+  ---
+  duration_ms: 0.454
+  type: 'test'
+  ...
+# Subtest: in-memory store: fail retries, then marks the submission failed until requeued
+ok 334 - in-memory store: fail retries, then marks the submission failed until requeued
+  ---
+  duration_ms: 0.4817
+  type: 'test'
+  ...
+# Subtest: in-memory store: the counted submission is the last one received before the deadline
+ok 335 - in-memory store: the counted submission is the last one received before the deadline
+  ---
+  duration_ms: 0.4764
+  type: 'test'
+  ...
+# Subtest: in-memory store: a submission received before opensAt is never counted
+ok 336 - in-memory store: a submission received before opensAt is never counted
+  ---
+  duration_ms: 0.3506
+  type: 'test'
+  ...
+# Subtest: in-memory store: the queue holds every verdict of counted AC submissions only
+ok 337 - in-memory store: the queue holds every verdict of counted AC submissions only
+  ---
+  duration_ms: 0.9384
+  type: 'test'
+  ...
+# Subtest: in-memory store: an unreviewed pass blocks until confirmed in bulk
+ok 338 - in-memory store: an unreviewed pass blocks until confirmed in bulk
+  ---
+  duration_ms: 1.054
+  type: 'test'
+  ...
+# Subtest: in-memory store: unfinished counted submissions count as pending
+ok 339 - in-memory store: unfinished counted submissions count as pending
+  ---
+  duration_ms: 0.3652
+  type: 'test'
+  ...
+# Subtest: in-memory store: decide and confirmPasses reject an unknown reviewer or bad evidence
+ok 340 - in-memory store: decide and confirmPasses reject an unknown reviewer or bad evidence
+  ---
+  duration_ms: 0.9336
+  type: 'test'
+  ...
+# Subtest: in-memory store: every decision change is logged
+ok 341 - in-memory store: every decision change is logged
+  ---
+  duration_ms: 2.411
+  type: 'test'
+  ...
+# Subtest: in-memory store: verdicts of a replaced submission leave the queue
+ok 342 - in-memory store: verdicts of a replaced submission leave the queue
+  ---
+  duration_ms: 3.1895
+  type: 'test'
+  ...
+# Subtest: in-memory store: model calls are logged per submission
+ok 343 - in-memory store: model calls are logged per submission
+  ---
+  duration_ms: 0.5451
+  type: 'test'
+  ...
+# Subtest: in-memory store: invalid model call metrics write no log and zero metrics are valid
+ok 344 - in-memory store: invalid model call metrics write no log and zero metrics are valid
+  ---
+  duration_ms: 0.8217
+  type: 'test'
+  ...
+# Subtest: in-memory store: isTaAssignedToClass only accepts a TA of that class
+ok 345 - in-memory store: isTaAssignedToClass only accepts a TA of that class
+  ---
+  duration_ms: 0.2788
+  type: 'test'
+  ...
+# Subtest: in-memory store: publish follows the PA02 order of checks
+ok 346 - in-memory store: publish follows the PA02 order of checks
+  ---
+  duration_ms: 0.9032
+  type: 'test'
+  ...
+# Subtest: in-memory store: a published lab no longer accepts review changes
+ok 347 - in-memory store: a published lab no longer accepts review changes
+  ---
+  duration_ms: 0.508
+  type: 'test'
+  ...
+# Subtest: in-memory store: a lab without submissions publishes an empty summary
+ok 348 - in-memory store: a lab without submissions publishes an empty summary
+  ---
+  duration_ms: 0.2831
+  type: 'test'
+  ...
+# Subtest: in-memory store: instances do not share state
+ok 349 - in-memory store: instances do not share state
+  ---
+  duration_ms: 0.4476
+  type: 'test'
+  ...
+# Subtest: in-memory store: a bad seed is rejected and reset keeps the old state
+ok 350 - in-memory store: a bad seed is rejected and reset keeps the old state
+  ---
+  duration_ms: 0.5451
+  type: 'test'
+  ...
+# Subtest: fake labs: idempotent lab creation is atomic, scoped and expires at 24 hours
+ok 351 - fake labs: idempotent lab creation is atomic, scoped and expires at 24 hours
+  ---
+  duration_ms: 8.2301
+  type: 'test'
+  ...
+# Subtest: fake labs: replay survives deadline while valid and reset clears keys
+ok 352 - fake labs: replay survives deadline while valid and reset clears keys
+  ---
+  duration_ms: 1.1844
+  type: 'test'
+  ...
+# Subtest: lab validation: Unicode and byte/count boundaries use decoded data
+ok 353 - lab validation: Unicode and byte/count boundaries use decoded data
+  ---
+  duration_ms: 79.6847
+  type: 'test'
+  ...
+# Subtest: a lab is a draft before opensAt
+ok 354 - a lab is a draft before opensAt
+  ---
+  duration_ms: 1.0299
+  type: 'test'
+  ...
+# Subtest: a lab is open from opensAt until just before the deadline
+ok 355 - a lab is open from opensAt until just before the deadline
+  ---
+  duration_ms: 0.2292
+  type: 'test'
+  ...
+# Subtest: a lab is closed from the deadline on
+ok 356 - a lab is closed from the deadline on
+  ---
+  duration_ms: 0.1873
+  type: 'test'
+  ...
+# Subtest: manifest covers the published dev set (6 problems, 47 solutions)
+ok 357 - manifest covers the published dev set (6 problems, 47 solutions)
+  ---
+  duration_ms: 1.392
+  type: 'test'
+  ...
+# Subtest: every dev set file in leetkob-eval/ matches the published bytes
+ok 358 - every dev set file in leetkob-eval/ matches the published bytes
+  ---
+  duration_ms: 38.0223
+  type: 'test'
+  ...
+# Subtest: leetkob-eval/ holds no file outside the published dev set
+ok 359 - leetkob-eval/ holds no file outside the published dev set
+  ---
+  duration_ms: 25.5339
+  type: 'test'
+  ...
+# Subtest: cost: price constants follow ADR 0001
+ok 360 - cost: price constants follow ADR 0001
+  ---
+  duration_ms: 1.346
+  type: 'test'
+  ...
+# Subtest: cost: computeCostUsd = in × $0.10/1M + out × $0.50/1M
+ok 361 - cost: computeCostUsd = in × $0.10/1M + out × $0.50/1M
+  ---
+  duration_ms: 0.3673
+  type: 'test'
+  ...
+# Subtest: cost: invalid token counts are rejected
+ok 362 - cost: invalid token counts are rejected
+  ---
+  duration_ms: 0.6001
+  type: 'test'
+  ...
+# Subtest: cost: a lab estimate is submissions × calls × cost of one call
+ok 363 - cost: a lab estimate is submissions × calls × cost of one call
+  ---
+  duration_ms: 0.2157
+  type: 'test'
+  ...
+# Subtest: config: MODEL_API_KEY is required and the error never prints a value
+ok 364 - config: MODEL_API_KEY is required and the error never prints a value
+  ---
+  duration_ms: 0.3984
+  type: 'test'
+  ...
+# Subtest: config: key and timeout are read from the environment, the timeout has a default
+ok 365 - config: key and timeout are read from the environment, the timeout has a default
+  ---
+  duration_ms: 1.1321
+  type: 'test'
+  ...
+# Subtest: no key: the real client cannot be created and nothing touches the network
+ok 366 - no key: the real client cannot be created and nothing touches the network
+  ---
+  duration_ms: 0.4418
+  type: 'test'
+  ...
+# Subtest: no key: no other test file builds a real client or imports the SDK
+ok 367 - no key: no other test file builds a real client or imports the SDK
+  ---
+  duration_ms: 23.3888
+  type: 'test'
+  ...
+# Subtest: real client: request body follows ADR 0001 (low effort, json schema, no sampling or thinking params)
+ok 368 - real client: request body follows ADR 0001 (low effort, json schema, no sampling or thinking params)
+  ---
+  duration_ms: 43.198
+  type: 'test'
+  ...
+# Subtest: real client: reads the text block after a thinking block, request id, usage and model
+ok 369 - real client: reads the text block after a thinking block, request id, usage and model
+  ---
+  duration_ms: 3.0416
+  type: 'test'
+  ...
+# Subtest: real client: a response without a text block gives text null; refusal is passed through
+ok 370 - real client: a response without a text block gives text null; refusal is passed through
+  ---
+  duration_ms: 2.2477
+  type: 'test'
+  ...
+# Subtest: real client: 429, 5xx and 529 are retried by the SDK and then succeed
+ok 371 - real client: 429, 5xx and 529 are retried by the SDK and then succeed
+  ---
+  duration_ms: 41.5562
+  type: 'test'
+  ...
+# Subtest: real client: a provider error that keeps failing is thrown after at most 2 retries
+ok 372 - real client: a provider error that keeps failing is thrown after at most 2 retries
+  ---
+  duration_ms: 104.8661
+  type: 'test'
+  ...
+# Subtest: retryable: 408, 409, 429, 5xx and connection errors are retryable; 400, 401, 403, 404 are not
+ok 373 - retryable: 408, 409, 429, 5xx and connection errors are retryable; 400, 401, 403, 404 are not
+  ---
+  duration_ms: 0.3528
+  type: 'test'
+  ...
+# Subtest: real client: 403 and 404 are not retryable and are not retried
+ok 374 - real client: 403 and 404 are not retryable and are not retried
+  ---
+  duration_ms: 2.8922
+  type: 'test'
+  ...
+# Subtest: real client: retries never push the call past the hard deadline
+ok 375 - real client: retries never push the call past the hard deadline
+  ---
+  duration_ms: 152.0483
+  type: 'test'
+  ...
+# Subtest: real client: running out of time during a retry is ModelTimeoutError
+ok 376 - real client: running out of time during a retry is ModelTimeoutError
+  ---
+  duration_ms: 203.0858
+  type: 'test'
+  ...
+# Subtest: real client: 400 and 401 are ModelProviderError, not retryable, and never contain the key
+ok 377 - real client: 400 and 401 are ModelProviderError, not retryable, and never contain the key
+  ---
+  duration_ms: 6.4488
+  type: 'test'
+  ...
+# Subtest: real client: a connection failure is retried, then a retryable ModelProviderError
+ok 378 - real client: a connection failure is retried, then a retryable ModelProviderError
+  ---
+  duration_ms: 1370.0516
+  type: 'test'
+  ...
+# Subtest: real client: a hanging request is cut at the deadline with ModelTimeoutError
+ok 379 - real client: a hanging request is cut at the deadline with ModelTimeoutError
+  ---
+  duration_ms: 60.4468
+  type: 'test'
+  ...
+# Subtest: real client: the caller signal aborts the request without becoming a timeout
+ok 380 - real client: the caller signal aborts the request without becoming a timeout
+  ---
+  duration_ms: 31.699
+  type: 'test'
+  ...
+# Subtest: evaluator: no semantic constraint means no model call and an empty result
+ok 381 - evaluator: no semantic constraint means no model call and an empty result
+  ---
+  duration_ms: 2.9352
+  type: 'test'
+  ...
+# Subtest: evaluator: one call covers all semantic constraints of a submission
+ok 382 - evaluator: one call covers all semantic constraints of a submission
+  ---
+  duration_ms: 2.25
+  type: 'test'
+  ...
+# Subtest: evaluator: verdict fields, order and evidence text come from the original code
+ok 383 - evaluator: verdict fields, order and evidence text come from the original code
+  ---
+  duration_ms: 1.1554
+  type: 'test'
+  ...
+# Subtest: evaluator: evidence text is the original line, never text written by the model
+ok 384 - evaluator: evidence text is the original line, never text written by the model
+  ---
+  duration_ms: 0.9569
+  type: 'test'
+  ...
+# Subtest: evaluator: violation with no line, or a line outside the file, is unsure/evidence_mismatch
+ok 385 - evaluator: violation with no line, or a line outside the file, is unsure/evidence_mismatch
+  ---
+  duration_ms: 3.1672
+  type: 'test'
+  ...
+# Subtest: evaluator: a violation that only cites lines the model never saw is evidence_mismatch
+ok 386 - evaluator: a violation that only cites lines the model never saw is evidence_mismatch
+  ---
+  duration_ms: 1.5151
+  type: 'test'
+  ...
+# Subtest: G2 evaluator: line numbers map back to the original code, comment included
+ok 387 - G2 evaluator: line numbers map back to the original code, comment included
+  ---
+  duration_ms: 1.2706
+  type: 'test'
+  ...
+# Subtest: G2 evaluator: quoting the removed comment of a line is evidence_mismatch
+ok 388 - G2 evaluator: quoting the removed comment of a line is evidence_mismatch
+  ---
+  duration_ms: 0.8082
+  type: 'test'
+  ...
+# Subtest: G2 evaluator: quoting the original line, which the model never saw, is evidence_mismatch
+ok 389 - G2 evaluator: quoting the original line, which the model never saw, is evidence_mismatch
+  ---
+  duration_ms: 1.4318
+  type: 'test'
+  ...
+# Subtest: G2 evaluator: a pass that cites a comment-only line is evidence_mismatch
+ok 390 - G2 evaluator: a pass that cites a comment-only line is evidence_mismatch
+  ---
+  duration_ms: 0.7044
+  type: 'test'
+  ...
+# Subtest: G2 evaluator: the request schema asks for line and text, and the prompt says to copy the line
+ok 391 - G2 evaluator: the request schema asks for line and text, and the prompt says to copy the line
+  ---
+  duration_ms: 0.6839
+  type: 'test'
+  ...
+# Subtest: evaluator: an unsure verdict from the model keeps cause model_unsure
+ok 392 - evaluator: an unsure verdict from the model keeps cause model_unsure
+  ---
+  duration_ms: 0.7654
+  type: 'test'
+  ...
+# Subtest: evaluator: unsureCause is set if and only if the verdict is unsure
+ok 393 - evaluator: unsureCause is set if and only if the verdict is unsure
+  ---
+  duration_ms: 2.3364
+  type: 'test'
+  ...
+# Subtest: evaluator: broken output makes every constraint unsure/schema_error and logs schema_error
+ok 394 - evaluator: broken output makes every constraint unsure/schema_error and logs schema_error
+  ---
+  duration_ms: 0.5767
+  type: 'test'
+  ...
+# Subtest: evaluator: refusal and max_tokens are unsure/schema_error even with parseable text
+ok 395 - evaluator: refusal and max_tokens are unsure/schema_error even with parseable text
+  ---
+  duration_ms: 0.8626
+  type: 'test'
+  ...
+# Subtest: evaluator: a model that returns null text is unsure/schema_error
+ok 396 - evaluator: a model that returns null text is unsure/schema_error
+  ---
+  duration_ms: 0.4745
+  type: 'test'
+  ...
+# Subtest: G5 evaluator: an extra deduction field is ignored, the verdict is kept and no verdict carries a mark
+ok 397 - G5 evaluator: an extra deduction field is ignored, the verdict is kept and no verdict carries a mark
+  ---
+  duration_ms: 0.7808
+  type: 'test'
+  ...
+# Subtest: G1 evaluator: a fenced JSON answer is not unwrapped, every constraint is unsure/schema_error
+ok 398 - G1 evaluator: a fenced JSON answer is not unwrapped, every constraint is unsure/schema_error
+  ---
+  duration_ms: 0.7228
+  type: 'test'
+  ...
+# Subtest: G1 evaluator: JSON after prose is not cut out, every constraint is unsure/schema_error
+ok 399 - G1 evaluator: JSON after prose is not cut out, every constraint is unsure/schema_error
+  ---
+  duration_ms: 0.6708
+  type: 'test'
+  ...
+# Subtest: evaluator: a missing constraint is schema_error, the valid one is kept
+ok 400 - evaluator: a missing constraint is schema_error, the valid one is kept
+  ---
+  duration_ms: 0.567
+  type: 'test'
+  ...
+# Subtest: evaluator: no verdict carries any grading field
+ok 401 - evaluator: no verdict carries any grading field
+  ---
+  duration_ms: 0.6156
+  type: 'test'
+  ...
+# Subtest: G3 timeout: a valid violation that arrives after the deadline is never used
+ok 402 - G3 timeout: a valid violation that arrives after the deadline is never used
+  ---
+  duration_ms: 248.2534
+  type: 'test'
+  ...
+# Subtest: G3 timeout: a model that never answers becomes unsure/timeout and the signal is aborted
+ok 403 - G3 timeout: a model that never answers becomes unsure/timeout and the signal is aborted
+  ---
+  duration_ms: 46.2201
+  type: 'test'
+  ...
+# Subtest: G3 timeout: a model that honours the abort signal is also unsure/timeout
+ok 404 - G3 timeout: a model that honours the abort signal is also unsure/timeout
+  ---
+  duration_ms: 31.2063
+  type: 'test'
+  ...
+# Subtest: G3 timeout: a client that throws ModelTimeoutError is unsure/timeout
+ok 405 - G3 timeout: a client that throws ModelTimeoutError is unsure/timeout
+  ---
+  duration_ms: 1.1323
+  type: 'test'
+  ...
+# Subtest: G3 timeout: a late answer after the deadline is ignored and does not crash the process
+ok 406 - G3 timeout: a late answer after the deadline is ignored and does not crash the process
+  ---
+  duration_ms: 234.4284
+  type: 'test'
+  ...
+# Subtest: provider errors (429, 5xx, connection) are thrown so the worker can retry the job
+ok 407 - provider errors (429, 5xx, connection) are thrown so the worker can retry the job
+  ---
+  duration_ms: 2.2948
+  type: 'test'
+  ...
+# Subtest: provider errors: an unknown error from the client is thrown too, not turned into unsure
+ok 408 - provider errors: an unknown error from the client is thrown too, not turned into unsure
+  ---
+  duration_ms: 0.4522
+  type: 'test'
+  ...
+# Subtest: abort: when the job signal is aborted the evaluator throws instead of returning unsure
+ok 409 - abort: when the job signal is aborted the evaluator throws instead of returning unsure
+  ---
+  duration_ms: 12.4626
+  type: 'test'
+  ...
+# Subtest: prompt: the model gets statement, semantic constraints and numbered clean code only
+ok 410 - prompt: the model gets statement, semantic constraints and numbered clean code only
+  ---
+  duration_ms: 1.0278
+  type: 'test'
+  ...
+# Subtest: prompt: the system prompt treats code as data and forbids scores
+ok 411 - prompt: the system prompt treats code as data and forbids scores
+  ---
+  duration_ms: 0.3995
+  type: 'test'
+  ...
+# Subtest: prompt: only the asked constraints are sent, and code with CRLF is numbered correctly
+ok 412 - prompt: only the asked constraints are sent, and code with CRLF is numbered correctly
+  ---
+  duration_ms: 0.3471
+  type: 'test'
+  ...
+# Subtest: prompt: onPrompt receives the exact prompt and its sha256, before the model is called
+ok 413 - prompt: onPrompt receives the exact prompt and its sha256, before the model is called
+  ---
+  duration_ms: 0.3945
+  type: 'test'
+  ...
+# Subtest: prompt: identity comes from getIdentity(submission), which may be async
+ok 414 - prompt: identity comes from getIdentity(submission), which may be async
+  ---
+  duration_ms: 0.2756
+  type: 'test'
+  ...
+# Subtest: call log: every field is filled from the response and the price table
+ok 415 - call log: every field is filled from the response and the price table
+  ---
+  duration_ms: 0.3271
+  type: 'test'
+  ...
+# Subtest: integration with T07: ban-list constraints never reach the model
+ok 416 - integration with T07: ban-list constraints never reach the model
+  ---
+  duration_ms: 2.9202
+  type: 'test'
+  ...
+# Subtest: identity fails closed: no usable identity means no prompt and no model call
+ok 417 - identity fails closed: no usable identity means no prompt and no model call
+  ---
+  duration_ms: 0.4606
+  type: 'test'
+  ...
+# Subtest: identity fails closed: an async getIdentity that returns nothing usable also throws
+ok 418 - identity fails closed: an async getIdentity that returns nothing usable also throws
+  ---
+  duration_ms: 0.1409
+  type: 'test'
+  ...
+# Subtest: identity fails closed: one usable string is enough, the others may be short
+ok 419 - identity fails closed: one usable string is enough, the others may be short
+  ---
+  duration_ms: 0.3322
+  type: 'test'
+  ...
+# Subtest: identity: a joined form such as nguyen_van_an is masked when only the full name is given
+ok 420 - identity: a joined form such as nguyen_van_an is masked when only the full name is given
+  ---
+  duration_ms: 0.699
+  type: 'test'
+  ...
+# Subtest: evaluator: bad configuration fails fast
+ok 421 - evaluator: bad configuration fails fast
+  ---
+  duration_ms: 0.1973
+  type: 'test'
+  ...
+# Subtest: evaluator: duplicated constraint ids are a programming error
+ok 422 - evaluator: duplicated constraint ids are a programming error
+  ---
+  duration_ms: 0.1068
+  type: 'test'
+  ...
+# Subtest: identity: NO_STUDENT_IDENTITY_DATASET is the explicit, frozen dataset marker
+ok 423 - identity: NO_STUDENT_IDENTITY_DATASET is the explicit, frozen dataset marker
+  ---
+  duration_ms: 2.0724
+  type: 'test'
+  ...
+# Subtest: identity: a dataset run calls the model, strips comments, redacts nothing and records none:dataset
+ok 424 - identity: a dataset run calls the model, strips comments, redacts nothing and records none:dataset
+  ---
+  duration_ms: 5.2442
+  type: 'test'
+  ...
+# Subtest: identity: the student form redacts like the legacy string list and records student
+ok 425 - identity: the student form redacts like the legacy string list and records student
+  ---
+  duration_ms: 8.8607
+  type: 'test'
+  ...
+# Subtest: identity: the legacy string list still records student for the T08 fixtures
+ok 426 - identity: the legacy string list still records student for the T08 fixtures
+  ---
+  duration_ms: 1.4227
+  type: 'test'
+  ...
+# Subtest: identity fails closed on every other shape: no prompt, no model call
+ok 427 - identity fails closed on every other shape: no prompt, no model call
+  ---
+  duration_ms: 1.5751
+  type: 'test'
+  ...
+# Subtest: sanitize: comments are removed and the line count stays the same
+ok 428 - sanitize: comments are removed and the line count stays the same
+  ---
+  duration_ms: 2.0301
+  type: 'test'
+  ...
+# Subtest: sanitize: line N of the clean code is line N of the original
+ok 429 - sanitize: line N of the clean code is line N of the original
+  ---
+  duration_ms: 1.2754
+  type: 'test'
+  ...
+# Subtest: sanitize: a multi-line block comment keeps every line break
+ok 430 - sanitize: a multi-line block comment keeps every line break
+  ---
+  duration_ms: 0.6178
+  type: 'test'
+  ...
+# Subtest: sanitize: // and /* inside strings are not treated as comments
+ok 431 - sanitize: // and /* inside strings are not treated as comments
+  ---
+  duration_ms: 0.5614
+  type: 'test'
+  ...
+# Subtest: sanitize: raw strings and char literals do not confuse the scanner
+ok 432 - sanitize: raw strings and char literals do not confuse the scanner
+  ---
+  duration_ms: 0.6276
+  type: 'test'
+  ...
+# Subtest: sanitize: a line comment ended by a backslash continues on the next line
+ok 433 - sanitize: a line comment ended by a backslash continues on the next line
+  ---
+  duration_ms: 0.2633
+  type: 'test'
+  ...
+# Subtest: sanitize: CRLF input keeps the same number of lines
+ok 434 - sanitize: CRLF input keeps the same number of lines
+  ---
+  duration_ms: 0.2492
+  type: 'test'
+  ...
+# Subtest: sanitize: identity is replaced in strings, identifiers and everywhere else
+ok 435 - sanitize: identity is replaced in strings, identifiers and everywhere else
+  ---
+  duration_ms: 1.4444
+  type: 'test'
+  ...
+# Subtest: sanitize: identity matching ignores case and diacritics
+ok 436 - sanitize: identity matching ignores case and diacritics
+  ---
+  duration_ms: 0.9918
+  type: 'test'
+  ...
+# Subtest: sanitize: joined forms with _, - and . are masked, with and without diacritics
+ok 437 - sanitize: joined forms with _, - and . are masked, with and without diacritics
+  ---
+  duration_ms: 0.8266
+  type: 'test'
+  ...
+# Subtest: hasUsableIdentity: needs at least one single-line string of 3 or more characters
+ok 438 - hasUsableIdentity: needs at least one single-line string of 3 or more characters
+  ---
+  duration_ms: 0.3285
+  type: 'test'
+  ...
+# Subtest: sanitize: empty and very short identity strings are ignored
+ok 439 - sanitize: empty and very short identity strings are ignored
+  ---
+  duration_ms: 0.2168
+  type: 'test'
+  ...
+# Subtest: sanitize: short name parts never corrupt C++ keywords or main
+ok 440 - sanitize: short name parts never corrupt C++ keywords or main
+  ---
+  duration_ms: 2.0648
+  type: 'test'
+  ...
+# Subtest: sanitize: short name parts are still replaced when they stand alone
+ok 441 - sanitize: short name parts are still replaced when they stand alone
+  ---
+  duration_ms: 0.7231
+  type: 'test'
+  ...
+# Subtest: sanitize: name parts of 5 letters or more and full identifiers are replaced anywhere
+ok 442 - sanitize: name parts of 5 letters or more and full identifiers are replaced anywhere
+  ---
+  duration_ms: 0.4426
+  type: 'test'
+  ...
+# Subtest: sanitize: an identity string never changes the line count
+ok 443 - sanitize: an identity string never changes the line count
+  ---
+  duration_ms: 0.3104
+  type: 'test'
+  ...
+# Subtest: sanitize: longer identity strings win over their own parts
+ok 444 - sanitize: longer identity strings win over their own parts
+  ---
+  duration_ms: 0.3261
+  type: 'test'
+  ...
+# Subtest: splitLines drops the empty tail after a final newline only
+ok 445 - splitLines drops the empty tail after a final newline only
+  ---
+  duration_ms: 1.0825
+  type: 'test'
+  ...
+# Subtest: schema: the request schema has enums for ids and verdicts and no score field
+ok 446 - schema: the request schema has enums for ids and verdicts and no score field
+  ---
+  duration_ms: 2.7852
+  type: 'test'
+  ...
+# Subtest: schema: a clean output is accepted as is
+ok 447 - schema: a clean output is accepted as is
+  ---
+  duration_ms: 1.1658
+  type: 'test'
+  ...
+# Subtest: schema: broken JSON makes every constraint unsure with schema_error
+ok 448 - schema: broken JSON makes every constraint unsure with schema_error
+  ---
+  duration_ms: 0.294
+  type: 'test'
+  ...
+# Subtest: schema: not JSON at all makes every constraint unsure with schema_error
+ok 449 - schema: not JSON at all makes every constraint unsure with schema_error
+  ---
+  duration_ms: 0.1978
+  type: 'test'
+  ...
+# Subtest: schema: empty text makes every constraint unsure with schema_error
+ok 450 - schema: empty text makes every constraint unsure with schema_error
+  ---
+  duration_ms: 0.1616
+  type: 'test'
+  ...
+# Subtest: schema: null JSON makes every constraint unsure with schema_error
+ok 451 - schema: null JSON makes every constraint unsure with schema_error
+  ---
+  duration_ms: 0.1283
+  type: 'test'
+  ...
+# Subtest: schema: an array at the top level makes every constraint unsure with schema_error
+ok 452 - schema: an array at the top level makes every constraint unsure with schema_error
+  ---
+  duration_ms: 0.1868
+  type: 'test'
+  ...
+# Subtest: schema: missing results makes every constraint unsure with schema_error
+ok 453 - schema: missing results makes every constraint unsure with schema_error
+  ---
+  duration_ms: 0.1395
+  type: 'test'
+  ...
+# Subtest: schema: results is not an array makes every constraint unsure with schema_error
+ok 454 - schema: results is not an array makes every constraint unsure with schema_error
+  ---
+  duration_ms: 0.1698
+  type: 'test'
+  ...
+# Subtest: schema: an unknown verdict makes every constraint unsure with schema_error
+ok 455 - schema: an unknown verdict makes every constraint unsure with schema_error
+  ---
+  duration_ms: 0.3276
+  type: 'test'
+  ...
+# Subtest: schema: a missing reason makes every constraint unsure with schema_error
+ok 456 - schema: a missing reason makes every constraint unsure with schema_error
+  ---
+  duration_ms: 0.1495
+  type: 'test'
+  ...
+# Subtest: schema: a missing evidence makes every constraint unsure with schema_error
+ok 457 - schema: a missing evidence makes every constraint unsure with schema_error
+  ---
+  duration_ms: 0.0985
+  type: 'test'
+  ...
+# Subtest: schema: evidence that is not an array makes every constraint unsure with schema_error
+ok 458 - schema: evidence that is not an array makes every constraint unsure with schema_error
+  ---
+  duration_ms: 0.0772
+  type: 'test'
+  ...
+# Subtest: schema: an evidence item that is a bare line number makes every constraint unsure with schema_error
+ok 459 - schema: an evidence item that is a bare line number makes every constraint unsure with schema_error
+  ---
+  duration_ms: 0.0857
+  type: 'test'
+  ...
+# Subtest: schema: an evidence line that is not an integer makes every constraint unsure with schema_error
+ok 460 - schema: an evidence line that is not an integer makes every constraint unsure with schema_error
+  ---
+  duration_ms: 0.0934
+  type: 'test'
+  ...
+# Subtest: schema: an evidence line with a fractional number makes every constraint unsure with schema_error
+ok 461 - schema: an evidence line with a fractional number makes every constraint unsure with schema_error
+  ---
+  duration_ms: 0.0721
+  type: 'test'
+  ...
+# Subtest: schema: an evidence item without text makes every constraint unsure with schema_error
+ok 462 - schema: an evidence item without text makes every constraint unsure with schema_error
+  ---
+  duration_ms: 0.0635
+  type: 'test'
+  ...
+# Subtest: schema: a reason that is not a string makes every constraint unsure with schema_error
+ok 463 - schema: a reason that is not a string makes every constraint unsure with schema_error
+  ---
+  duration_ms: 0.0689
+  type: 'test'
+  ...
+# Subtest: schema: a constraint_id that is not a string makes every constraint unsure with schema_error
+ok 464 - schema: a constraint_id that is not a string makes every constraint unsure with schema_error
+  ---
+  duration_ms: 0.0589
+  type: 'test'
+  ...
+# Subtest: schema: an item that is not an object makes every constraint unsure with schema_error
+ok 465 - schema: an item that is not an object makes every constraint unsure with schema_error
+  ---
+  duration_ms: 0.0476
+  type: 'test'
+  ...
+# Subtest: schema: a missing constraint becomes schema_error, the valid one is kept
+ok 466 - schema: a missing constraint becomes schema_error, the valid one is kept
+  ---
+  duration_ms: 0.1631
+  type: 'test'
+  ...
+# Subtest: schema: a duplicated id becomes schema_error for that id only
+ok 467 - schema: a duplicated id becomes schema_error for that id only
+  ---
+  duration_ms: 0.1698
+  type: 'test'
+  ...
+# Subtest: schema: an unknown id is ignored, the asked constraints keep their result
+ok 468 - schema: an unknown id is ignored, the asked constraints keep their result
+  ---
+  duration_ms: 0.1345
+  type: 'test'
+  ...
+# Subtest: schema: an unknown id with a missing asked constraint leaves that one as schema_error
+ok 469 - schema: an unknown id with a missing asked constraint leaves that one as schema_error
+  ---
+  duration_ms: 0.1181
+  type: 'test'
+  ...
+# Subtest: schema: stop_reason refusal is schema_error even if the text is valid
+ok 470 - schema: stop_reason refusal is schema_error even if the text is valid
+  ---
+  duration_ms: 0.1084
+  type: 'test'
+  ...
+# Subtest: schema: stop_reason max_tokens is schema_error even if the text is valid
+ok 471 - schema: stop_reason max_tokens is schema_error even if the text is valid
+  ---
+  duration_ms: 0.061
+  type: 'test'
+  ...
+# Subtest: schema: stop_reason tool_use is schema_error even if the text is valid
+ok 472 - schema: stop_reason tool_use is schema_error even if the text is valid
+  ---
+  duration_ms: 0.1151
+  type: 'test'
+  ...
+# Subtest: schema: stop_reason null is schema_error even if the text is valid
+ok 473 - schema: stop_reason null is schema_error even if the text is valid
+  ---
+  duration_ms: 0.0899
+  type: 'test'
+  ...
+# Subtest: schema: no text block is schema_error
+ok 474 - schema: no text block is schema_error
+  ---
+  duration_ms: 0.0876
+  type: 'test'
+  ...
+# Subtest: schema: violation without evidence lines is evidence_mismatch
+ok 475 - schema: violation without evidence lines is evidence_mismatch
+  ---
+  duration_ms: 0.2703
+  type: 'test'
+  ...
+# Subtest: schema: evidence lines [0] outside 1..10 is evidence_mismatch
+ok 476 - schema: evidence lines [0] outside 1..10 is evidence_mismatch
+  ---
+  duration_ms: 0.246
+  type: 'test'
+  ...
+# Subtest: schema: evidence lines [11] outside 1..10 is evidence_mismatch
+ok 477 - schema: evidence lines [11] outside 1..10 is evidence_mismatch
+  ---
+  duration_ms: 0.2205
+  type: 'test'
+  ...
+# Subtest: schema: evidence lines [-1] outside 1..10 is evidence_mismatch
+ok 478 - schema: evidence lines [-1] outside 1..10 is evidence_mismatch
+  ---
+  duration_ms: 0.1924
+  type: 'test'
+  ...
+# Subtest: schema: evidence lines [3,99] outside 1..10 is evidence_mismatch
+ok 479 - schema: evidence lines [3,99] outside 1..10 is evidence_mismatch
+  ---
+  duration_ms: 0.1405
+  type: 'test'
+  ...
+# Subtest: schema: pass and unsure may omit evidence, but lines that are given must be in range
+ok 480 - schema: pass and unsure may omit evidence, but lines that are given must be in range
+  ---
+  duration_ms: 0.2377
+  type: 'test'
+  ...
+# Subtest: schema: evidence lines are sorted, deduplicated and capped
+ok 481 - schema: evidence lines are sorted, deduplicated and capped
+  ---
+  duration_ms: 0.3215
+  type: 'test'
+  ...
+# Subtest: schema: a very long reason is truncated, not rejected
+ok 482 - schema: a very long reason is truncated, not rejected
+  ---
+  duration_ms: 0.2089
+  type: 'test'
+  ...
+# Subtest: schema: a model unsure verdict has cause model_unsure
+ok 483 - schema: a model unsure verdict has cause model_unsure
+  ---
+  duration_ms: 0.1514
+  type: 'test'
+  ...
+# Subtest: G5 schema: extra deduction or score fields on a result are ignored and the verdict is kept
+ok 484 - G5 schema: extra deduction or score fields on a result are ignored and the verdict is kept
+  ---
+  duration_ms: 0.2547
+  type: 'test'
+  ...
+# Subtest: G5 schema: an extra top-level deduction field is ignored and the results are kept
+ok 485 - G5 schema: an extra top-level deduction field is ignored and the results are kept
+  ---
+  duration_ms: 0.2539
+  type: 'test'
+  ...
+# Subtest: G5 schema: a grading instruction in the reason changes nothing but the reason text
+ok 486 - G5 schema: a grading instruction in the reason changes nothing but the reason text
+  ---
+  duration_ms: 0.2624
+  type: 'test'
+  ...
+# Subtest: G5 schema: required fields with the wrong type are still schema_error (G1), extra fields do not hide them
+ok 487 - G5 schema: required fields with the wrong type are still schema_error (G1), extra fields do not hide them
+  ---
+  duration_ms: 0.1841
+  type: 'test'
+  ...
+# Subtest: G1 schema: JSON in a json code fence makes every constraint unsure with schema_error
+ok 488 - G1 schema: JSON in a json code fence makes every constraint unsure with schema_error
+  ---
+  duration_ms: 0.1986
+  type: 'test'
+  ...
+# Subtest: G1 schema: JSON in a bare code fence makes every constraint unsure with schema_error
+ok 489 - G1 schema: JSON in a bare code fence makes every constraint unsure with schema_error
+  ---
+  duration_ms: 0.2813
+  type: 'test'
+  ...
+# Subtest: G1 schema: JSON after prose makes every constraint unsure with schema_error
+ok 490 - G1 schema: JSON after prose makes every constraint unsure with schema_error
+  ---
+  duration_ms: 0.1384
+  type: 'test'
+  ...
+# Subtest: G1 schema: JSON followed by prose makes every constraint unsure with schema_error
+ok 491 - G1 schema: JSON followed by prose makes every constraint unsure with schema_error
+  ---
+  duration_ms: 0.1048
+  type: 'test'
+  ...
+# Subtest: G1 schema: two JSON objects in a row makes every constraint unsure with schema_error
+ok 492 - G1 schema: two JSON objects in a row makes every constraint unsure with schema_error
+  ---
+  duration_ms: 0.0741
+  type: 'test'
+  ...
+# Subtest: G1 schema: the same answer without fence or prose is accepted, so the cases above fail only on the wrapping
+ok 493 - G1 schema: the same answer without fence or prose is accepted, so the cases above fail only on the wrapping
+  ---
+  duration_ms: 0.1818
+  type: 'test'
+  ...
+# Subtest: G1 schema: an unknown verdict makes every constraint unsure with schema_error
+ok 494 - G1 schema: an unknown verdict makes every constraint unsure with schema_error
+  ---
+  duration_ms: 0.1617
+  type: 'test'
+  ...
+# Subtest: G1 schema: a missing constraint is unsure with schema_error, the other keeps its verdict
+ok 495 - G1 schema: a missing constraint is unsure with schema_error, the other keeps its verdict
+  ---
+  duration_ms: 0.1191
+  type: 'test'
+  ...
+# Subtest: G1 schema: a duplicated constraint is unsure with schema_error, even when both answers agree
+ok 496 - G1 schema: a duplicated constraint is unsure with schema_error, even when both answers agree
+  ---
+  duration_ms: 0.1136
+  type: 'test'
+  ...
+# Subtest: G2 schema: evidence that quotes its line exactly is accepted
+ok 497 - G2 schema: evidence that quotes its line exactly is accepted
+  ---
+  duration_ms: 0.1926
+  type: 'test'
+  ...
+# Subtest: G2 schema: a fabricated line (text that is nowhere in the code) is evidence_mismatch
+ok 498 - G2 schema: a fabricated line (text that is nowhere in the code) is evidence_mismatch
+  ---
+  duration_ms: 0.1742
+  type: 'test'
+  ...
+# Subtest: G2 schema: the right text with the wrong line number is evidence_mismatch
+ok 499 - G2 schema: the right text with the wrong line number is evidence_mismatch
+  ---
+  duration_ms: 0.1293
+  type: 'test'
+  ...
+# Subtest: G2 schema: a line that only held a removed comment is evidence_mismatch, whatever the text
+ok 500 - G2 schema: a line that only held a removed comment is evidence_mismatch, whatever the text
+  ---
+  duration_ms: 0.1958
+  type: 'test'
+  ...
+# Subtest: G2 schema: one bad line among good ones makes the whole verdict evidence_mismatch
+ok 501 - G2 schema: one bad line among good ones makes the whole verdict evidence_mismatch
+  ---
+  duration_ms: 0.1204
+  type: 'test'
+  ...
+# Subtest: G2 schema: pass and unsure with a bad evidence line also become evidence_mismatch
+ok 502 - G2 schema: pass and unsure with a bad evidence line also become evidence_mismatch
+  ---
+  duration_ms: 0.103
+  type: 'test'
+  ...
+# Subtest: G2 schema: surrounding whitespace is ignored but any change inside the line is a mismatch
+ok 503 - G2 schema: surrounding whitespace is ignored but any change inside the line is a mismatch
+  ---
+  duration_ms: 0.3132
+  type: 'test'
+  ...
+# Subtest: G2 schema: the mismatch reason names the line and keeps the model reason for the TA
+ok 504 - G2 schema: the mismatch reason names the line and keeps the model reason for the TA
+  ---
+  duration_ms: 0.2251
+  type: 'test'
+  ...
+# Subtest: G2 schema: an extra field inside an evidence item is ignored like any field outside the schema (G5)
+ok 505 - G2 schema: an extra field inside an evidence item is ignored like any field outside the schema (G5)
+  ---
+  duration_ms: 0.1345
+  type: 'test'
+  ...
+# Subtest: createSemanticEvaluator is assignable to EvaluateSemanticConstraintsFn
+ok 506 - createSemanticEvaluator is assignable to EvaluateSemanticConstraintsFn
+  ---
+  duration_ms: 0.8701
+  type: 'test'
+  ...
+# Subtest: lab lookup and many-to-many membership supply the T03 ownership boundary
+ok 507 - lab lookup and many-to-many membership supply the T03 ownership boundary
+  ---
+  duration_ms: 4.7484
+  type: 'test'
+  ...
+# Subtest: one millisecond before deadline
+ok 508 - one millisecond before deadline
+  ---
+  duration_ms: 0.4974
+  type: 'test'
+  ...
+# Subtest: exactly at deadline
+ok 509 - exactly at deadline
+  ---
+  duration_ms: 0.3342
+  type: 'test'
+  ...
+# Subtest: one millisecond after deadline
+ok 510 - one millisecond after deadline
+  ---
+  duration_ms: 0.2572
+  type: 'test'
+  ...
+# Subtest: a queued pass without a TA decision blocks publication
+ok 511 - a queued pass without a TA decision blocks publication
+  ---
+  duration_ms: 0.4184
+  type: 'test'
+  ...
+# Subtest: a queued violation without a TA decision blocks publication
+ok 512 - a queued violation without a TA decision blocks publication
+  ---
+  duration_ms: 0.2413
+  type: 'test'
+  ...
+# Subtest: a queued unsure without a TA decision blocks publication
+ok 513 - a queued unsure without a TA decision blocks publication
+  ---
+  duration_ms: 0.2032
+  type: 'test'
+  ...
+# Subtest: deadline refusal precedes pending refusal
+ok 514 - deadline refusal precedes pending refusal
+  ---
+  duration_ms: 0.3125
+  type: 'test'
+  ...
+# Subtest: summary counts TA decisions, including overrides and resolved unsure
+ok 515 - summary counts TA decisions, including overrides and resolved unsure
+  ---
+  duration_ms: 0.3483
+  type: 'test'
+  ...
+# Subtest: pending in another lab is excluded and an empty queue can publish
+ok 516 - pending in another lab is excluded and an empty queue can publish
+  ---
+  duration_ms: 0.4292
+  type: 'test'
+  ...
+# Subtest: repeat preserves original publisher, timestamp and summary without consulting the clock
+ok 517 - repeat preserves original publisher, timestamp and summary without consulting the clock
+  ---
+  duration_ms: 0.3122
+  type: 'test'
+  ...
+# Subtest: a seeded publication remains unchanged even when the clock is before deadline
+ok 518 - a seeded publication remains unchanged even when the clock is before deadline
+  ---
+  duration_ms: 0.2752
+  type: 'test'
+  ...
+# Subtest: two scheduled calls create one publication in the same store
+ok 519 - two scheduled calls create one publication in the same store
+  ---
+  duration_ms: 0.4312
+  type: 'test'
+  ...
+# Subtest: factories, seed/reset and fixed clocks do not share mutable state
+ok 520 - factories, seed/reset and fixed clocks do not share mutable state
+  ---
+  duration_ms: 0.3825
+  type: 'test'
+  ...
+# Subtest: seed, lookup, reset and publication results are defensive copies
+ok 521 - seed, lookup, reset and publication results are defensive copies
+  ---
+  duration_ms: 0.4328
+  type: 'test'
+  ...
+# Subtest: invalid seed: duplicate lab; failed reset preserves previous publication and lookup
+ok 522 - invalid seed: duplicate lab; failed reset preserves previous publication and lookup
+  ---
+  duration_ms: 3.2061
+  type: 'test'
+  ...
+# Subtest: invalid seed: duplicate membership; failed reset preserves previous publication and lookup
+ok 523 - invalid seed: duplicate membership; failed reset preserves previous publication and lookup
+  ---
+  duration_ms: 0.4505
+  type: 'test'
+  ...
+# Subtest: invalid seed: duplicate queue ID; failed reset preserves previous publication and lookup
+ok 524 - invalid seed: duplicate queue ID; failed reset preserves previous publication and lookup
+  ---
+  duration_ms: 0.2758
+  type: 'test'
+  ...
+# Subtest: invalid seed: duplicate review pair; failed reset preserves previous publication and lookup
+ok 525 - invalid seed: duplicate review pair; failed reset preserves previous publication and lookup
+  ---
+  duration_ms: 0.2284
+  type: 'test'
+  ...
+# Subtest: invalid seed: unknown review lab; failed reset preserves previous publication and lookup
+ok 526 - invalid seed: unknown review lab; failed reset preserves previous publication and lookup
+  ---
+  duration_ms: 0.2502
+  type: 'test'
+  ...
+# Subtest: invalid seed: invalid verdict; failed reset preserves previous publication and lookup
+ok 527 - invalid seed: invalid verdict; failed reset preserves previous publication and lookup
+  ---
+  duration_ms: 0.2097
+  type: 'test'
+  ...
+# Subtest: invalid seed: invalid TA decision; failed reset preserves previous publication and lookup
+ok 528 - invalid seed: invalid TA decision; failed reset preserves previous publication and lookup
+  ---
+  duration_ms: 0.199
+  type: 'test'
+  ...
+# Subtest: invalid seed: missing TA decision; failed reset preserves previous publication and lookup
+ok 529 - invalid seed: missing TA decision; failed reset preserves previous publication and lookup
+  ---
+  duration_ms: 0.2194
+  type: 'test'
+  ...
+# Subtest: invalid seed: empty ID; failed reset preserves previous publication and lookup
+ok 530 - invalid seed: empty ID; failed reset preserves previous publication and lookup
+  ---
+  duration_ms: 0.2125
+  type: 'test'
+  ...
+# Subtest: invalid seed: whitespace ID; failed reset preserves previous publication and lookup
+ok 531 - invalid seed: whitespace ID; failed reset preserves previous publication and lookup
+  ---
+  duration_ms: 0.2134
+  type: 'test'
+  ...
+# Subtest: invalid seed: invalid deadline; failed reset preserves previous publication and lookup
+ok 532 - invalid seed: invalid deadline; failed reset preserves previous publication and lookup
+  ---
+  duration_ms: 0.1939
+  type: 'test'
+  ...
+# Subtest: invalid seed: noncanonical deadline; failed reset preserves previous publication and lookup
+ok 533 - invalid seed: noncanonical deadline; failed reset preserves previous publication and lookup
+  ---
+  duration_ms: 0.1827
+  type: 'test'
+  ...
+# Subtest: invalid seed: unknown publication lab; failed reset preserves previous publication and lookup
+ok 534 - invalid seed: unknown publication lab; failed reset preserves previous publication and lookup
+  ---
+  duration_ms: 0.2199
+  type: 'test'
+  ...
+# Subtest: invalid seed: duplicate publication; failed reset preserves previous publication and lookup
+ok 535 - invalid seed: duplicate publication; failed reset preserves previous publication and lookup
+  ---
+  duration_ms: 0.234
+  type: 'test'
+  ...
+# Subtest: invalid seed: publication before deadline; failed reset preserves previous publication and lookup
+ok 536 - invalid seed: publication before deadline; failed reset preserves previous publication and lookup
+  ---
+  duration_ms: 0.2194
+  type: 'test'
+  ...
+# Subtest: invalid seed: publication with pending; failed reset preserves previous publication and lookup
+ok 537 - invalid seed: publication with pending; failed reset preserves previous publication and lookup
+  ---
+  duration_ms: 0.2416
+  type: 'test'
+  ...
+# Subtest: invalid seed: wrong publication summary; failed reset preserves previous publication and lookup
+ok 538 - invalid seed: wrong publication summary; failed reset preserves previous publication and lookup
+  ---
+  duration_ms: 0.2907
+  type: 'test'
+  ...
+# Subtest: invalid seed: invalid publication time; failed reset preserves previous publication and lookup
+ok 539 - invalid seed: invalid publication time; failed reset preserves previous publication and lookup
+  ---
+  duration_ms: 0.2645
+  type: 'test'
+  ...
+# Subtest: invalid seed: invalid publication author; failed reset preserves previous publication and lookup
+ok 540 - invalid seed: invalid publication author; failed reset preserves previous publication and lookup
+  ---
+  duration_ms: 0.2341
+  type: 'test'
+  ...
+# Subtest: invalid seed: missing seed array; failed reset preserves previous publication and lookup
+ok 541 - invalid seed: missing seed array; failed reset preserves previous publication and lookup
+  ---
+  duration_ms: 0.1777
+  type: 'test'
+  ...
+# Subtest: tuple keys distinguish IDs that contain separators
+ok 542 - tuple keys distinguish IDs that contain separators
+  ---
+  duration_ms: 0.18
+  type: 'test'
+  ...
+# Subtest: invalid date cannot create a publication
+ok 543 - invalid date cannot create a publication
+  ---
+  duration_ms: 0.2552
+  type: 'test'
+  ...
+# Subtest: non-Date value cannot create a publication
+ok 544 - non-Date value cannot create a publication
+  ---
+  duration_ms: 0.158
+  type: 'test'
+  ...
+# Subtest: throwing clock cannot create a publication
+ok 545 - throwing clock cannot create a publication
+  ---
+  duration_ms: 0.1872
+  type: 'test'
+  ...
+# Subtest: invalid publisher is a programming error and cannot create a publication
+ok 546 - invalid publisher is a programming error and cannot create a publication
+  ---
+  duration_ms: 0.1857
+  type: 'test'
+  ...
+# Subtest: FAQ05_SANDBOX_LIMITS matches FAQ-05 defaults
+ok 547 - FAQ05_SANDBOX_LIMITS matches FAQ-05 defaults
+  ---
+  duration_ms: 3.376
+  type: 'test'
+  ...
+# Subtest: buildSandboxDockerArgs enforces all 9 minimums without forbidden flags
+ok 548 - buildSandboxDockerArgs enforces all 9 minimums without forbidden flags
+  ---
+  duration_ms: 1.0135
+  type: 'test'
+  ...
+# Subtest: assertSafeSandboxDockerArgs rejects dangerous sandbox options
+ok 549 - assertSafeSandboxDockerArgs rejects dangerous sandbox options
+  ---
+  duration_ms: 2.506
+  type: 'test'
+  ...
+# Subtest: sanitizeDockerHostEnv strips secrets while preserving Docker transport vars
+ok 550 - sanitizeDockerHostEnv strips secrets while preserving Docker transport vars
+  ---
+  duration_ms: 0.5656
+  type: 'test'
+  ...
+# Subtest: normalizeJudgeOutput ignores CRLF and trailing spaces/newlines
+ok 551 - normalizeJudgeOutput ignores CRLF and trailing spaces/newlines
+  ---
+  duration_ms: 0.3343
+  type: 'test'
+  ...
+# Subtest: runner compiles and judges compliant submission as Accepted
+ok 552 - runner compiles and judges compliant submission as Accepted
+  ---
+  duration_ms: 15.1308
+  type: 'test'
+  ...
+# Subtest: runner returns CompileError and skips execution when compilation fails
+ok 553 - runner returns CompileError and skips execution when compilation fails
+  ---
+  duration_ms: 3.2282
+  type: 'test'
+  ...
+# Subtest: runner classifies CPU limit, memory OOM, non-OOM SIGKILL and WrongAnswer accurately
+ok 554 - runner classifies CPU limit, memory OOM, non-OOM SIGKILL and WrongAnswer accurately
+  ---
+  duration_ms: 15.6611
+  type: 'test'
+  ...
+# Subtest: runner treats solution exit codes 125, 152 and 197 as RuntimeError when helper status reports exited
+ok 555 - runner treats solution exit codes 125, 152 and 197 as RuntimeError when helper status reports exited
+  ---
+  duration_ms: 3.428
+  type: 'test'
+  ...
+# Subtest: runner strips helper status frame cleanly near stderr limit and ignores spoofed earlier frames
+ok 556 - runner strips helper status frame cleanly near stderr limit and ignores spoofed earlier frames
+  ---
+  duration_ms: 1.9907
+  type: 'test'
+  ...
+# Subtest: runner kills container on wall-clock timeout
+ok 557 - runner kills container on wall-clock timeout
+  ---
+  duration_ms: 54.8031
+  type: 'test'
+  ...
+# Subtest: runner truncates output above limit and kills container
+ok 558 - runner truncates output above limit and kills container
+  ---
+  duration_ms: 1.5828
+  type: 'test'
+  ...
+# Subtest: runner rejects Docker infrastructure errors without valid helper status frame and helper infra_error frames
+ok 559 - runner rejects Docker infrastructure errors without valid helper status frame and helper infra_error frames
+  ---
+  duration_ms: 2.604
+  type: 'test'
+  ...
+# Subtest: fallback kill schedules independently when killContainer hangs and fails within bounded deadline
+ok 560 - fallback kill schedules independently when killContainer hangs and fails within bounded deadline
+  ---
+  duration_ms: 117.0213
+  type: 'test'
+  ...
+# Subtest: runner settles within bounded deadline even when killContainer hangs and process ignores SIGKILL
+ok 561 - runner settles within bounded deadline even when killContainer hangs and process ignores SIGKILL
+  ---
+  duration_ms: 142.1893
+  type: 'test'
+  ...
+# Subtest: rejected killContainer does not hang or leak rejection and triggers fallback SIGKILL
+ok 562 - rejected killContainer does not hang or leak rejection and triggers fallback SIGKILL
+  ---
+  duration_ms: 31.1547
+  type: 'test'
+  ...
+# Subtest: resolveSandboxLimits supports millisecond-precision CPU limits and rejects invalid values
+ok 563 - resolveSandboxLimits supports millisecond-precision CPU limits and rejects invalid values
+  ---
+  duration_ms: 0.5749
+  type: 'test'
+  ...
+# Subtest: compile phase uses fixed memory limit independent of lab runtime memoryLimitMb
+ok 564 - compile phase uses fixed memory limit independent of lab runtime memoryLimitMb
+  ---
+  duration_ms: 0.2975
+  type: 'test'
+  ...
+# Subtest: fake submissions: atomic intake, scope, TTL, persistence-safe reset
+ok 565 - fake submissions: atomic intake, scope, TTL, persistence-safe reset
+  ---
+  duration_ms: 6.9085
+  type: 'test'
+  ...
+# Subtest: fake submissions: receipt time boundaries, post-deadline replay and last attempt counted
+ok 566 - fake submissions: receipt time boundaries, post-deadline replay and last attempt counted
+  ---
+  duration_ms: 1.1504
+  type: 'test'
+  ...
+# Subtest: submission limiter: capacity cleanup and exact minute boundary
+ok 567 - submission limiter: capacity cleanup and exact minute boundary
+  ---
+  duration_ms: 0.4114
+  type: 'test'
+  ...
+# Subtest: verdict schema has no deduction field and forbids extra fields
+ok 568 - verdict schema has no deduction field and forbids extra fields
+  ---
+  duration_ms: 2.3048
+  type: 'test'
+  ...
+# Subtest: valid model output parses into one verdict per constraint
+ok 569 - valid model output parses into one verdict per constraint
+  ---
+  duration_ms: 0.6191
+  type: 'test'
+  ...
+# Subtest: model output with a deduction field from the model is rejected
+ok 570 - model output with a deduction field from the model is rejected
+  ---
+  duration_ms: 0.2709
+  type: 'test'
+  ...
+# Subtest: model output with an extra top-level field is rejected
+ok 571 - model output with an extra top-level field is rejected
+  ---
+  duration_ms: 0.2251
+  type: 'test'
+  ...
+# Subtest: model output with an unknown verdict value is rejected
+ok 572 - model output with an unknown verdict value is rejected
+  ---
+  duration_ms: 0.2413
+  type: 'test'
+  ...
+# Subtest: model output with evidence line 0 is rejected
+ok 573 - model output with evidence line 0 is rejected
+  ---
+  duration_ms: 0.1854
+  type: 'test'
+  ...
+# Subtest: model output with a fractional evidence line is rejected
+ok 574 - model output with a fractional evidence line is rejected
+  ---
+  duration_ms: 0.1761
+  type: 'test'
+  ...
+# Subtest: model output with a violation without evidence is rejected
+ok 575 - model output with a violation without evidence is rejected
+  ---
+  duration_ms: 0.1734
+  type: 'test'
+  ...
+# Subtest: model output with an unknown constraint is rejected
+ok 576 - model output with an unknown constraint is rejected
+  ---
+  duration_ms: 0.1907
+  type: 'test'
+  ...
+# Subtest: model output with a duplicate constraint is rejected
+ok 577 - model output with a duplicate constraint is rejected
+  ---
+  duration_ms: 0.2271
+  type: 'test'
+  ...
+# Subtest: model output with a missing constraint is rejected
+ok 578 - model output with a missing constraint is rejected
+  ---
+  duration_ms: 0.2786
+  type: 'test'
+  ...
+# Subtest: model output with a missing reason field is rejected
+ok 579 - model output with a missing reason field is rejected
+  ---
+  duration_ms: 0.1214
+  type: 'test'
+  ...
+# Subtest: model output with a numeric reason is rejected
+ok 580 - model output with a numeric reason is rejected
+  ---
+  duration_ms: 0.1927
+  type: 'test'
+  ...
+# Subtest: non-object model output is rejected
+ok 581 - non-object model output is rejected
+  ---
+  duration_ms: 0.1344
+  type: 'test'
+  ...
+# Subtest: buildSandboxLimitsFromLab converts lab limits and FIXED_JUDGE_LIMITS to SandboxLimits
+ok 582 - buildSandboxLimitsFromLab converts lab limits and FIXED_JUDGE_LIMITS to SandboxLimits
+  ---
+  duration_ms: 1.4854
+  type: 'test'
+  ...
+# Subtest: mapSandboxResultToJudgeResult maps all sandbox verdicts and test statuses cleanly
+ok 583 - mapSandboxResultToJudgeResult maps all sandbox verdicts and test statuses cleanly
+  ---
+  duration_ms: 0.2683
+  type: 'test'
+  ...
+# Subtest: createSandboxJudgeSubmission delegates to SandboxRunner using lab limits and tests
+ok 584 - createSandboxJudgeSubmission delegates to SandboxRunner using lab limits and tests
+  ---
+  duration_ms: 2.5459
+  type: 'test'
+  ...
+# Subtest: createStoreIdentityResolver resolves user displayName, parts and username, and fails closed when user missing
+ok 585 - createStoreIdentityResolver resolves user displayName, parts and username, and fails closed when user missing
+  ---
+  duration_ms: 1.1901
+  type: 'test'
+  ...
+# Subtest: non-retryable ModelProviderError (401) records error.modelCall and fails job on first attempt
+ok 586 - non-retryable ModelProviderError (401) records error.modelCall and fails job on first attempt
+  ---
+  duration_ms: 4.0376
+  type: 'test'
+  ...
+# Subtest: ModelConfigError fails job immediately on first attempt without retry
+ok 587 - ModelConfigError fails job immediately on first attempt without retry
+  ---
+  duration_ms: 0.8871
+  type: 'test'
+  ...
+# Subtest: retryable ModelProviderError (429) records error.modelCall, signals willRetry and waits backoff before retry
+ok 588 - retryable ModelProviderError (429) records error.modelCall, signals willRetry and waits backoff before retry
+  ---
+  duration_ms: 13.519
+  type: 'test'
+  ...
+# Subtest: createDefaultSubmissionEvaluator reports hard rules decisionLog with modelCalled=false
+ok 589 - createDefaultSubmissionEvaluator reports hard rules decisionLog with modelCalled=false
+  ---
+  duration_ms: 1.2239
+  type: 'test'
+  ...
+# Subtest: loadWorkerProcessConfig requires MODEL_API_KEY in default real mode and reads sandbox/backoff options
+ok 590 - loadWorkerProcessConfig requires MODEL_API_KEY in default real mode and reads sandbox/backoff options
+  ---
+  duration_ms: 0.4372
+  type: 'test'
+  ...
+# Subtest: fail-closed: default worker and evaluator reject missing judge adapter and never write simulated AC
+ok 591 - fail-closed: default worker and evaluator reject missing judge adapter and never write simulated AC
+  ---
+  duration_ms: 3.4139
+  type: 'test'
+  ...
+# Subtest: Rule Q1: stop worker, submit, start worker and restart worker stores exactly one verdict set
+ok 592 - Rule Q1: stop worker, submit, start worker and restart worker stores exactly one verdict set
+  ---
+  duration_ms: 3.9675
+  type: 'test'
+  ...
+# Subtest: lease expiry lets a new worker recover cleanly and blocks stale worker completion or duplicate logs
+ok 593 - lease expiry lets a new worker recover cleanly and blocks stale worker completion or duplicate logs
+  ---
+  duration_ms: 1.2193
+  type: 'test'
+  ...
+# Subtest: transient failure retries via fail() until maxAttempts and requeue recovers failed submissions
+ok 594 - transient failure retries via fail() until maxAttempts and requeue recovers failed submissions
+  ---
+  duration_ms: 1.6809
+  type: 'test'
+  ...
+# Subtest: lease renewal keeps long-running jobs alive past initial leaseMs and signals if lease is lost
+ok 595 - lease renewal keeps long-running jobs alive past initial leaseMs and signals if lease is lost
+  ---
+  duration_ms: 1.1712
+  type: 'test'
+  ...
+# Subtest: hard rules resolve ban-list before semantic evaluator and non-AC skips review (FAQ-04)
+ok 596 - hard rules resolve ban-list before semantic evaluator and non-AC skips review (FAQ-04)
+  ---
+  duration_ms: 1.4506
+  type: 'test'
+  ...
+# Subtest: transient recordModelCall failure after complete never calls fail/stale_lease and flushes without re-judging
+ok 597 - transient recordModelCall failure after complete never calls fail/stale_lease and flushes without re-judging
+  ---
+  duration_ms: 11.6589
+  type: 'test'
+  ...
+# Subtest: background start/stop workers drain concurrent submissions without duplicate verdicts
+ok 598 - background start/stop workers drain concurrent submissions without duplicate verdicts
+  ---
+  duration_ms: 26.0735
+  type: 'test'
+  ...
+# Subtest: createQueueWorker and drain validate invalid options
+ok 599 - createQueueWorker and drain validate invalid options
+  ---
+  duration_ms: 0.7163
+  type: 'test'
+  ...
+1..599
+# tests 600
+# suites 0
+# pass 597
+# fail 0
+# cancelled 0
+# skipped 3
+# todo 0
+# duration_ms 7759.6821

@@ -1,0 +1,341 @@
+# Removal check: g2-no-blank-line-check
+# What: G2 removed: a line that is empty once comments are removed may be cited
+# Source: HEAD 3bc2c16 plus the working tree at the time of the run; src/pipeline/model/schema.ts restored afterwards
+# Command: npm run build && node --test tests/unit/model-schema.test.mjs tests/unit/model-evaluate.test.mjs
+# Exit code: 1
+# Failing tests: 2
+#   ✖ evaluator: a violation that only cites lines the model never saw is evidence_mismatch
+#   ✖ G2 schema: a line that only held a removed comment is evidence_mismatch, whatever the text
+#
+# Temporary patch applied to src/pipeline/model/schema.ts:
+#   diff --git a/src/pipeline/model/schema.ts b/src/pipeline/model/schema.ts
+#   index b72538c..684c50d 100644
+#   --- a/src/pipeline/model/schema.ts
+#   +++ b/src/pipeline/model/schema.ts
+#   @@ -23,10 +23,21 @@ export const buildResultSchema = (
+#            properties: {
+#              constraint_id: { type: 'string', enum: [...constraintIds] },
+#              reason: { type: 'string' },
+#   -          evidence_lines: { type: 'array', items: { type: 'integer' } },
+#   +          evidence: {
+#   +            type: 'array',
+#   +            items: {
+#   +              type: 'object',
+#   +              properties: {
+#   +                line: { type: 'integer' },
+#   +                text: { type: 'string' },
+#   +              },
+#   +              required: ['line', 'text'],
+#   +              additionalProperties: false,
+#   +            },
+#   +          },
+#              verdict: { type: 'string', enum: [...VERDICTS] },
+#            },
+#   -        required: ['constraint_id', 'reason', 'evidence_lines', 'verdict'],
+#   +        required: ['constraint_id', 'reason', 'evidence', 'verdict'],
+#            additionalProperties: false,
+#          },
+#        },
+#   @@ -55,8 +66,11 @@ export interface ParseModelOutputInput {
+#      readonly text: string | null;
+#      readonly stopReason: string | null;
+#      readonly constraintIds: readonly string[];
+#   -  /** Số dòng của file gốc. */
+#   -  readonly lineCount: number;
+#   +  /**
+#   +   * Các dòng code model đã thấy (đã bỏ comment, đã che danh tính), cùng số dòng với file gốc.
+#   +   * G2 so text evidence của model với các dòng này.
+#   +   */
+#   +  readonly codeLines: readonly string[];
+#      readonly maxEvidenceLines?: number | undefined;
+#    }
+#
+#   @@ -73,32 +87,43 @@ const hasRequiredKeys = (
+#      keys: readonly string[],
+#    ): boolean => keys.every((key) => Object.hasOwn(value, key));
+#
+#   -const RESULT_KEYS = ['constraint_id', 'evidence_lines', 'reason', 'verdict'];
+#   +const RESULT_KEYS = ['constraint_id', 'evidence', 'reason', 'verdict'];
+#   +const EVIDENCE_KEYS = ['line', 'text'];
+#   +
+#   +interface RawEvidence {
+#   +  readonly line: number;
+#   +  readonly text: string;
+#   +}
+#
+#    interface RawResult {
+#      readonly constraintId: string;
+#      readonly verdict: VerdictValue;
+#   -  readonly evidenceLines: number[];
+#   +  readonly evidence: RawEvidence[];
+#      readonly reason: string;
+#    }
+#
+#   +const readRawEvidence = (value: unknown): RawEvidence | null => {
+#   +  if (!isPlainObject(value) || !hasRequiredKeys(value, EVIDENCE_KEYS))
+#   +    return null;
+#   +  const { line, text } = value;
+#   +  if (!Number.isInteger(line) || typeof text !== 'string') return null;
+#   +  return { line: line as number, text };
+#   +};
+#   +
+#    const readRawResult = (value: unknown): RawResult | null => {
+#      if (!isPlainObject(value) || !hasRequiredKeys(value, RESULT_KEYS))
+#        return null;
+#   -  const { constraint_id, verdict, evidence_lines, reason } = value;
+#   +  const { constraint_id, verdict, evidence, reason } = value;
+#      if (typeof constraint_id !== 'string') return null;
+#      if (typeof reason !== 'string') return null;
+#      if (!VERDICTS.includes(verdict as VerdictValue)) return null;
+#   -  if (
+#   -    !Array.isArray(evidence_lines) ||
+#   -    !evidence_lines.every((line) => Number.isInteger(line))
+#   -  ) {
+#   -    return null;
+#   -  }
+#   +  if (!Array.isArray(evidence)) return null;
+#   +  const items = evidence.map(readRawEvidence);
+#   +  if (items.some((item) => item === null)) return null;
+#      return {
+#        constraintId: constraint_id,
+#        verdict: verdict as VerdictValue,
+#   -    evidenceLines: evidence_lines as number[],
+#   +    evidence: items as RawEvidence[],
+#        reason,
+#      };
+#    };
+#   @@ -123,13 +148,37 @@ const allSchemaError = (
+#      hasSchemaError: true,
+#    });
+#
+#   +/**
+#   + * G2: mọi dòng evidence phải khớp chính xác dòng code model đã thấy. Trả mô tả lỗi đầu tiên, hoặc
+#   + * `null` khi mọi dòng khớp. So sánh chỉ bỏ khoảng trắng hai đầu; mọi khác biệt bên trong dòng
+#   + * (kể cả khoảng trắng) là lệch. Dòng trống sau khi bỏ comment không bao giờ là bằng chứng.
+#   + */
+#   +const findEvidenceMismatch = (
+#   +  evidence: readonly RawEvidence[],
+#   +  codeLines: readonly string[],
+#   +): string | null => {
+#   +  for (const { line, text } of evidence) {
+#   +    if (line < 1 || line > codeLines.length) {
+#   +      return `line ${line} is outside the file (1..${codeLines.length})`;
+#   +    }
+#   +    const seen = (codeLines[line - 1] ?? '').trim();
+#   +    if (false && seen === '') { // REMOVAL TEST: comment-only lines allowed
+#   +      return `line ${line} has no code once comments are removed`;
+#   +    }
+#   +    if (text.trim() !== seen) {
+#   +      return `the text quoted for line ${line} does not match that line of the code`;
+#   +    }
+#   +  }
+#   +  return null;
+#   +};
+#   +
+#    const clip = (value: string): string =>
+#      value.length > MAX_REASON_LENGTH
+#        ? `${value.slice(0, MAX_REASON_LENGTH)}…`
+#        : value;
+#
+#    /**
+#   - * Kiểm output của model theo schema và theo phạm vi dòng. Luôn chạy, kể cả khi API đã ép schema,
+#   + * Kiểm output của model theo schema (G1, G5) và kiểm evidence với code model đã thấy (G2). Luôn chạy, kể cả khi API đã ép schema,
+#     * vì refusal, `max_tokens` và model giả có thể trả output sai. Quy tắc gốc ở evidence PA03-T08
+#     * (`docs/evidence/PA03/T08/README.md`); các guardrail PA04 thay một phần quy tắc đó, ghi ở
+#     * `docs/evidence/PA04/T02/README.md` (G5: field ngoài schema bị bỏ qua, không còn là `schema_error`).
+#   @@ -137,7 +186,7 @@ const clip = (value: string): string =>
+#    export const parseModelOutput = (
+#      input: ParseModelOutputInput,
+#    ): ParsedModelOutput => {
+#   -  const { constraintIds, lineCount } = input;
+#   +  const { constraintIds, codeLines } = input;
+#      const maxLines = input.maxEvidenceLines ?? MAX_EVIDENCE_LINES;
+#
+#      if (input.stopReason !== 'end_turn') {
+#   @@ -207,21 +256,25 @@ export const parseModelOutput = (
+#          );
+#        }
+#
+#   -    const lines = [...new Set(raw.evidenceLines)].sort((a, b) => a - b);
+#   -    const inRange = lines.every((line) => line >= 1 && line <= lineCount);
+#        const reason = raw.reason.trim() === '' ? null : clip(raw.reason.trim());
+#   -
+#   -    if (!inRange || (raw.verdict === 'violation' && lines.length === 0)) {
+#   +    const mismatch =
+#   +      raw.verdict === 'violation' && raw.evidence.length === 0
+#   +        ? 'it cited no line'
+#   +        : findEvidenceMismatch(raw.evidence, codeLines);
+#   +    if (mismatch !== null) {
+#          return unsureResult(
+#            id,
+#            'evidence_mismatch',
+#            clip(
+#   -          `The model said "${raw.verdict}" but its evidence lines are missing or outside the file.${
+#   +          `The model said "${raw.verdict}" but its evidence does not match the code: ${mismatch}.${
+#                reason === null ? '' : ` Model reason: ${reason}`
+#              }`,
+#            ),
+#          );
+#        }
+#   +    const lines = [...new Set(raw.evidence.map((e) => e.line))].sort(
+#   +      (a, b) => a - b,
+#   +    );
+#        return {
+#          constraintId: id,
+#          verdict: raw.verdict,
+#
+# Test output:
+✔ evaluator: no semantic constraint means no model call and an empty result (3.4806ms)
+✔ evaluator: one call covers all semantic constraints of a submission (3.002ms)
+✔ evaluator: verdict fields, order and evidence text come from the original code (1.8ms)
+✔ evaluator: evidence text is the original line, never text written by the model (1.1585ms)
+✔ evaluator: violation with no line, or a line outside the file, is unsure/evidence_mismatch (3.0795ms)
+✖ evaluator: a violation that only cites lines the model never saw is evidence_mismatch (2.385ms)
+✔ G2 evaluator: line numbers map back to the original code, comment included (1.1371ms)
+✔ G2 evaluator: quoting the removed comment of a line is evidence_mismatch (1.0147ms)
+✔ G2 evaluator: quoting the original line, which the model never saw, is evidence_mismatch (1.5396ms)
+✔ G2 evaluator: a pass that cites a comment-only line is evidence_mismatch (0.7882ms)
+✔ G2 evaluator: the request schema asks for line and text, and the prompt says to copy the line (0.8847ms)
+✔ evaluator: an unsure verdict from the model keeps cause model_unsure (0.8738ms)
+✔ evaluator: unsureCause is set if and only if the verdict is unsure (4.6092ms)
+✔ evaluator: broken output makes every constraint unsure/schema_error and logs schema_error (0.4499ms)
+✔ evaluator: refusal and max_tokens are unsure/schema_error even with parseable text (0.4392ms)
+✔ evaluator: a model that returns null text is unsure/schema_error (0.2304ms)
+✔ G5 evaluator: an extra deduction field is ignored, the verdict is kept and no verdict carries a mark (0.4491ms)
+✔ G1 evaluator: a fenced JSON answer is not unwrapped, every constraint is unsure/schema_error (0.5589ms)
+✔ G1 evaluator: JSON after prose is not cut out, every constraint is unsure/schema_error (0.56ms)
+✔ evaluator: a missing constraint is schema_error, the valid one is kept (0.4633ms)
+✔ evaluator: no verdict carries any grading field (0.5476ms)
+✔ timeout: a model that never answers becomes unsure/timeout and the signal is aborted (53.7037ms)
+✔ timeout: a model that honours the abort signal is also unsure/timeout (31.653ms)
+✔ timeout: a client that throws ModelTimeoutError is unsure/timeout (0.9693ms)
+✔ timeout: a late answer after the deadline is ignored and does not crash the process (230.9305ms)
+✔ provider errors (429, 5xx, connection) are thrown so the worker can retry the job (3.3111ms)
+✔ provider errors: an unknown error from the client is thrown too, not turned into unsure (0.8882ms)
+✔ abort: when the job signal is aborted the evaluator throws instead of returning unsure (11.126ms)
+✔ prompt: the model gets statement, semantic constraints and numbered clean code only (0.915ms)
+✔ prompt: the system prompt treats code as data and forbids scores (0.448ms)
+✔ prompt: only the asked constraints are sent, and code with CRLF is numbered correctly (0.3535ms)
+✔ prompt: onPrompt receives the exact prompt and its sha256, before the model is called (0.3853ms)
+✔ prompt: identity comes from getIdentity(submission), which may be async (0.3759ms)
+✔ call log: every field is filled from the response and the price table (0.4749ms)
+✔ integration with T07: ban-list constraints never reach the model (6.7498ms)
+✔ identity fails closed: no usable identity means no prompt and no model call (1.2611ms)
+✔ identity fails closed: an async getIdentity that returns nothing usable also throws (0.388ms)
+✔ identity fails closed: one usable string is enough, the others may be short (0.7986ms)
+✔ identity: a joined form such as nguyen_van_an is masked when only the full name is given (1.4391ms)
+✔ evaluator: bad configuration fails fast (0.5535ms)
+✔ evaluator: duplicated constraint ids are a programming error (0.2209ms)
+✔ schema: the request schema has enums for ids and verdicts and no score field (5.5855ms)
+✔ schema: a clean output is accepted as is (1.8424ms)
+✔ schema: broken JSON makes every constraint unsure with schema_error (0.9386ms)
+✔ schema: not JSON at all makes every constraint unsure with schema_error (0.5649ms)
+✔ schema: empty text makes every constraint unsure with schema_error (0.3458ms)
+✔ schema: null JSON makes every constraint unsure with schema_error (0.2013ms)
+✔ schema: an array at the top level makes every constraint unsure with schema_error (1.1357ms)
+✔ schema: missing results makes every constraint unsure with schema_error (0.4327ms)
+✔ schema: results is not an array makes every constraint unsure with schema_error (0.3702ms)
+✔ schema: an unknown verdict makes every constraint unsure with schema_error (0.3034ms)
+✔ schema: a missing reason makes every constraint unsure with schema_error (0.1797ms)
+✔ schema: a missing evidence makes every constraint unsure with schema_error (0.1175ms)
+✔ schema: evidence that is not an array makes every constraint unsure with schema_error (0.1028ms)
+✔ schema: an evidence item that is a bare line number makes every constraint unsure with schema_error (0.1057ms)
+✔ schema: an evidence line that is not an integer makes every constraint unsure with schema_error (0.1119ms)
+✔ schema: an evidence line with a fractional number makes every constraint unsure with schema_error (0.0819ms)
+✔ schema: an evidence item without text makes every constraint unsure with schema_error (0.074ms)
+✔ schema: a reason that is not a string makes every constraint unsure with schema_error (0.0744ms)
+✔ schema: a constraint_id that is not a string makes every constraint unsure with schema_error (0.1361ms)
+✔ schema: an item that is not an object makes every constraint unsure with schema_error (0.0748ms)
+✔ schema: a missing constraint becomes schema_error, the valid one is kept (0.1898ms)
+✔ schema: a duplicated id becomes schema_error for that id only (0.1801ms)
+✔ schema: an unknown id is ignored, the asked constraints keep their result (0.1363ms)
+✔ schema: an unknown id with a missing asked constraint leaves that one as schema_error (0.1944ms)
+✔ schema: stop_reason refusal is schema_error even if the text is valid (0.1621ms)
+✔ schema: stop_reason max_tokens is schema_error even if the text is valid (0.0697ms)
+✔ schema: stop_reason tool_use is schema_error even if the text is valid (0.0562ms)
+✔ schema: stop_reason null is schema_error even if the text is valid (0.1213ms)
+✔ schema: no text block is schema_error (0.1093ms)
+✔ schema: violation without evidence lines is evidence_mismatch (0.1957ms)
+✔ schema: evidence lines [0] outside 1..10 is evidence_mismatch (0.2112ms)
+✔ schema: evidence lines [11] outside 1..10 is evidence_mismatch (0.1215ms)
+✔ schema: evidence lines [-1] outside 1..10 is evidence_mismatch (0.091ms)
+✔ schema: evidence lines [3,99] outside 1..10 is evidence_mismatch (0.146ms)
+✔ schema: pass and unsure may omit evidence, but lines that are given must be in range (0.1727ms)
+✔ schema: evidence lines are sorted, deduplicated and capped (0.2013ms)
+✔ schema: a very long reason is truncated, not rejected (0.1819ms)
+✔ schema: a model unsure verdict has cause model_unsure (0.1185ms)
+✔ G5 schema: extra deduction or score fields on a result are ignored and the verdict is kept (0.1535ms)
+✔ G5 schema: an extra top-level deduction field is ignored and the results are kept (0.146ms)
+✔ G5 schema: a grading instruction in the reason changes nothing but the reason text (0.1743ms)
+✔ G5 schema: required fields with the wrong type are still schema_error (G1), extra fields do not hide them (0.1458ms)
+✔ G1 schema: JSON in a json code fence makes every constraint unsure with schema_error (0.2108ms)
+✔ G1 schema: JSON in a bare code fence makes every constraint unsure with schema_error (0.1342ms)
+✔ G1 schema: JSON after prose makes every constraint unsure with schema_error (0.1208ms)
+✔ G1 schema: JSON followed by prose makes every constraint unsure with schema_error (0.1058ms)
+✔ G1 schema: two JSON objects in a row makes every constraint unsure with schema_error (0.0844ms)
+✔ G1 schema: the same answer without fence or prose is accepted, so the cases above fail only on the wrapping (0.1277ms)
+✔ G1 schema: an unknown verdict makes every constraint unsure with schema_error (0.1533ms)
+✔ G1 schema: a missing constraint is unsure with schema_error, the other keeps its verdict (0.1369ms)
+✔ G1 schema: a duplicated constraint is unsure with schema_error, even when both answers agree (0.1354ms)
+✔ G2 schema: evidence that quotes its line exactly is accepted (0.1855ms)
+✔ G2 schema: a fabricated line (text that is nowhere in the code) is evidence_mismatch (0.1939ms)
+✔ G2 schema: the right text with the wrong line number is evidence_mismatch (0.1526ms)
+✖ G2 schema: a line that only held a removed comment is evidence_mismatch, whatever the text (1.8017ms)
+✔ G2 schema: one bad line among good ones makes the whole verdict evidence_mismatch (0.275ms)
+✔ G2 schema: pass and unsure with a bad evidence line also become evidence_mismatch (0.1624ms)
+✔ G2 schema: surrounding whitespace is ignored but any change inside the line is a mismatch (0.2487ms)
+✔ G2 schema: the mismatch reason names the line and keeps the model reason for the TA (0.9979ms)
+✔ G2 schema: an extra field inside an evidence item is ignored like any field outside the schema (G5) (0.4253ms)
+ℹ tests 101
+ℹ suites 0
+ℹ pass 99
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 978.5712
+
+✖ failing tests:
+
+test at tests\unit\model-evaluate.test.mjs:123:1
+✖ evaluator: a violation that only cites lines the model never saw is evidence_mismatch (2.385ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'violation'
+  - 'unsure'
+
+      at TestContext.<anonymous> (<repo>/tests/unit/model-evaluate.test.mjs:129:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'violation',
+    expected: 'unsure',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\unit\model-schema.test.mjs:412:1
+✖ G2 schema: a line that only held a removed comment is evidence_mismatch, whatever the text (1.8017ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'violation'
+  - 'unsure'
+
+      at assertMismatch (<repo>/tests/unit/model-schema.test.mjs:373:10)
+      at TestContext.<anonymous> (<repo>/tests/unit/model-schema.test.mjs:418:5)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'violation',
+    expected: 'unsure',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

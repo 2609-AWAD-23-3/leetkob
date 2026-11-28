@@ -1,0 +1,49 @@
+# G2: tests that failed after the G2 tests and the fake model helper were added, before any change to src/ (npm test: 599 tests, 549 pass, 47 fail, 3 skipped)
+# Source: HEAD 3bc2c16 plus the G2 test changes in the working tree
+e2e pipeline: submit -> worker -> fake sandbox -> hard rules -> fake model -> review queue -> publish
+model on: one call per solution with semantic constraints, prompt logged with dataset identity
+model on: a provider error makes that solution unsure, is logged, and the run continues
+evaluator: verdict fields, order and evidence text come from the original code
+evaluator: evidence text is the original line, never text written by the model
+evaluator: violation with no line, or a line outside the file, is unsure/evidence_mismatch
+evaluator: a violation that only cites lines the model never saw is evidence_mismatch
+G2 evaluator: line numbers map back to the original code, comment included
+G2 evaluator: quoting the removed comment of a line is evidence_mismatch
+G2 evaluator: quoting the original line, which the model never saw, is evidence_mismatch
+G2 evaluator: a pass that cites a comment-only line is evidence_mismatch
+G2 evaluator: the request schema asks for line and text, and the prompt says to copy the line
+evaluator: an unsure verdict from the model keeps cause model_unsure
+G5 evaluator: an extra deduction field is ignored, the verdict is kept and no verdict carries a mark
+evaluator: a missing constraint is schema_error, the valid one is kept
+call log: every field is filled from the response and the price table
+identity: a dataset run calls the model, strips comments, redacts nothing and records none:dataset
+schema: the request schema has enums for ids and verdicts and no score field
+schema: a clean output is accepted as is
+schema: a missing constraint becomes schema_error, the valid one is kept
+schema: a duplicated id becomes schema_error for that id only
+schema: an unknown id is ignored, the asked constraints keep their result
+schema: an unknown id with a missing asked constraint leaves that one as schema_error
+schema: violation without evidence lines is evidence_mismatch
+schema: evidence lines [0] outside 1..10 is evidence_mismatch
+schema: evidence lines [11] outside 1..10 is evidence_mismatch
+schema: evidence lines [-1] outside 1..10 is evidence_mismatch
+schema: evidence lines [3,99] outside 1..10 is evidence_mismatch
+schema: pass and unsure may omit evidence, but lines that are given must be in range
+schema: evidence lines are sorted, deduplicated and capped
+schema: a very long reason is truncated, not rejected
+schema: a model unsure verdict has cause model_unsure
+G5 schema: extra deduction or score fields on a result are ignored and the verdict is kept
+G5 schema: an extra top-level deduction field is ignored and the results are kept
+G5 schema: a grading instruction in the reason changes nothing but the reason text
+G1 schema: the same answer without fence or prose is accepted, so the cases above fail only on the wrapping
+G1 schema: a missing constraint is unsure with schema_error, the other keeps its verdict
+G1 schema: a duplicated constraint is unsure with schema_error, even when both answers agree
+G2 schema: evidence that quotes its line exactly is accepted
+G2 schema: a fabricated line (text that is nowhere in the code) is evidence_mismatch
+G2 schema: the right text with the wrong line number is evidence_mismatch
+G2 schema: a line that only held a removed comment is evidence_mismatch, whatever the text
+G2 schema: one bad line among good ones makes the whole verdict evidence_mismatch
+G2 schema: pass and unsure with a bad evidence line also become evidence_mismatch
+G2 schema: surrounding whitespace is ignored but any change inside the line is a mismatch
+G2 schema: the mismatch reason names the line and keeps the model reason for the TA
+G2 schema: an extra field inside an evidence item is ignored like any field outside the schema (G5)
