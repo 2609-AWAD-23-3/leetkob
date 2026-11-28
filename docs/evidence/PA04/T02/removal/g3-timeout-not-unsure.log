@@ -1,0 +1,145 @@
+# Removal check: g3-timeout-not-unsure
+# What: G3 removed: a timeout is not turned into unsure/timeout but thrown like a provider error
+# Source: HEAD 2fea9f8 plus the working tree at the time of the run; src/pipeline/model/evaluate.ts restored afterwards
+# Command: npm run build && node --test tests/unit/model-evaluate.test.mjs
+# Exit code: 1
+# Failing tests: 5
+#   ✖ G3 timeout: a valid violation that arrives after the deadline is never used
+#   ✖ G3 timeout: a model that never answers becomes unsure/timeout and the signal is aborted
+#   ✖ G3 timeout: a model that honours the abort signal is also unsure/timeout
+#   ✖ G3 timeout: a client that throws ModelTimeoutError is unsure/timeout
+#   ✖ G3 timeout: a late answer after the deadline is ignored and does not crash the process
+#
+# Temporary patch applied to src/pipeline/model/evaluate.ts:
+#   diff --git a/src/pipeline/model/evaluate.ts b/src/pipeline/model/evaluate.ts
+#   index 0d04643..ea0a125 100644
+#   --- a/src/pipeline/model/evaluate.ts
+#   +++ b/src/pipeline/model/evaluate.ts
+#   @@ -163,7 +163,7 @@ export const createSemanticEvaluator = (
+#          });
+#        } catch (error) {
+#          if (context.signal.aborted) throw abortReason(context.signal);
+#   -      if (error instanceof ModelTimeoutError) {
+#   +      if (false && error instanceof ModelTimeoutError) { // REMOVAL TEST: timeout thrown
+#            return {
+#              verdicts: constraints.map((c) =>
+#                unsureVerdict(
+#
+# Test output:
+✔ evaluator: no semantic constraint means no model call and an empty result (2.8864ms)
+✔ evaluator: one call covers all semantic constraints of a submission (1.5739ms)
+✔ evaluator: verdict fields, order and evidence text come from the original code (0.7267ms)
+✔ evaluator: evidence text is the original line, never text written by the model (0.4897ms)
+✔ evaluator: violation with no line, or a line outside the file, is unsure/evidence_mismatch (1.6118ms)
+✔ evaluator: a violation that only cites lines the model never saw is evidence_mismatch (0.4751ms)
+✔ G2 evaluator: line numbers map back to the original code, comment included (0.6059ms)
+✔ G2 evaluator: quoting the removed comment of a line is evidence_mismatch (0.3846ms)
+✔ G2 evaluator: quoting the original line, which the model never saw, is evidence_mismatch (0.5013ms)
+✔ G2 evaluator: a pass that cites a comment-only line is evidence_mismatch (0.346ms)
+✔ G2 evaluator: the request schema asks for line and text, and the prompt says to copy the line (0.3525ms)
+✔ evaluator: an unsure verdict from the model keeps cause model_unsure (0.3022ms)
+✔ evaluator: unsureCause is set if and only if the verdict is unsure (2.1461ms)
+✔ evaluator: broken output makes every constraint unsure/schema_error and logs schema_error (0.3233ms)
+✔ evaluator: refusal and max_tokens are unsure/schema_error even with parseable text (0.5133ms)
+✔ evaluator: a model that returns null text is unsure/schema_error (0.2858ms)
+✔ G5 evaluator: an extra deduction field is ignored, the verdict is kept and no verdict carries a mark (0.4433ms)
+✔ G1 evaluator: a fenced JSON answer is not unwrapped, every constraint is unsure/schema_error (0.3979ms)
+✔ G1 evaluator: JSON after prose is not cut out, every constraint is unsure/schema_error (0.3575ms)
+✔ evaluator: a missing constraint is schema_error, the valid one is kept (0.2849ms)
+✔ evaluator: no verdict carries any grading field (0.4122ms)
+✖ G3 timeout: a valid violation that arrives after the deadline is never used (41.3815ms)
+✖ G3 timeout: a model that never answers becomes unsure/timeout and the signal is aborted (45.7104ms)
+✖ G3 timeout: a model that honours the abort signal is also unsure/timeout (31.0826ms)
+✖ G3 timeout: a client that throws ModelTimeoutError is unsure/timeout (0.7847ms)
+✖ G3 timeout: a late answer after the deadline is ignored and does not crash the process (30.6424ms)
+✔ provider errors (429, 5xx, connection) are thrown so the worker can retry the job (2.0656ms)
+✔ provider errors: an unknown error from the client is thrown too, not turned into unsure (0.2772ms)
+✔ abort: when the job signal is aborted the evaluator throws instead of returning unsure (13.5558ms)
+✔ prompt: the model gets statement, semantic constraints and numbered clean code only (0.9811ms)
+✔ prompt: the system prompt treats code as data and forbids scores (0.3271ms)
+✔ prompt: only the asked constraints are sent, and code with CRLF is numbered correctly (0.3175ms)
+✔ prompt: onPrompt receives the exact prompt and its sha256, before the model is called (0.3699ms)
+✔ prompt: identity comes from getIdentity(submission), which may be async (0.2917ms)
+✔ call log: every field is filled from the response and the price table (0.2918ms)
+✔ integration with T07: ban-list constraints never reach the model (3.1771ms)
+✔ identity fails closed: no usable identity means no prompt and no model call (0.5558ms)
+✔ identity fails closed: an async getIdentity that returns nothing usable also throws (0.1287ms)
+✔ identity fails closed: one usable string is enough, the others may be short (0.4042ms)
+✔ identity: a joined form such as nguyen_van_an is masked when only the full name is given (0.7852ms)
+✔ evaluator: bad configuration fails fast (0.2629ms)
+✔ evaluator: duplicated constraint ids are a programming error (0.124ms)
+ℹ tests 42
+ℹ suites 0
+ℹ pass 37
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 622.1322
+
+✖ failing tests:
+
+test at tests\unit\model-evaluate.test.mjs:391:1
+✖ G3 timeout: a valid violation that arrives after the deadline is never used (41.3815ms)
+  Error [ModelProviderError]: Model call exceeded 30 ms and was aborted
+      at <repo>/dist/pipeline/model/evaluate.js:105:19
+      at async TestContext.<anonymous> (<repo>/tests/unit/model-evaluate.test.mjs:415:17)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    status: null,
+    retryable: true,
+    requestId: null,
+    modelCall: { submissionId: 'sub-1', constraintIds: [ 'c1', 'c2' ], provider: 'fake', model: 'fake-model', requestId: null, inputTokens: 0, outputTokens: 0, latencyMs: 41, costUsd: 0, outcome: 'provider_error' }
+  }
+
+test at tests\unit\model-evaluate.test.mjs:428:1
+✖ G3 timeout: a model that never answers becomes unsure/timeout and the signal is aborted (45.7104ms)
+  Error [ModelProviderError]: Model call exceeded 40 ms and was aborted
+      at <repo>/dist/pipeline/model/evaluate.js:105:19
+      at async TestContext.<anonymous> (<repo>/tests/unit/model-evaluate.test.mjs:439:17)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    status: null,
+    retryable: true,
+    requestId: null,
+    modelCall: { submissionId: 'sub-1', constraintIds: [ 'c1', 'c2' ], provider: 'fake', model: 'fake-model', requestId: null, inputTokens: 0, outputTokens: 0, latencyMs: 45, costUsd: 0, outcome: 'provider_error' }
+  }
+
+test at tests\unit\model-evaluate.test.mjs:463:1
+✖ G3 timeout: a model that honours the abort signal is also unsure/timeout (31.0826ms)
+  Error [ModelProviderError]: Model call exceeded 30 ms and was aborted
+      at <repo>/dist/pipeline/model/evaluate.js:105:19
+      at async TestContext.<anonymous> (<repo>/tests/unit/model-evaluate.test.mjs:480:17)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    status: null,
+    retryable: true,
+    requestId: null,
+    modelCall: { submissionId: 'sub-1', constraintIds: [ 'c1' ], provider: 'fake', model: 'fake-model', requestId: null, inputTokens: 0, outputTokens: 0, latencyMs: 31, costUsd: 0, outcome: 'provider_error' }
+  }
+
+test at tests\unit\model-evaluate.test.mjs:486:1
+✖ G3 timeout: a client that throws ModelTimeoutError is unsure/timeout (0.7847ms)
+  Error [ModelProviderError]: SDK timeout
+      at <repo>/dist/pipeline/model/evaluate.js:105:19
+      at async TestContext.<anonymous> (<repo>/tests/unit/model-evaluate.test.mjs:493:17)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    status: null,
+    retryable: true,
+    requestId: null,
+    modelCall: { submissionId: 'sub-1', constraintIds: [ 'c1' ], provider: 'fake', model: 'fake-model', requestId: null, inputTokens: 0, outputTokens: 0, latencyMs: 0, costUsd: 0, outcome: 'provider_error' }
+  }
+
+test at tests\unit\model-evaluate.test.mjs:500:1
+✖ G3 timeout: a late answer after the deadline is ignored and does not crash the process (30.6424ms)
+  Error [ModelProviderError]: Model call exceeded 20 ms and was aborted
+      at <repo>/dist/pipeline/model/evaluate.js:105:19
+      at async TestContext.<anonymous> (<repo>/tests/unit/model-evaluate.test.mjs:516:17)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    status: null,
+    retryable: true,
+    requestId: null,
+    modelCall: { submissionId: 'sub-1', constraintIds: [ 'c1', 'c2' ], provider: 'fake', model: 'fake-model', requestId: null, inputTokens: 0, outputTokens: 0, latencyMs: 30, costUsd: 0, outcome: 'provider_error' }
+  }

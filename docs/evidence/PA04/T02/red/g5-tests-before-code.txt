@@ -1,0 +1,9 @@
+# G5: tests that failed with the G5 tests and the code before G5
+# State: tests and everything else at d8c8423 (G5 commit), src/pipeline/model/schema.ts from 977c2bc (before G5), in a temporary git worktree
+# Reproduced on 2026-11-28 for review of PR #92; the original red run on 2026-11-27 was observed but not logged
+# Command: npm run build && node --test tests/unit/model-schema.test.mjs tests/unit/model-evaluate.test.mjs tests/e2e/pipeline.test.mjs
+# Result: exit 1; tests 74, pass 70, fail 4
+G5 evaluator: an extra deduction field is ignored, the verdict is kept and no verdict carries a mark
+G5 schema: an extra top-level deduction field is ignored and the results are kept
+G5 schema: extra deduction or score fields on a result are ignored and the verdict is kept
+e2e pipeline: submit -> worker -> fake sandbox -> hard rules -> fake model -> review queue -> publish

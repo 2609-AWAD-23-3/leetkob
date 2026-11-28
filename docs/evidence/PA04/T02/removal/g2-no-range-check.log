@@ -1,0 +1,155 @@
+# Removal check: g2-no-range-check
+# What: G2 sub-check removed: no check that the cited line is inside the file (an out-of-range line then reads as an empty line)
+# Source: HEAD 792ee86 plus the working tree at the time of the run; src/pipeline/model/schema.ts restored afterwards
+# Command: npm run build && node --test tests/unit/model-schema.test.mjs tests/unit/model-evaluate.test.mjs
+# Exit code: 1
+# Failing tests: 1
+#   ✖ G2 schema: a line outside the file is evidence_mismatch and the reason names that check
+#
+# Temporary patch applied to src/pipeline/model/schema.ts:
+#   diff --git a/src/pipeline/model/schema.ts b/src/pipeline/model/schema.ts
+#   index ff81184..5cfee10 100644
+#   --- a/src/pipeline/model/schema.ts
+#   +++ b/src/pipeline/model/schema.ts
+#   @@ -158,7 +158,7 @@ const findEvidenceMismatch = (
+#      codeLines: readonly string[],
+#    ): string | null => {
+#      for (const { line, text } of evidence) {
+#   -    if (line < 1 || line > codeLines.length) {
+#   +    if (false && (line < 1 || line > codeLines.length)) { // REMOVAL TEST: no range check
+#          return `line ${line} is outside the file (1..${codeLines.length})`;
+#        }
+#        const seen = (codeLines[line - 1] ?? '').trim();
+#
+# Test output:
+✔ evaluator: no semantic constraint means no model call and an empty result (1.928ms)
+✔ evaluator: one call covers all semantic constraints of a submission (2.2825ms)
+✔ evaluator: verdict fields, order and evidence text come from the original code (1.1552ms)
+✔ evaluator: evidence text is the original line, never text written by the model (0.7522ms)
+✔ evaluator: violation with no line, or a line outside the file, is unsure/evidence_mismatch (2.1554ms)
+✔ evaluator: a violation that only cites lines the model never saw is evidence_mismatch (0.5411ms)
+✔ G2 evaluator: line numbers map back to the original code, comment included (1.0449ms)
+✔ G2 evaluator: quoting the removed comment of a line is evidence_mismatch (0.5022ms)
+✔ G2 evaluator: quoting the original line, which the model never saw, is evidence_mismatch (1.1003ms)
+✔ G2 evaluator: a pass that cites a comment-only line is evidence_mismatch (0.5184ms)
+✔ G2 evaluator: the request schema asks for line and text, and the prompt says to copy the line (0.3847ms)
+✔ evaluator: an unsure verdict from the model keeps cause model_unsure (0.3937ms)
+✔ evaluator: unsureCause is set if and only if the verdict is unsure (3.3313ms)
+✔ evaluator: broken output makes every constraint unsure/schema_error and logs schema_error (0.5767ms)
+✔ evaluator: refusal and max_tokens are unsure/schema_error even with parseable text (0.6963ms)
+✔ evaluator: a model that returns null text is unsure/schema_error (0.2388ms)
+✔ G5 evaluator: an extra deduction field is ignored, the verdict is kept and no verdict carries a mark (0.367ms)
+✔ G1 evaluator: a fenced JSON answer is not unwrapped, every constraint is unsure/schema_error (0.3442ms)
+✔ G1 evaluator: JSON after prose is not cut out, every constraint is unsure/schema_error (0.4545ms)
+✔ evaluator: a missing constraint is schema_error, the valid one is kept (0.4117ms)
+✔ evaluator: no verdict carries any grading field (0.4912ms)
+✔ G3 timeout: a valid violation that arrives after the deadline is never used (242.4951ms)
+✔ G3 timeout: a model that never answers becomes unsure/timeout and the signal is aborted (46.6442ms)
+✔ G3 timeout: a model that honours the abort signal is also unsure/timeout (46.7746ms)
+✔ G3 timeout: a client that throws ModelTimeoutError is unsure/timeout (0.5754ms)
+✔ G3 timeout: a late answer after the deadline is ignored and does not crash the process (235.5841ms)
+✔ provider errors (429, 5xx, connection) are thrown so the worker can retry the job (2.202ms)
+✔ provider errors: an unknown error from the client is thrown too, not turned into unsure (0.2646ms)
+✔ abort: when the job signal is aborted the evaluator throws instead of returning unsure (12.4463ms)
+✔ prompt: the model gets statement, semantic constraints and numbered clean code only (1.2411ms)
+✔ prompt: the system prompt treats code as data and forbids scores (0.5158ms)
+✔ prompt: only the asked constraints are sent, and code with CRLF is numbered correctly (0.462ms)
+✔ prompt: onPrompt receives the exact prompt and its sha256, before the model is called (0.4983ms)
+✔ prompt: identity comes from getIdentity(submission), which may be async (0.3718ms)
+✔ call log: every field is filled from the response and the price table (0.3754ms)
+✔ integration with T07: ban-list constraints never reach the model (3.9118ms)
+✔ identity fails closed: no usable identity means no prompt and no model call (0.5918ms)
+✔ identity fails closed: an async getIdentity that returns nothing usable also throws (0.127ms)
+✔ identity fails closed: one usable string is enough, the others may be short (0.3735ms)
+✔ identity: a joined form such as nguyen_van_an is masked when only the full name is given (0.8321ms)
+✔ evaluator: bad configuration fails fast (0.2062ms)
+✔ evaluator: duplicated constraint ids are a programming error (0.1183ms)
+✔ schema: the request schema has enums for ids and verdicts and no score field (1.8804ms)
+✔ schema: a clean output is accepted as is (0.6419ms)
+✔ schema: broken JSON makes every constraint unsure with schema_error (0.2372ms)
+✔ schema: not JSON at all makes every constraint unsure with schema_error (0.107ms)
+✔ schema: empty text makes every constraint unsure with schema_error (0.1304ms)
+✔ schema: null JSON makes every constraint unsure with schema_error (0.0765ms)
+✔ schema: an array at the top level makes every constraint unsure with schema_error (0.2454ms)
+✔ schema: missing results makes every constraint unsure with schema_error (0.0793ms)
+✔ schema: results is not an array makes every constraint unsure with schema_error (0.0911ms)
+✔ schema: an unknown verdict makes every constraint unsure with schema_error (0.2094ms)
+✔ schema: a missing reason makes every constraint unsure with schema_error (0.1448ms)
+✔ schema: a missing evidence makes every constraint unsure with schema_error (0.1072ms)
+✔ schema: evidence that is not an array makes every constraint unsure with schema_error (0.0729ms)
+✔ schema: an evidence item that is a bare line number makes every constraint unsure with schema_error (0.0894ms)
+✔ schema: an evidence line that is not an integer makes every constraint unsure with schema_error (0.078ms)
+✔ schema: an evidence line with a fractional number makes every constraint unsure with schema_error (0.0615ms)
+✔ schema: an evidence item without text makes every constraint unsure with schema_error (0.0441ms)
+✔ schema: a reason that is not a string makes every constraint unsure with schema_error (0.0336ms)
+✔ schema: a constraint_id that is not a string makes every constraint unsure with schema_error (0.0369ms)
+✔ schema: an item that is not an object makes every constraint unsure with schema_error (0.0322ms)
+✔ schema: a missing constraint becomes schema_error, the valid one is kept (0.0977ms)
+✔ schema: a duplicated id becomes schema_error for that id only (0.1413ms)
+✔ schema: an unknown id is ignored, the asked constraints keep their result (0.1411ms)
+✔ schema: an unknown id with a missing asked constraint leaves that one as schema_error (0.1573ms)
+✔ schema: stop_reason refusal is schema_error even if the text is valid (0.1285ms)
+✔ schema: stop_reason max_tokens is schema_error even if the text is valid (0.0568ms)
+✔ schema: stop_reason tool_use is schema_error even if the text is valid (0.0423ms)
+✔ schema: stop_reason null is schema_error even if the text is valid (0.0985ms)
+✔ schema: no text block is schema_error (0.0816ms)
+✔ schema: violation without evidence lines is evidence_mismatch (0.1805ms)
+✔ schema: evidence lines [0] outside 1..10 is evidence_mismatch (0.1349ms)
+✔ schema: evidence lines [11] outside 1..10 is evidence_mismatch (0.1016ms)
+✔ schema: evidence lines [-1] outside 1..10 is evidence_mismatch (0.1008ms)
+✔ schema: evidence lines [3,99] outside 1..10 is evidence_mismatch (0.1458ms)
+✔ schema: pass and unsure may omit evidence, but lines that are given must be in range (0.1026ms)
+✔ schema: evidence lines are sorted, deduplicated and capped (0.1572ms)
+✔ schema: a very long reason is truncated, not rejected (0.1726ms)
+✔ schema: a model unsure verdict has cause model_unsure (0.096ms)
+✔ G5 schema: extra deduction or score fields on a result are ignored and the verdict is kept (0.1483ms)
+✔ G5 schema: an extra top-level deduction field is ignored and the results are kept (0.1008ms)
+✔ G5 schema: a grading instruction in the reason changes nothing but the reason text (0.1466ms)
+✔ G5 schema: required fields with the wrong type are still schema_error (G1), extra fields do not hide them (0.2151ms)
+✔ G1 schema: JSON in a json code fence makes every constraint unsure with schema_error (0.2108ms)
+✔ G1 schema: JSON in a bare code fence makes every constraint unsure with schema_error (0.1486ms)
+✔ G1 schema: JSON after prose makes every constraint unsure with schema_error (0.1167ms)
+✔ G1 schema: JSON followed by prose makes every constraint unsure with schema_error (0.1198ms)
+✔ G1 schema: two JSON objects in a row makes every constraint unsure with schema_error (0.0976ms)
+✔ G1 schema: the same answer without fence or prose is accepted, so the cases above fail only on the wrapping (0.155ms)
+✔ G1 schema: an unknown verdict makes every constraint unsure with schema_error (0.1857ms)
+✔ G1 schema: a missing constraint is unsure with schema_error, the other keeps its verdict (0.0946ms)
+✔ G1 schema: a duplicated constraint is unsure with schema_error, even when both answers agree (0.0881ms)
+✔ G2 schema: evidence that quotes its line exactly is accepted (0.1017ms)
+✔ G2 schema: a fabricated line (text that is nowhere in the code) is evidence_mismatch (0.0997ms)
+✔ G2 schema: the right text with the wrong line number is evidence_mismatch (0.1177ms)
+✔ G2 schema: a line that only held a removed comment is evidence_mismatch, whatever the text (0.1762ms)
+✔ G2 schema: one bad line among good ones makes the whole verdict evidence_mismatch (0.125ms)
+✔ G2 schema: pass and unsure with a bad evidence line also become evidence_mismatch (0.1376ms)
+✔ G2 schema: surrounding whitespace is ignored but any change inside the line is a mismatch (0.2586ms)
+✔ G2 schema: the mismatch reason names the line and keeps the model reason for the TA (0.2965ms)
+✔ G2 schema: an extra field inside an evidence item is ignored like any field outside the schema (G5) (0.1511ms)
+✖ G2 schema: a line outside the file is evidence_mismatch and the reason names that check (0.982ms)
+ℹ tests 103
+ℹ suites 0
+ℹ pass 102
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 967.1844
+
+✖ failing tests:
+
+test at tests\unit\model-schema.test.mjs:496:1
+✖ G2 schema: a line outside the file is evidence_mismatch and the reason names that check (0.982ms)
+  AssertionError [ERR_ASSERTION]: violation line 0
+      at TestContext.<anonymous> (<repo>/tests/unit/model-schema.test.mjs:508:14)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'The model said "violation" but its evidence does not match the code: line 0 has no code once comments are removed. Model reason: because',
+    expected: /line 0 is outside the file \(1\.\.10\)/,
+    operator: 'match',
+    diff: 'simple'
+  }

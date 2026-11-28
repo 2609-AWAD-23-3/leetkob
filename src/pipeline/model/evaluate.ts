@@ -212,10 +212,10 @@ export const createSemanticEvaluator = (
       text: completion.text,
       stopReason: completion.stopReason,
       constraintIds,
-      lineCount: originalLines.length,
+      codeLines: sanitizedLines,
     });
     const verdicts = parsed.results.map((r) =>
-      toVerdict(submissionId, r, originalLines, sanitizedLines),
+      toVerdict(submissionId, r, originalLines),
     );
     return {
       verdicts,
@@ -297,21 +297,9 @@ const toVerdict = (
   submissionId: string,
   result: ParsedConstraintResult,
   originalLines: readonly string[],
-  sanitizedLines: readonly string[],
 ): NewConstraintVerdict => {
-  // Dòng mà model chưa từng thấy nội dung (dòng trống sau khi bỏ comment) không phải là
-  // bằng chứng cho một violation.
-  const citesVisibleCode = result.evidenceLines.some(
-    (line) => (sanitizedLines[line - 1] ?? '').trim() !== '',
-  );
-  if (result.verdict === 'violation' && !citesVisibleCode) {
-    return unsureVerdict(
-      submissionId,
-      result.constraintId,
-      'evidence_mismatch',
-      `The model said "violation" but cited only lines with no code. Model reason: ${result.reason ?? '(none)'}`,
-    );
-  }
+  // G2 đã kiểm từng dòng evidence với code model thấy (`parseModelOutput`). Số dòng của bản đã
+  // làm sạch trùng với bản gốc, nên text TA thấy là dòng của code gốc, không phải text của model.
   const evidence: Evidence[] = result.evidenceLines.map((line) => ({
     line,
     text: originalLineText(originalLines[line - 1] ?? ''),

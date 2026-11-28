@@ -42,17 +42,44 @@ export const STUDENT_IDENTITY = [
   'an_nguyen',
 ];
 
+/**
+ * Một kết quả của model. Phần tử evidence là số `n` nghĩa là "model trích đúng dòng `n`": text
+ * được điền bằng chỗ giữ `@@quote:n@@`, rồi `resolveQuotes` (hoặc model giả) thay bằng đúng dòng
+ * code model đã thấy. Muốn thử evidence sai thì truyền thẳng `{ line, text }`.
+ */
+export const quote = (line) => `@@quote:${line}@@`;
+
 export const result = (
   constraintId,
   verdict,
-  evidenceLines = [],
+  evidence = [],
   reason = 'because',
 ) => ({
   constraint_id: constraintId,
   reason,
-  evidence_lines: evidenceLines,
+  evidence: evidence.map((e) =>
+    typeof e === 'number' ? { line: e, text: quote(e) } : e,
+  ),
   verdict,
 });
+
+/** Thay mọi `@@quote:n@@` trong output JSON bằng dòng `n` (đã trim) của `codeLines`. */
+export const resolveQuotes = (text, codeLines) =>
+  typeof text !== 'string'
+    ? text
+    : text.replace(/@@quote:(-?\d+)@@/g, (_match, n) =>
+        JSON.stringify((codeLines[Number(n) - 1] ?? '').trim()).slice(1, -1),
+      );
+
+/** Các dòng code (đã làm sạch) model thấy trong prompt, theo đúng số dòng in trong prompt. */
+export const promptCodeLines = (user) => {
+  const block = /<submission[^>]*>\n([\s\S]*?)\n<\/submission>/.exec(user);
+  if (!block) return [];
+  return block[1].split('\n').map((line) => {
+    const match = /^\s*\d+\|(?: (.*))?$/.exec(line);
+    return match ? (match[1] ?? '') : '';
+  });
+};
 
 export const okCompletion = (results, overrides = {}) => ({
   text: JSON.stringify({ results }),
@@ -83,7 +110,12 @@ export const createFakeModel = (respond) => {
     calls,
     async complete(request) {
       calls.push(request);
-      return respond(request, calls.length);
+      const completion = await respond(request, calls.length);
+      if (!completion || typeof completion.text !== 'string') return completion;
+      return {
+        ...completion,
+        text: resolveQuotes(completion.text, promptCodeLines(request.user)),
+      };
     },
   };
 };

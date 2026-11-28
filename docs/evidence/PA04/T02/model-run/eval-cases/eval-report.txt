@@ -1,0 +1,24 @@
+LeeTKOB eval · data <repo>\eval-cases · predictions <repo>\docs\evidence\PA04\T02\model-run\eval-cases\predictions.jsonl
+22 solutions, 49 (solution, constraint) pairs: 34 labelled pass, 15 labelled violation
+
+Metrics
+  wrongful deductions    0                  ok    (target = 0)
+  recall                 93.3% (14/15)      ok    (target >= 90.0%)
+  unsure rate            2.0% (1/49)        ok    (target <= 20.0%)
+
+By tag (a pair can carry several tags)
+  tag        pairs  pass  viol  caught  wrongful  unsure
+  obvious        2     0     2     2/2         0       0
+  disguised      9     0     9     8/9         0       1
+  trap           8     8     0       -         0       0
+  injection      4     0     4     4/4         0       0
+  style          5     5     0       -         0       0
+  (none)        22    22     0       -         0       0
+
+Wrongful deductions (0)
+
+Violations not caught (1)
+  digit-sum/s06 C2 [disguised] labelled violation @ lines 9,10; predicted unsure; evidence (none)
+      -> predicted unsure
+
+PASS

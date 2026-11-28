@@ -1,0 +1,188 @@
+# Removal check: g1-no-verdict-check
+# What: G1 removed: no check that the verdict is pass, violation or unsure
+# Source: HEAD 366f691 plus the working tree at the time of the run; src/pipeline/model/schema.ts restored afterwards
+# Command: npm run build && node --test tests/unit/model-schema.test.mjs tests/unit/model-evaluate.test.mjs
+# Exit code: 1
+# Failing tests: 3
+#   ✖ schema: an unknown verdict makes every constraint unsure with schema_error
+#   ✖ G5 schema: required fields with the wrong type are still schema_error (G1), extra fields do not hide them
+#   ✖ G1 schema: an unknown verdict makes every constraint unsure with schema_error
+#
+# Temporary patch applied to src/pipeline/model/schema.ts:
+#   diff --git a/src/pipeline/model/schema.ts b/src/pipeline/model/schema.ts
+#   index b72538c..4ed5b4e 100644
+#   --- a/src/pipeline/model/schema.ts
+#   +++ b/src/pipeline/model/schema.ts
+#   @@ -88,7 +88,7 @@ const readRawResult = (value: unknown): RawResult | null => {
+#      const { constraint_id, verdict, evidence_lines, reason } = value;
+#      if (typeof constraint_id !== 'string') return null;
+#      if (typeof reason !== 'string') return null;
+#   -  if (!VERDICTS.includes(verdict as VerdictValue)) return null;
+#   +  // REMOVAL TEST: verdict enum check removed
+#      if (
+#        !Array.isArray(evidence_lines) ||
+#        !evidence_lines.every((line) => Number.isInteger(line))
+#
+# Test output:
+✔ evaluator: no semantic constraint means no model call and an empty result (2.8196ms)
+✔ evaluator: one call covers all semantic constraints of a submission (5.0811ms)
+✔ evaluator: verdict fields, order and evidence text come from the original code (1.3982ms)
+✔ evaluator: evidence text is the original line, never text written by the model (0.9326ms)
+✔ evaluator: violation with no line, or a line outside the file, is unsure/evidence_mismatch (2.8422ms)
+✔ evaluator: a violation that only cites lines the model never saw is evidence_mismatch (0.8048ms)
+✔ evaluator: an unsure verdict from the model keeps cause model_unsure (0.7955ms)
+✔ evaluator: unsureCause is set if and only if the verdict is unsure (2.279ms)
+✔ evaluator: broken output makes every constraint unsure/schema_error and logs schema_error (0.6294ms)
+✔ evaluator: refusal and max_tokens are unsure/schema_error even with parseable text (1.6385ms)
+✔ evaluator: a model that returns null text is unsure/schema_error (2.3124ms)
+✔ G5 evaluator: an extra deduction field is ignored, the verdict is kept and no verdict carries a mark (0.6324ms)
+✔ G1 evaluator: a fenced JSON answer is not unwrapped, every constraint is unsure/schema_error (0.4446ms)
+✔ G1 evaluator: JSON after prose is not cut out, every constraint is unsure/schema_error (0.3599ms)
+✔ evaluator: a missing constraint is schema_error, the valid one is kept (0.4214ms)
+✔ evaluator: no verdict carries any grading field (0.5401ms)
+✔ timeout: a model that never answers becomes unsure/timeout and the signal is aborted (46.1729ms)
+✔ timeout: a model that honours the abort signal is also unsure/timeout (47.2808ms)
+✔ timeout: a client that throws ModelTimeoutError is unsure/timeout (0.8514ms)
+✔ timeout: a late answer after the deadline is ignored and does not crash the process (230.791ms)
+✔ provider errors (429, 5xx, connection) are thrown so the worker can retry the job (2.6026ms)
+✔ provider errors: an unknown error from the client is thrown too, not turned into unsure (0.5262ms)
+✔ abort: when the job signal is aborted the evaluator throws instead of returning unsure (12.003ms)
+✔ prompt: the model gets statement, semantic constraints and numbered clean code only (0.9707ms)
+✔ prompt: the system prompt treats code as data and forbids scores (0.4305ms)
+✔ prompt: only the asked constraints are sent, and code with CRLF is numbered correctly (0.4193ms)
+✔ prompt: onPrompt receives the exact prompt and its sha256, before the model is called (0.4173ms)
+✔ prompt: identity comes from getIdentity(submission), which may be async (0.4118ms)
+✔ call log: every field is filled from the response and the price table (0.4144ms)
+✔ integration with T07: ban-list constraints never reach the model (3.6505ms)
+✔ identity fails closed: no usable identity means no prompt and no model call (0.5222ms)
+✔ identity fails closed: an async getIdentity that returns nothing usable also throws (0.1322ms)
+✔ identity fails closed: one usable string is enough, the others may be short (0.3618ms)
+✔ identity: a joined form such as nguyen_van_an is masked when only the full name is given (1.1667ms)
+✔ evaluator: bad configuration fails fast (0.389ms)
+✔ evaluator: duplicated constraint ids are a programming error (0.2267ms)
+✔ schema: the request schema has enums for ids and verdicts and no score field (2.6244ms)
+✔ schema: a clean output is accepted as is (0.775ms)
+✔ schema: broken JSON makes every constraint unsure with schema_error (0.3398ms)
+✔ schema: not JSON at all makes every constraint unsure with schema_error (0.1856ms)
+✔ schema: empty text makes every constraint unsure with schema_error (0.1716ms)
+✔ schema: null JSON makes every constraint unsure with schema_error (0.142ms)
+✔ schema: an array at the top level makes every constraint unsure with schema_error (0.1443ms)
+✔ schema: missing results makes every constraint unsure with schema_error (0.1672ms)
+✔ schema: results is not an array makes every constraint unsure with schema_error (0.1936ms)
+✖ schema: an unknown verdict makes every constraint unsure with schema_error (1.6011ms)
+✔ schema: a missing reason makes every constraint unsure with schema_error (0.295ms)
+✔ schema: a missing evidence_lines makes every constraint unsure with schema_error (0.1866ms)
+✔ schema: evidence_lines that are not integers makes every constraint unsure with schema_error (0.0933ms)
+✔ schema: evidence_lines with a fractional number makes every constraint unsure with schema_error (0.0878ms)
+✔ schema: a reason that is not a string makes every constraint unsure with schema_error (0.0598ms)
+✔ schema: a constraint_id that is not a string makes every constraint unsure with schema_error (0.0701ms)
+✔ schema: an item that is not an object makes every constraint unsure with schema_error (0.0576ms)
+✔ schema: a missing constraint becomes schema_error, the valid one is kept (0.2097ms)
+✔ schema: a duplicated id becomes schema_error for that id only (0.1997ms)
+✔ schema: an unknown id is ignored, the asked constraints keep their result (0.3781ms)
+✔ schema: an unknown id with a missing asked constraint leaves that one as schema_error (0.1847ms)
+✔ schema: stop_reason refusal is schema_error even if the text is valid (0.1524ms)
+✔ schema: stop_reason max_tokens is schema_error even if the text is valid (0.0816ms)
+✔ schema: stop_reason tool_use is schema_error even if the text is valid (0.0643ms)
+✔ schema: stop_reason null is schema_error even if the text is valid (0.1784ms)
+✔ schema: no text block is schema_error (0.2105ms)
+✔ schema: violation without evidence lines is evidence_mismatch (0.1907ms)
+✔ schema: evidence lines [0] outside 1..10 is evidence_mismatch (0.1305ms)
+✔ schema: evidence lines [11] outside 1..10 is evidence_mismatch (0.1272ms)
+✔ schema: evidence lines [-1] outside 1..10 is evidence_mismatch (0.3028ms)
+✔ schema: evidence lines [3,99] outside 1..10 is evidence_mismatch (0.5428ms)
+✔ schema: pass and unsure may omit evidence, but lines that are given must be in range (2.4951ms)
+✔ schema: evidence lines are sorted, deduplicated and capped (0.6086ms)
+✔ schema: a very long reason is truncated, not rejected (1.1833ms)
+✔ schema: a model unsure verdict has cause model_unsure (0.7254ms)
+✔ G5 schema: extra deduction or score fields on a result are ignored and the verdict is kept (0.4518ms)
+✔ G5 schema: an extra top-level deduction field is ignored and the results are kept (0.2361ms)
+✔ G5 schema: a grading instruction in the reason changes nothing but the reason text (0.169ms)
+✖ G5 schema: required fields with the wrong type are still schema_error (G1), extra fields do not hide them (0.5738ms)
+✔ G1 schema: JSON in a json code fence makes every constraint unsure with schema_error (0.1646ms)
+✔ G1 schema: JSON in a bare code fence makes every constraint unsure with schema_error (0.0786ms)
+✔ G1 schema: JSON after prose makes every constraint unsure with schema_error (0.0814ms)
+✔ G1 schema: JSON followed by prose makes every constraint unsure with schema_error (0.1463ms)
+✔ G1 schema: two JSON objects in a row makes every constraint unsure with schema_error (0.1563ms)
+✔ G1 schema: the same answer without fence or prose is accepted, so the cases above fail only on the wrapping (0.1671ms)
+✖ G1 schema: an unknown verdict makes every constraint unsure with schema_error (0.628ms)
+✔ G1 schema: a missing constraint is unsure with schema_error, the other keeps its verdict (0.3253ms)
+✔ G1 schema: a duplicated constraint is unsure with schema_error, even when both answers agree (0.2303ms)
+ℹ tests 84
+ℹ suites 0
+ℹ pass 81
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 817.4101
+
+✖ failing tests:
+
+test at tests\unit\model-schema.test.mjs:108:3
+✖ schema: an unknown verdict makes every constraint unsure with schema_error (1.6011ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  'maybe' !== 'unsure'
+
+      at assertAllSchemaError (<repo>/tests/unit/model-schema.test.mjs:24:12)
+      at TestContext.<anonymous> (<repo>/tests/unit/model-schema.test.mjs:109:5)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'maybe',
+    expected: 'unsure',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\unit\model-schema.test.mjs:276:1
+✖ G5 schema: required fields with the wrong type are still schema_error (G1), extra fields do not hide them (0.5738ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  'maybe' !== 'unsure'
+
+      at assertAllSchemaError (<repo>/tests/unit/model-schema.test.mjs:24:12)
+      at TestContext.<anonymous> (<repo>/tests/unit/model-schema.test.mjs:277:3)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'maybe',
+    expected: 'unsure',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\unit\model-schema.test.mjs:305:1
+✖ G1 schema: an unknown verdict makes every constraint unsure with schema_error (0.628ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'compliant'
+  - 'unsure'
+
+      at assertAllSchemaError (<repo>/tests/unit/model-schema.test.mjs:24:12)
+      at TestContext.<anonymous> (<repo>/tests/unit/model-schema.test.mjs:307:5)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'compliant',
+    expected: 'unsure',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
